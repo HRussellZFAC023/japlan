@@ -25,6 +25,20 @@ const closeMapBtn = mapOverlay.querySelector('[data-action="close-map"]');
 const ACTIVITY_MAP = new Map(CATALOG.activity.map((item) => [item.id, item]));
 const STAY_MAP = new Map(CATALOG.stay.map((item) => [item.id, item]));
 
+const ICS_TIMEZONE_ID = 'Asia/Tokyo';
+const ICS_VTIMEZONE_BLOCK = [
+  'BEGIN:VTIMEZONE',
+  `TZID:${ICS_TIMEZONE_ID}`,
+  `X-LIC-LOCATION:${ICS_TIMEZONE_ID}`,
+  'BEGIN:STANDARD',
+  'TZOFFSETFROM:+0900',
+  'TZOFFSETTO:+0900',
+  'TZNAME:JST',
+  'DTSTART:19700101T000000',
+  'END:STANDARD',
+  'END:VTIMEZONE',
+];
+
 const dateSequence = buildDateSequence(TRIP_RANGE.start, TRIP_RANGE.end);
 
 let planState = loadState();
@@ -786,6 +800,7 @@ function exportIcs() {
     'VERSION:2.0',
     'CALSCALE:GREGORIAN',
     'PRODID:-//Canvas6 Trip Planner//EN',
+    ...ICS_VTIMEZONE_BLOCK
   ];
 
   dateSequence.forEach((dateKey) => {
@@ -814,8 +829,8 @@ function exportIcs() {
     lines.push(`UID:${dateKey}@canvas6`);
     lines.push(`DTSTAMP:${dtstamp}`);
     lines.push(`SUMMARY:${escapeIcsText(`${summaryDate} — ${title}`)}`);
-    lines.push(`DTSTART:${dateValue}T090000`);
-    lines.push(`DTEND:${dateValue}T210000`);
+    lines.push(`DTSTART;TZID=${ICS_TIMEZONE_ID}:${dateValue}T090000`);
+    lines.push(`DTEND;TZID=${ICS_TIMEZONE_ID}:${dateValue}T210000`);
     lines.push(`DESCRIPTION:${escapeIcsText(description)}`);
     lines.push(`LOCATION:${escapeIcsText(locationLabel)}`);
     lines.push('END:VEVENT');
