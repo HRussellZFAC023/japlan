@@ -1,4 +1,4 @@
-export const STORAGE_VERSION = 'v1';
+export const STORAGE_VERSION = 'v2';
 export const STORAGE_KEY = 'jp-canvas6-' + STORAGE_VERSION;
 
 export const TRIP_RANGE = {
@@ -31,6 +31,9 @@ export const MAP_COORDINATES = {
   umedaSky: [34.7051, 135.4899],
   abenoHarukas: [34.6464, 135.5134],
   midosujiIllumination: [34.6865, 135.4983],
+  kuromonMarket: [34.6667, 135.5071],
+  nambaYasaka: [34.6615, 135.4967],
+  cupnoodlesIkeda: [34.8181, 135.4267],
   arashiyama: [35.0136, 135.6736],
   kiyomizudera: [34.9948, 135.785],
   fushimiInari: [34.9671, 135.7727],
@@ -39,9 +42,16 @@ export const MAP_COORDINATES = {
   okunoin: [34.215, 135.5858],
   eikando: [35.0156, 135.7967],
   rurikoin: [35.0866, 135.7869],
+  philosophersPath: [35.027, 135.7954],
+  sanzenin: [35.1196, 135.8349],
+  kuramaDera: [35.1179, 135.7707],
+  tojiTemple: [34.9806, 135.7477],
   arimaOnsen: [34.7968, 135.2495],
   harborland: [34.6785, 135.1787],
   himejiCastle: [34.8393, 134.6939],
+  kitanoIjinkan: [34.701, 135.1913],
+  nunobikiGardens: [34.7151, 135.1923],
+  higashiYuenchi: [34.6875, 135.1976],
   disneyResort: [35.6339, 139.8864],
   teamlabPlanets: [35.6496, 139.7916],
   ghibliMuseum: [35.6962, 139.5704],
@@ -52,6 +62,10 @@ export const MAP_COORDINATES = {
   akihabara: [35.6987, 139.7714],
   harajukuVintage: [35.6695, 139.7058],
   roppongiMidtown: [35.6665, 139.7316],
+  sensoji: [35.7134, 139.7955],
+  kappabashi: [35.7128, 139.7885],
+  meguroRiver: [35.6237, 139.7266],
+  tsukijiMarket: [35.6654, 139.7705],
   kix: [34.4338, 135.2263],
   hirakatashi: [34.8165, 135.6477],
   usj: [34.6654, 135.4323],
@@ -72,9 +86,13 @@ export const CATALOG = {
     { id: 'act-dotonbori-walk', city: 'osaka', label: 'Dōtonbori walk + street food', coord: 'dotonbori' },
     { id: 'act-umeda-sky', city: 'osaka', label: 'Umeda Sky Building sunset', coord: 'umedaSky' },
     { id: 'act-abeno-harukas', city: 'osaka', label: 'Abeno HARUKAS 300 view', coord: 'abenoHarukas' },
+    { id: 'act-kuromon-market', city: 'osaka', label: 'Kuromon Ichiba morning bites', coord: 'kuromonMarket' },
+    { id: 'act-namba-yasaka', city: 'osaka', label: 'Namba Yasaka Shrine photo stop', coord: 'nambaYasaka' },
     { id: 'act-karaoke-namba', city: 'osaka', label: 'Namba karaoke & late izakaya', coord: 'dotonbori' },
     { id: 'guide-donki-night-run', city: 'osaka', label: 'Donki night run (Dōtonbori)', coord: 'dotonbori' },
     { id: 'event-midosuji-lights', city: 'osaka', label: 'Osaka Festival of the Lights — Midosuji', coord: 'midosujiIllumination' },
+    { id: 'event-osaka-christmas-market', city: 'osaka', label: 'Osaka German Christmas Market (Umeda)', coord: 'umedaSky' },
+    { id: 'act-cupnoodles-ikeda', city: 'osaka', label: 'CupNoodles Museum Ikeda DIY ramen', coord: 'cupnoodlesIkeda' },
     { id: 'act-usj-day', city: 'osaka', label: 'Universal Studios Japan day', coord: 'usj' },
 
     // Kyoto / Nara / Kōyasan
@@ -82,17 +100,25 @@ export const CATALOG = {
     { id: 'act-kiyomizudera', city: 'kyoto', label: 'Kiyomizu-dera & Sannenzaka', coord: 'kiyomizudera' },
     { id: 'act-fushimi-inari', city: 'kyoto', label: 'Fushimi Inari at dusk', coord: 'fushimiInari' },
     { id: 'act-uji-tea', city: 'kyoto', label: 'Uji tea tastings & Byōdō-in stroll', coord: 'uji' },
+    { id: 'act-philosophers-path', city: 'kyoto', label: 'Philosopher’s Path slow walk', coord: 'philosophersPath' },
     { id: 'act-nara-park', city: 'kyoto', label: 'Nara Park deer + Tōdai-ji', coord: 'naraPark' },
     { id: 'act-koyasan-okunoin', city: 'kyoto', label: 'Kōyasan Okunoin night walk', coord: 'okunoin' },
+    { id: 'act-sanzenin-ohara', city: 'kyoto', label: 'Ohara Sanzen-in moss gardens', coord: 'sanzenin' },
+    { id: 'act-kurama-kibune', city: 'kyoto', label: 'Kurama to Kibune hike & onsen', coord: 'kuramaDera' },
     { id: 'guide-kimono-stroll', city: 'kyoto', label: 'Kimono stroll photo spot', coord: 'kiyomizudera' },
     { id: 'event-kiyomizu-lightup', city: 'kyoto', label: 'Kiyomizu-dera autumn night illumination', coord: 'kiyomizudera' },
     { id: 'event-eikando-lightup', city: 'kyoto', label: 'Eikando Zenrinji maple light-up', coord: 'eikando' },
     { id: 'event-rurikoin-autumn', city: 'kyoto', label: 'Rurikō-in autumn garden visit', coord: 'rurikoin' },
+    { id: 'event-arashiyama-hanatouro', city: 'kyoto', label: 'Arashiyama Hanatōro lantern walk', coord: 'arashiyama' },
+    { id: 'event-toji-flea', city: 'kyoto', label: 'Tō-ji Kobo-ichi flea market (21st)', coord: 'tojiTemple' },
 
     // Kobe / Himeji
     { id: 'act-arima-onsen', city: 'kobe', label: 'Arima Onsen golden & silver baths', coord: 'arimaOnsen' },
     { id: 'act-himeji-castle', city: 'kobe', label: 'Himeji Castle + Kōko-en', coord: 'himejiCastle' },
     { id: 'act-harborland-night', city: 'kobe', label: 'Kobe Harborland evening lights', coord: 'harborland' },
+    { id: 'act-kitano-ijinkan', city: 'kobe', label: 'Kitano Ijinkan heritage houses', coord: 'kitanoIjinkan' },
+    { id: 'act-nunobiki-herb', city: 'kobe', label: 'Nunobiki Herb Gardens ropeway', coord: 'nunobikiGardens' },
+    { id: 'event-kobe-luminarie', city: 'kobe', label: 'Kobe Luminarie light festival', coord: 'higashiYuenchi' },
 
     // Tokyo / Chiba
     { id: 'act-disney-day', city: 'tokyo', label: 'Tokyo Disney day (Sea/Land)', coord: 'disneyResort' },
@@ -111,21 +137,30 @@ export const CATALOG = {
     { id: 'guide-harajuku-vintage', city: 'tokyo', label: 'Harajuku thrift & vintage run', coord: 'harajukuVintage' },
     { id: 'event-roppongi-illumination', city: 'tokyo', label: 'Tokyo Midtown Roppongi illuminations', coord: 'roppongiMidtown' },
     { id: 'event-blue-cave', city: 'tokyo', label: 'Shibuya Ao no Dokutsu (Blue Cave)', coord: 'shibuyaParco' },
+    { id: 'act-sensoji-asakusa', city: 'tokyo', label: 'Asakusa Sensō-ji & Nakamise stroll', coord: 'sensoji' },
+    { id: 'act-kappabashi-hunt', city: 'tokyo', label: 'Kappabashi kitchenware treasure hunt', coord: 'kappabashi' },
+    { id: 'act-tsukiji-breakfast', city: 'tokyo', label: 'Tsukiji Outer Market sushi breakfast', coord: 'tsukijiMarket' },
+    { id: 'event-meguro-river-illumination', city: 'tokyo', label: 'Meguro River winter illumination', coord: 'meguroRiver' },
   ],
   stay: [
     // Osaka / Hirakata
     { id: 'stay-candeo-hirakata', city: 'osaka', label: 'Candeo Hotels Osaka Hirakata', url: 'https://www.candeohotels.com/en/osaka-hirakata/' },
     { id: 'stay-sunplaza-hirakata', city: 'osaka', label: 'Hirakata SunPlaza Hotel', url: 'https://sunplazahotel.co.jp/en/' },
     { id: 'stay-cross-hotel-osaka', city: 'osaka', label: 'Cross Hotel Osaka', url: 'https://www.crosshotel.com/osaka/en/' },
+    { id: 'stay-hotel-vischio-osaka', city: 'osaka', label: 'Hotel Vischio Osaka by Granvia', url: 'https://www.hotelvischio-osaka.com/en/' },
+    { id: 'stay-lively-osaka', city: 'osaka', label: 'THE LIVELY Osaka Honmachi', url: 'https://www.livelyhotels.com/en/thelivelyosaka/' },
 
     // Kyoto / Kōyasan
     { id: 'stay-the-thousand-kyoto', city: 'kyoto', label: 'THE THOUSAND KYOTO', url: 'https://www.keihanhotels-resorts.co.jp/the-thousand-kyoto/en/' },
     { id: 'stay-hotel-granvia-kyoto', city: 'kyoto', label: 'Hotel Granvia Kyoto', url: 'https://www.granviakyoto.com/' },
     { id: 'stay-ekoin-koyasan', city: 'kyoto', label: 'Kōyasan Eko-in temple stay', url: 'https://www.ekoin.jp/en/' },
+    { id: 'stay-gate-hotel-kyoto', city: 'kyoto', label: 'THE GATE HOTEL Kyoto Takasegawa', url: 'https://www.gate-hotel.jp/kyoto/en/' },
+    { id: 'stay-sowaka-kyoto', city: 'kyoto', label: 'Luxury ryokan SOWAKA (Gion)', url: 'https://sowaka.com/en/' },
 
     // Kobe / Himeji
     { id: 'stay-arima-grand', city: 'kobe', label: 'Arima Grand Hotel', url: 'https://www.arima-gh.jp/en/' },
     { id: 'stay-la-suite-kobe', city: 'kobe', label: 'Hotel La Suite Kobe Harborland', url: 'https://www.l-s.jp/english/' },
+    { id: 'stay-hotel-okura-kobe', city: 'kobe', label: 'Hotel Okura Kobe', url: 'https://www.okura-nikko.com/japan/kobe/hotel-okura-kobe/' },
 
     // Tokyo / Chiba
     { id: 'stay-mitsui-garden-otemachi', city: 'tokyo', label: 'Mitsui Garden Hotel Otemachi', url: 'https://www.gardenhotels.co.jp/otemachi/eng/' },
@@ -134,6 +169,8 @@ export const CATALOG = {
     { id: 'stay-disney-ambassador', city: 'tokyo', label: 'Disney Ambassador Hotel', url: 'https://www.tokyodisneyresort.jp/en/hotel/dh/' },
     { id: 'stay-disneyland-hotel', city: 'tokyo', label: 'Tokyo Disneyland Hotel', url: 'https://www.tokyodisneyresort.jp/en/hotel/tdh/' },
     { id: 'stay-disney-celebration', city: 'tokyo', label: 'Tokyo Disney Celebration Hotel', url: 'https://www.tokyodisneyresort.jp/en/hotel/dch/' },
+    { id: 'stay-muji-hotel-ginza', city: 'tokyo', label: 'MUJI HOTEL GINZA', url: 'https://hotel.muji.com/en/ginza/' },
+    { id: 'stay-millennials-shibuya', city: 'tokyo', label: 'The Millennials Shibuya (capsule)', url: 'https://www.livelyhotels.com/en/themillennialsshibuya/' },
   ],
   booking: [
     // Osaka / Hirakata
