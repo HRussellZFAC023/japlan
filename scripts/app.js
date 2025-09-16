@@ -703,34 +703,82 @@ function handleChipDragStart(event) {
 
 function handleChipDragEnd() {
   chipDragData = null;
-  document.querySelectorAll('.slot[data-drop-hover]').forEach((slot) => {
+  document.querySelectorAll('.slot').forEach((slot) => {
     slot.removeAttribute('data-drop-hover');
+    clearSlotDropIndicator(slot);
   });
 }
 
+function computeSlotDropIndex(slotElement, event) {
+  const chips = Array.from(slotElement.querySelectorAll('.chiplet'));
+  if (!chips.length) {
+    return { index: 0 };
+  }
+  const pointerY = event.clientY ?? event.pageY ?? 0;
+  for (let i = 0; i < chips.length; i += 1) {
+    const rect = chips[i].getBoundingClientRect();
+    if (pointerY < rect.top + rect.height / 2) {
+      return { index: i };
+    }
+  }
+  return { index: chips.length };
+}
+
+function updateSlotDropIndicator(slotElement, index) {
+  clearSlotDropIndicator(slotElement);
+  const chips = Array.from(slotElement.querySelectorAll('.chiplet'));
+  if (!chips.length) return;
+  if (index <= 0) {
+    chips[0].dataset.dropIndicator = 'before';
+  } else if (index >= chips.length) {
+    chips[chips.length - 1].dataset.dropIndicator = 'after';
+  } else {
+    chips[index].dataset.dropIndicator = 'before';
+  }
+}
+
+function clearSlotDropIndicator(slotElement) {
+  if (!slotElement) return;
+  slotElement
+    .querySelectorAll('.chiplet[data-drop-indicator]')
+    .forEach((chip) => chip.removeAttribute('data-drop-indicator'));
+}
+
 function handleSlotDragOver(event) {
-  if (!editing) return;
+  if (!editing || !chipDragData) return;
   event.preventDefault();
-  event.currentTarget.dataset.dropHover = 'true';
+  const slotElement = event.currentTarget;
+  slotElement.dataset.dropHover = 'true';
+  const { index } = computeSlotDropIndex(slotElement, event);
+  updateSlotDropIndicator(slotElement, index);
   event.dataTransfer.dropEffect = 'move';
 }
 
 function handleSlotDragLeave(event) {
-  event.currentTarget.removeAttribute('data-drop-hover');
+  if (!editing || !chipDragData) return;
+  const slotElement = event.currentTarget;
+  const nextTarget = event.relatedTarget;
+  if (nextTarget && slotElement.contains(nextTarget)) {
+    return;
+  }
+  slotElement.removeAttribute('data-drop-hover');
+  clearSlotDropIndicator(slotElement);
 }
 
 function handleSlotDrop(event) {
-  if (!editing) return;
+  const slotElement = event.currentTarget;
+  slotElement.removeAttribute('data-drop-hover');
+  clearSlotDropIndicator(slotElement);
+  if (!editing || !chipDragData) return;
   event.preventDefault();
-  event.currentTarget.removeAttribute('data-drop-hover');
-  if (!chipDragData) return;
-  const targetDate = event.currentTarget.dataset.date;
-  const targetSlot = event.currentTarget.dataset.slot;
-  moveChip(chipDragData, targetDate, targetSlot);
+  const { index: targetIndex } = computeSlotDropIndex(slotElement, event);
+  const targetDate = slotElement.dataset.date;
+  const targetSlot = slotElement.dataset.slot;
+  moveChip(chipDragData, targetDate, targetSlot, targetIndex);
   chipDragData = null;
 }
 
-function moveChip(dragData, targetDate, targetSlot) {
+function moveChip(dragData, targetDate, targetSlot, targetIndex) {
   const { date: sourceDate, slot: sourceSlot, index, id } = dragData;
   if (!id) return;
   const sourceDay = ensureDay(sourceDate);
@@ -739,6 +787,8 @@ function moveChip(dragData, targetDate, targetSlot) {
 
   const sourceList = sourceDay.slots?.[sourceSlot];
   if (!Array.isArray(sourceList)) return;
+  targetDay.slots[targetSlot] = targetDay.slots[targetSlot] || [];
+  const targetList = targetDay.slots[targetSlot];
   const [removed] = sourceList.splice(index, 1);
   if (removed !== id) {
     const fallbackIndex = sourceList.indexOf(id);
@@ -747,8 +797,12 @@ function moveChip(dragData, targetDate, targetSlot) {
     }
   }
 
-  targetDay.slots[targetSlot] = targetDay.slots[targetSlot] || [];
-  targetDay.slots[targetSlot].push(id);
+  let insertIndex = Number.isInteger(targetIndex) ? targetIndex : targetList.length;
+  if (sourceDate === targetDate && sourceSlot === targetSlot && index < insertIndex) {
+    insertIndex -= 1;
+  }
+  insertIndex = Math.max(0, Math.min(insertIndex, targetList.length));
+  targetList.splice(insertIndex, 0, id);
   persistState();
   updateDayCard(sourceDate);
   if (sourceDate !== targetDate) {

@@ -397,6 +397,23 @@ button:disabled {
   position: relative;
 }
 
+.chiplet[data-drop-indicator]::after {
+  content: '';
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  border-top: 2px solid rgba(45, 58, 100, 0.5);
+  pointer-events: none;
+}
+
+.chiplet[data-drop-indicator='before']::after {
+  top: -6px;
+}
+
+.chiplet[data-drop-indicator='after']::after {
+  bottom: -6px;
+}
+
 .chiplet.locked {
   opacity: 0.7;
   cursor: default;
