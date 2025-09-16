@@ -5,16 +5,6 @@
   --line: #e7e2d8;
   --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
   --radius-card: 18px;
-  --osaka: #2d3a64;
-  --kyoto: #c84e4e;
-  --tokyo: #eecad0;
-  --kobe: #7fafae;
-  --work: #9a948c;
-  --friend-nana: #f7e6ec;
-  --friend-nicole: #ffe4f0;
-  --friend-ken: #eaf7ea;
-  --friend-james: #e6effa;
-  --friend-phil: #e5f4f1;
   --slot-bg: #f8f3eb;
   --tab-bg: rgba(255, 255, 255, 0.9);
 }
@@ -92,6 +82,13 @@ button:disabled {
   align-items: center;
 }
 
+.toolbar-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
 .toolbar-group--actions {
   margin-left: auto;
   gap: 8px;
@@ -126,45 +123,81 @@ button:disabled {
   box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.08);
 }
 
-.chip[data-friend="Nana"] {
-  background: var(--friend-nana);
+.chip--friend,
+.chip--location {
+  transition: color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
-.chip[data-friend="Nicole"] {
-  background: var(--friend-nicole);
+.chip--friend,
+.chip--location {
+  background: #fff;
+  border-color: var(--line);
 }
 
-.chip[data-friend="Ken"] {
-  background: var(--friend-ken);
+.chip--friend[aria-pressed="true"],
+.chip--location[aria-pressed="true"] {
+  background: var(--chip-active-bg, #fff);
+  color: var(--chip-active-fg, var(--ink));
+  border-color: transparent;
+  box-shadow: 0 0 0 2px var(--chip-active-ring, rgba(17, 24, 39, 0.14));
+  font-weight: 600;
 }
 
-.chip[data-friend="James"] {
-  background: var(--friend-james);
+.chip--friend[data-friend="Nana"] {
+  --chip-active-bg: var(--friend-nana);
+  --chip-active-ring: rgba(214, 122, 151, 0.35);
 }
 
-.chip[data-friend="Phil"] {
-  background: var(--friend-phil);
+.chip--friend[data-friend="Nicole"] {
+  --chip-active-bg: var(--friend-nicole);
+  --chip-active-ring: rgba(229, 126, 170, 0.3);
 }
 
-.chip[data-location="osaka"] {
-  background: rgba(45, 58, 100, 0.12);
+.chip--friend[data-friend="Ken"] {
+  --chip-active-bg: var(--friend-ken);
+  --chip-active-ring: rgba(130, 186, 130, 0.35);
 }
 
-.chip[data-location="kyoto"] {
-  background: rgba(200, 78, 78, 0.12);
+.chip--friend[data-friend="James"] {
+  --chip-active-bg: var(--friend-james);
+  --chip-active-ring: rgba(124, 158, 211, 0.3);
 }
 
-.chip[data-location="tokyo"] {
-  background: rgba(238, 202, 208, 0.6);
+.chip--friend[data-friend="Phil"] {
+  --chip-active-bg: var(--friend-phil);
+  --chip-active-ring: rgba(115, 181, 165, 0.3);
 }
 
-.chip[data-location="kobe"] {
-  background: rgba(127, 175, 174, 0.22);
+.chip--location[data-location="osaka"] {
+  --chip-active-bg: var(--osaka);
+  --chip-active-fg: #fff;
+  --chip-active-ring: rgba(45, 58, 100, 0.4);
 }
 
-.chip[data-location="work"] {
-  background: rgba(154, 148, 140, 0.22);
+.chip--location[data-location="kyoto"] {
+  --chip-active-bg: var(--kyoto);
+  --chip-active-fg: #fff;
+  --chip-active-ring: rgba(200, 78, 78, 0.45);
 }
+
+.chip--location[data-location="tokyo"] {
+  --chip-active-bg: var(--tokyo);
+  --chip-active-fg: #4c1d2b;
+  --chip-active-ring: rgba(238, 202, 208, 0.7);
+}
+
+.chip--location[data-location="kobe"] {
+  --chip-active-bg: var(--kobe);
+  --chip-active-fg: #0c3332;
+  --chip-active-ring: rgba(127, 175, 174, 0.45);
+}
+
+.chip--location[data-location="work"] {
+  --chip-active-bg: var(--work);
+  --chip-active-fg: #2e2721;
+  --chip-active-ring: rgba(154, 148, 140, 0.5);
+}
+
 
 .btn {
   background: #fff;
@@ -205,25 +238,6 @@ button:disabled {
   display: inline-block;
 }
 
-.legend-swatch[data-swatch="osaka"] {
-  background: var(--osaka);
-}
-
-.legend-swatch[data-swatch="kyoto"] {
-  background: var(--kyoto);
-}
-
-.legend-swatch[data-swatch="tokyo"] {
-  background: var(--tokyo);
-}
-
-.legend-swatch[data-swatch="kobe"] {
-  background: var(--kobe);
-}
-
-.legend-swatch[data-swatch="work"] {
-  background: var(--work);
-}
 
 .main {
   padding: 24px clamp(16px, 4vw, 24px);
@@ -383,6 +397,23 @@ button:disabled {
   position: relative;
 }
 
+.chiplet[data-drop-indicator]::after {
+  content: '';
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  border-top: 2px solid rgba(45, 58, 100, 0.5);
+  pointer-events: none;
+}
+
+.chiplet[data-drop-indicator='before']::after {
+  top: -6px;
+}
+
+.chiplet[data-drop-indicator='after']::after {
+  bottom: -6px;
+}
+
 .chiplet.locked {
   opacity: 0.7;
   cursor: default;
@@ -428,25 +459,10 @@ button:disabled {
   background: #fff;
 }
 
-.friend-chip.friend-chip--on[data-friend="Nana"] {
-  background: var(--friend-nana);
+.friend-chip.friend-chip--on {
+  background: rgba(45, 58, 100, 0.08);
 }
 
-.friend-chip.friend-chip--on[data-friend="Nicole"] {
-  background: var(--friend-nicole);
-}
-
-.friend-chip.friend-chip--on[data-friend="Ken"] {
-  background: var(--friend-ken);
-}
-
-.friend-chip.friend-chip--on[data-friend="James"] {
-  background: var(--friend-james);
-}
-
-.friend-chip.friend-chip--on[data-friend="Phil"] {
-  background: var(--friend-phil);
-}
 
 .sheet-backdrop {
   position: fixed;
@@ -557,6 +573,33 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 10px;
+}
+
+.sheet-custom {
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+}
+
+.sheet-custom__title {
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.sheet-custom__text {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.sheet-custom__btn {
+  align-self: flex-start;
 }
 
 .sheet-card {

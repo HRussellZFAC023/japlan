@@ -1,18 +1,15 @@
-import {
-  STORAGE_KEY,
-  TRIP_RANGE,
-  FRIENDS,
-  LOCATION_META,
-  LOCATION_ORDER,
-  DEFAULT_THEMES,
-  MAP_COORDINATES,
-  CATALOG,
-  PREFILL,
-} from './data.js';
+import { STORAGE_KEY, DEFAULT_TRIP_TEMPLATE, COLOR_PALETTES } from './data.js';
 
 const calendarEl = document.getElementById('calendar');
+const tripTitleEl = document.getElementById('tripTitle');
+const friendFiltersEl = document.getElementById('friendFilters');
+const locationFiltersEl = document.getElementById('locationFilters');
+const locationLegendEl = document.getElementById('locationLegend');
 const editBtn = document.querySelector('[data-action="toggle-edit"]');
+const settingsBtn = document.querySelector('[data-action="trip-settings"]');
+const newTripBtn = document.querySelector('[data-action="new-trip"]');
 const icsBtn = document.querySelector('[data-action="export-ics"]');
+const allFilterBtn = document.querySelector('[data-filter="all"]');
 const sheetEl = document.getElementById('sheet');
 const sheetBackdrop = document.getElementById('sheetBackdrop');
 const sheetTitle = document.getElementById('sheetTitle');
@@ -22,9 +19,12 @@ const mapOverlay = document.getElementById('mapOverlay');
 const closeSheetBtn = sheetEl.querySelector('[data-action="close-sheet"]');
 const closeMapBtn = mapOverlay.querySelector('[data-action="close-map"]');
 
-const ACTIVITY_MAP = new Map(CATALOG.activity.map((item) => [item.id, item]));
-const STAY_MAP = new Map(CATALOG.stay.map((item) => [item.id, item]));
 
+let planState = initializeState();
+let dateSequence = buildDateSequence(planState.config.range.start, planState.config.range.end);
+let ACTIVITY_MAP = new Map();
+let STAY_MAP = new Map();
+refreshCatalogLookups();
 const ICS_TIMEZONE_ID = 'Asia/Tokyo';
 const ICS_VTIMEZONE_BLOCK = [
   'BEGIN:VTIMEZONE',
@@ -38,10 +38,6 @@ const ICS_VTIMEZONE_BLOCK = [
   'END:STANDARD',
   'END:VTIMEZONE',
 ];
-
-const dateSequence = buildDateSequence(TRIP_RANGE.start, TRIP_RANGE.end);
-
-let planState = loadState();
 let editing = false;
 let filterState = { friend: null, location: null };
 let sheetState = { open: false, day: null, slot: 'morning', tab: 'activity' };
@@ -50,6 +46,7 @@ let chipDragData = null;
 let mapInstance = null;
 let mapMarkersLayer = null;
 
+renderChrome();
 renderCalendar();
 updateFilterChips();
 attachToolbarEvents();
@@ -66,9 +63,112 @@ function buildDateSequence(start, end) {
   return results;
 }
 
-function createEmptyDay(location = 'work') {
+function renderChrome() {
+  updateTripTitle();
+  renderFilterChips();
+  renderLegend();
+}
+
+function updateTripTitle() {
+  const title = planState.config.tripName || 'Trip Planner';
+  if (tripTitleEl) {
+    tripTitleEl.textContent = title;
+  }
+  document.title = title;
+}
+
+function renderFilterChips() {
+  if (filterState.friend && !planState.config.friends.includes(filterState.friend)) {
+    filterState.friend = null;
+  }
+  if (filterState.location && !planState.config.locations[filterState.location]) {
+    filterState.location = null;
+  }
+
+  if (friendFiltersEl) {
+    friendFiltersEl.innerHTML = '';
+    planState.config.friends.forEach((friend) => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip chip--friend';
+      chip.dataset.friend = friend;
+      chip.textContent = friend;
+      chip.addEventListener('click', () => {
+        filterState.friend = filterState.friend === friend ? null : friend;
+        applyFilters();
+        updateFilterChips();
+      });
+      friendFiltersEl.appendChild(chip);
+    });
+  }
+
+  if (locationFiltersEl) {
+    locationFiltersEl.innerHTML = '';
+    planState.config.locationOrder.forEach((loc) => {
+      const meta = planState.config.locations[loc];
+      if (!meta) return;
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'chip chip--location';
+      chip.dataset.location = loc;
+      chip.textContent = meta.label || loc;
+      chip.addEventListener('click', () => {
+        filterState.location = filterState.location === loc ? null : loc;
+        applyFilters();
+        updateFilterChips();
+      });
+      locationFiltersEl.appendChild(chip);
+    });
+  }
+
+  updateFilterChips();
+}
+
+function renderLegend() {
+  if (!locationLegendEl) return;
+  locationLegendEl.innerHTML = '';
+  planState.config.locationOrder.forEach((loc) => {
+    const meta = planState.config.locations[loc];
+    if (!meta) return;
+    const item = document.createElement('div');
+    item.className = 'legend-item';
+    const swatch = document.createElement('span');
+    swatch.className = 'legend-swatch';
+    swatch.style.background = meta.color || '#d1d5db';
+    const label = document.createElement('span');
+    label.textContent = meta.label || loc;
+    item.append(swatch, label);
+    locationLegendEl.appendChild(item);
+  });
+}
+
+function applyFilterChipStyles() {
+  document.querySelectorAll('.chip[data-friend]').forEach((chip) => {
+    const friend = chip.dataset.friend;
+    const active = chip.getAttribute('aria-pressed') === 'true';
+    if (active) {
+      const color = planState.config.friendColors?.[friend];
+      chip.style.background = color || 'rgba(45, 58, 100, 0.08)';
+    } else {
+      chip.style.background = '';
+    }
+  });
+  document.querySelectorAll('.chip[data-location]').forEach((chip) => {
+    const loc = chip.dataset.location;
+    const active = chip.getAttribute('aria-pressed') === 'true';
+    if (active) {
+      const color = planState.config.locations[loc]?.color;
+      chip.style.background = color ? lightenColor(color, 0.6) : 'rgba(45, 58, 100, 0.08)';
+    } else {
+      chip.style.background = '';
+    }
+  });
+}
+
+function createEmptyDay(config = planState.config, locationId) {
+  const targetLocation = locationId || getDefaultLocationId(config);
   return {
-    loc: location,
+    loc: targetLocation,
     theme: '',
     friends: [],
     stay: null,
@@ -77,10 +177,10 @@ function createEmptyDay(location = 'work') {
   };
 }
 
-function cloneDay(day) {
-  const base = day || createEmptyDay();
+function cloneDay(day, config = planState.config) {
+  const base = day || createEmptyDay(config);
   return {
-    loc: base.loc || 'work',
+    loc: config.locations?.[base.loc] ? base.loc : getDefaultLocationId(config),
     theme: base.theme || '',
     friends: Array.isArray(base.friends) ? [...base.friends] : [],
     stay: base.stay || null,
@@ -93,52 +193,232 @@ function cloneDay(day) {
   };
 }
 
-function mergeDayData(defaultDay, savedDay) {
-  if (!savedDay) return cloneDay(defaultDay);
-  const merged = cloneDay(defaultDay);
-  merged.loc = savedDay.loc || merged.loc;
-  merged.theme = savedDay.theme ?? merged.theme;
-  merged.stay = savedDay.stay ?? merged.stay ?? null;
-  merged.friends = Array.isArray(savedDay.friends)
-    ? [...new Set(savedDay.friends.filter(Boolean))]
-    : merged.friends;
-  merged.slots = {
-    morning: Array.isArray(savedDay.slots?.morning) ? [...savedDay.slots.morning] : merged.slots.morning,
-    afternoon: Array.isArray(savedDay.slots?.afternoon) ? [...savedDay.slots.afternoon] : merged.slots.afternoon,
-    evening: Array.isArray(savedDay.slots?.evening) ? [...savedDay.slots.evening] : merged.slots.evening,
-  };
-  merged.locks = { ...merged.locks, ...(savedDay.locks || {}) };
-  return merged;
+function initializeState() {
+  const saved = loadSavedState();
+  if (saved) return saved;
+  return createStateFromTemplate(DEFAULT_TRIP_TEMPLATE);
 }
 
-function loadState() {
-  const defaults = {};
-  dateSequence.forEach((dateKey) => {
-    defaults[dateKey] = cloneDay(PREFILL[dateKey] || createEmptyDay());
-  });
-
+function loadSavedState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return { days: defaults };
-    }
+    if (!raw) return null;
     const parsed = JSON.parse(raw);
-    const merged = {};
-    dateSequence.forEach((dateKey) => {
-      merged[dateKey] = mergeDayData(defaults[dateKey], parsed?.days?.[dateKey]);
-    });
-    return { days: merged };
+    return normalizeState(parsed);
   } catch (error) {
-    console.warn('Unable to load saved state, using defaults.', error);
-    return { days: defaults };
+    console.warn('Unable to load saved trip, using default template.', error);
+    return null;
   }
+}
+
+function createStateFromTemplate(template) {
+  const config = createConfigFromTemplate(template);
+  const days = {};
+  const sequence = buildDateSequence(config.range.start, config.range.end);
+  sequence.forEach((dateKey) => {
+    const prefillDay = template.prefill?.[dateKey];
+    days[dateKey] = cloneDay(prefillDay, config);
+  });
+  return { config, days };
+}
+
+function createConfigFromTemplate(template) {
+  const locations = deepClone(template.locations || {});
+  let locationOrder = Array.isArray(template.locationOrder) && template.locationOrder.length
+    ? [...template.locationOrder]
+    : Object.keys(locations);
+  if (!locationOrder.length) {
+    locations.general = { label: 'General', color: '#1f2937' };
+    locationOrder = ['general'];
+  }
+  const rangeStart = template.range?.start || new Date().toISOString().slice(0, 10);
+  const rangeEnd = template.range?.end || rangeStart;
+  const config = {
+    tripName: template.tripName || 'Trip Planner',
+    range: { start: rangeStart, end: rangeEnd },
+    friends: Array.isArray(template.friends) ? template.friends.filter(Boolean) : [],
+    friendColors: assignFriendColors(
+      Array.isArray(template.friends) ? template.friends.filter(Boolean) : [],
+      template.friendColors || {}
+    ),
+    locations,
+    locationOrder,
+    defaultThemes: { ...(template.defaultThemes || {}) },
+    mapDefaults: template.mapDefaults ? { ...template.mapDefaults } : null,
+    mapCoordinates: deepClone(template.mapCoordinates || {}),
+    catalog: {
+      activity: Array.isArray(template.catalog?.activity)
+        ? template.catalog.activity.map((item) => ({ ...item }))
+        : [],
+      stay: Array.isArray(template.catalog?.stay)
+        ? template.catalog.stay.map((item) => ({ ...item }))
+        : [],
+      booking: Array.isArray(template.catalog?.booking)
+        ? template.catalog.booking.map((item) => ({ ...item }))
+        : [],
+    },
+  };
+  config.locationOrder.forEach((loc) => {
+    if (!config.defaultThemes[loc]) {
+      config.defaultThemes[loc] = config.locations[loc]?.label || '';
+    }
+  });
+  return config;
+}
+
+function normalizeState(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const config = normalizeConfig(raw.config || {});
+  const sequence = buildDateSequence(config.range.start, config.range.end);
+  const days = {};
+  sequence.forEach((dateKey) => {
+    const savedDay = raw.days?.[dateKey];
+    days[dateKey] = cloneDay(savedDay, config);
+  });
+  return { config, days };
+}
+
+function normalizeConfig(rawConfig) {
+  const template = DEFAULT_TRIP_TEMPLATE;
+  const fallbackStart = rawConfig.range?.start || template.range.start;
+  const fallbackEnd = rawConfig.range?.end || rawConfig.range?.start || template.range.end;
+  const locations = deepClone(rawConfig.locations || template.locations || {});
+  let locationOrder = Array.isArray(rawConfig.locationOrder) && rawConfig.locationOrder.length
+    ? [...rawConfig.locationOrder]
+    : Object.keys(locations);
+  if (!locationOrder.length) {
+    locations.general = { label: 'General', color: '#1f2937' };
+    locationOrder = ['general'];
+  }
+  const friends = Array.isArray(rawConfig.friends)
+    ? rawConfig.friends.filter(Boolean)
+    : [];
+  const config = {
+    tripName: rawConfig.tripName || template.tripName || 'Trip Planner',
+    range: { start: fallbackStart, end: fallbackEnd },
+    friends,
+    friendColors: assignFriendColors(friends, rawConfig.friendColors || {}),
+    locations,
+    locationOrder,
+    defaultThemes: { ...(rawConfig.defaultThemes || {}) },
+    mapDefaults: rawConfig.mapDefaults ? { ...rawConfig.mapDefaults } : template.mapDefaults || null,
+    mapCoordinates: deepClone(rawConfig.mapCoordinates || template.mapCoordinates || {}),
+    catalog: {
+      activity: Array.isArray(rawConfig.catalog?.activity)
+        ? rawConfig.catalog.activity.map((item) => ({ ...item }))
+        : [],
+      stay: Array.isArray(rawConfig.catalog?.stay)
+        ? rawConfig.catalog.stay.map((item) => ({ ...item }))
+        : [],
+      booking: Array.isArray(rawConfig.catalog?.booking)
+        ? rawConfig.catalog.booking.map((item) => ({ ...item }))
+        : [],
+    },
+  };
+  config.locationOrder.forEach((loc) => {
+    if (!config.defaultThemes[loc]) {
+      const label = config.locations[loc]?.label || template.defaultThemes?.[loc] || '';
+      config.defaultThemes[loc] = label;
+    }
+  });
+  return config;
+}
+
+function refreshCatalogLookups() {
+  ACTIVITY_MAP = new Map((planState.config.catalog.activity || []).map((item) => [item.id, item]));
+  STAY_MAP = new Map((planState.config.catalog.stay || []).map((item) => [item.id, item]));
+}
+
+function deepClone(value) {
+  return value ? JSON.parse(JSON.stringify(value)) : value;
+}
+
+function assignFriendColors(friends, existing = {}) {
+  const colors = { ...existing };
+  let paletteIndex = 0;
+  friends.forEach((friend) => {
+    if (!colors[friend]) {
+      colors[friend] = COLOR_PALETTES.friends[paletteIndex % COLOR_PALETTES.friends.length];
+      paletteIndex += 1;
+    }
+  });
+  Object.keys(colors).forEach((friend) => {
+    if (!friends.includes(friend)) {
+      delete colors[friend];
+    }
+  });
+  return colors;
+}
+
+function buildLocationsFromList(names, previousConfig) {
+  const locations = {};
+  const order = [];
+  const usedIds = new Set();
+  const palette = COLOR_PALETTES.locations;
+  let paletteIndex = 0;
+  const entries = Array.isArray(names) && names.length ? names : ['General'];
+  entries.forEach((labelRaw, index) => {
+    const label = labelRaw.trim();
+    if (!label) return;
+    let id;
+    let color;
+    let match = null;
+    if (previousConfig) {
+      match = Object.entries(previousConfig.locations || {}).find(
+        ([key, meta]) => meta?.label?.trim()?.toLowerCase() === label.toLowerCase() && !usedIds.has(key)
+      );
+    }
+    if (match) {
+      [id, { color }] = match;
+    } else {
+      const baseSlug = slugify(label, `loc-${index + 1}`);
+      id = baseSlug;
+      let counter = 2;
+      while (usedIds.has(id)) {
+        id = `${baseSlug}-${counter++}`;
+      }
+      color = palette[paletteIndex % palette.length];
+      paletteIndex += 1;
+    }
+    usedIds.add(id);
+    locations[id] = {
+      label,
+      color: color || palette[paletteIndex++ % palette.length] || '#1f2937',
+    };
+    order.push(id);
+  });
+  if (!order.length) {
+    locations.general = { label: 'General', color: '#1f2937' };
+    order.push('general');
+  }
+  return { locations, order };
+}
+
+function buildDefaultThemes(order, locations, previousThemes = {}) {
+  const themes = {};
+  order.forEach((id) => {
+    themes[id] = previousThemes[id] || locations[id]?.label || '';
+  });
+  return themes;
+}
+
+function remapCatalogItems(items, fallbackLocation, locations) {
+  if (!Array.isArray(items) || !items.length) return [];
+  return items.map((item) => {
+    const city = locations[item.city] ? item.city : fallbackLocation;
+    return { ...item, city };
+  });
+}
+
+function getDefaultLocationId(config = planState.config) {
+  return config.locationOrder[0] || Object.keys(config.locations || {})[0] || 'general';
 }
 
 function persistState() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ days: planState.days }));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(planState));
   } catch (error) {
-    console.warn('Unable to save state.', error);
+    console.warn('Unable to save trip.', error);
   }
 }
 
@@ -147,10 +427,20 @@ function ensureDay(dateKey) {
     planState.days[dateKey] = createEmptyDay();
   }
   const day = planState.days[dateKey];
-  day.slots = day.slots || { morning: [], afternoon: [], evening: [] };
+  day.slots = {
+    morning: Array.isArray(day.slots?.morning) ? day.slots.morning : [],
+    afternoon: Array.isArray(day.slots?.afternoon) ? day.slots.afternoon : [],
+    evening: Array.isArray(day.slots?.evening) ? day.slots.evening : [],
+  };
   day.locks = day.locks || {};
-  day.friends = Array.isArray(day.friends) ? day.friends : [];
-  day.loc = day.loc || 'work';
+  day.friends = Array.isArray(day.friends)
+    ? day.friends.filter((friend) => planState.config.friends.includes(friend))
+    : [];
+  if (!planState.config.locations[day.loc]) {
+    day.loc = getDefaultLocationId(planState.config);
+  }
+  day.theme = day.theme ?? '';
+  day.stay = day.stay || null;
   return day;
 }
 
@@ -174,7 +464,7 @@ function renderDayCard(dateKey) {
 
   const stripe = document.createElement('span');
   stripe.className = 'day-card__stripe';
-  stripe.style.background = LOCATION_META[plan.loc]?.color || '#d1d5db';
+  stripe.style.background = planState.config.locations[plan.loc]?.color || '#d1d5db';
   card.appendChild(stripe);
 
   const header = document.createElement('div');
@@ -200,7 +490,17 @@ function renderDayCard(dateKey) {
   const badges = document.createElement('div');
   badges.className = 'day-card__badges';
 
-  const themeLabel = plan.theme || DEFAULT_THEMES[plan.loc] || '';
+  const locationLabel = getLocationLabel(plan.loc);
+  const locationChip = document.createElement(editing ? 'button' : 'span');
+  locationChip.className = editing ? 'theme-chip theme-chip--link' : 'theme-chip';
+  locationChip.textContent = locationLabel;
+  if (editing) {
+    locationChip.type = 'button';
+    locationChip.addEventListener('click', () => editLocation(dateKey));
+  }
+  badges.appendChild(locationChip);
+
+  const themeLabel = plan.theme || getDefaultTheme(plan.loc) || '';
   const themeChip = document.createElement(editing ? 'button' : 'span');
   themeChip.className = editing ? 'theme-chip theme-chip--link' : 'theme-chip';
   themeChip.textContent = themeLabel || 'Set theme';
@@ -264,13 +564,21 @@ function renderDayCard(dateKey) {
 
   const friendRow = document.createElement('div');
   friendRow.className = 'day-card__friends';
-  FRIENDS.forEach((friend) => {
+  planState.config.friends.forEach((friend) => {
     const isActive = plan.friends.includes(friend);
     const friendBtn = document.createElement('button');
     friendBtn.type = 'button';
     friendBtn.className = 'friend-chip' + (isActive ? ' friend-chip--on' : '');
     friendBtn.dataset.friend = friend;
     friendBtn.textContent = isActive ? friend : `+ ${friend}`;
+    if (isActive) {
+      const color = planState.config.friendColors?.[friend];
+      if (color) {
+        friendBtn.style.background = color;
+      }
+    } else {
+      friendBtn.style.background = '';
+    }
     friendBtn.addEventListener('click', () => toggleFriend(dateKey, friend));
     friendRow.appendChild(friendBtn);
   });
@@ -409,34 +717,82 @@ function handleChipDragStart(event) {
 
 function handleChipDragEnd() {
   chipDragData = null;
-  document.querySelectorAll('.slot[data-drop-hover]').forEach((slot) => {
+  document.querySelectorAll('.slot').forEach((slot) => {
     slot.removeAttribute('data-drop-hover');
+    clearSlotDropIndicator(slot);
   });
 }
 
+function computeSlotDropIndex(slotElement, event) {
+  const chips = Array.from(slotElement.querySelectorAll('.chiplet'));
+  if (!chips.length) {
+    return { index: 0 };
+  }
+  const pointerY = event.clientY ?? event.pageY ?? 0;
+  for (let i = 0; i < chips.length; i += 1) {
+    const rect = chips[i].getBoundingClientRect();
+    if (pointerY < rect.top + rect.height / 2) {
+      return { index: i };
+    }
+  }
+  return { index: chips.length };
+}
+
+function updateSlotDropIndicator(slotElement, index) {
+  clearSlotDropIndicator(slotElement);
+  const chips = Array.from(slotElement.querySelectorAll('.chiplet'));
+  if (!chips.length) return;
+  if (index <= 0) {
+    chips[0].dataset.dropIndicator = 'before';
+  } else if (index >= chips.length) {
+    chips[chips.length - 1].dataset.dropIndicator = 'after';
+  } else {
+    chips[index].dataset.dropIndicator = 'before';
+  }
+}
+
+function clearSlotDropIndicator(slotElement) {
+  if (!slotElement) return;
+  slotElement
+    .querySelectorAll('.chiplet[data-drop-indicator]')
+    .forEach((chip) => chip.removeAttribute('data-drop-indicator'));
+}
+
 function handleSlotDragOver(event) {
-  if (!editing) return;
+  if (!editing || !chipDragData) return;
   event.preventDefault();
-  event.currentTarget.dataset.dropHover = 'true';
+  const slotElement = event.currentTarget;
+  slotElement.dataset.dropHover = 'true';
+  const { index } = computeSlotDropIndex(slotElement, event);
+  updateSlotDropIndicator(slotElement, index);
   event.dataTransfer.dropEffect = 'move';
 }
 
 function handleSlotDragLeave(event) {
-  event.currentTarget.removeAttribute('data-drop-hover');
+  if (!editing || !chipDragData) return;
+  const slotElement = event.currentTarget;
+  const nextTarget = event.relatedTarget;
+  if (nextTarget && slotElement.contains(nextTarget)) {
+    return;
+  }
+  slotElement.removeAttribute('data-drop-hover');
+  clearSlotDropIndicator(slotElement);
 }
 
 function handleSlotDrop(event) {
-  if (!editing) return;
+  const slotElement = event.currentTarget;
+  slotElement.removeAttribute('data-drop-hover');
+  clearSlotDropIndicator(slotElement);
+  if (!editing || !chipDragData) return;
   event.preventDefault();
-  event.currentTarget.removeAttribute('data-drop-hover');
-  if (!chipDragData) return;
-  const targetDate = event.currentTarget.dataset.date;
-  const targetSlot = event.currentTarget.dataset.slot;
-  moveChip(chipDragData, targetDate, targetSlot);
+  const { index: targetIndex } = computeSlotDropIndex(slotElement, event);
+  const targetDate = slotElement.dataset.date;
+  const targetSlot = slotElement.dataset.slot;
+  moveChip(chipDragData, targetDate, targetSlot, targetIndex);
   chipDragData = null;
 }
 
-function moveChip(dragData, targetDate, targetSlot) {
+function moveChip(dragData, targetDate, targetSlot, targetIndex) {
   const { date: sourceDate, slot: sourceSlot, index, id } = dragData;
   if (!id) return;
   const sourceDay = ensureDay(sourceDate);
@@ -445,6 +801,8 @@ function moveChip(dragData, targetDate, targetSlot) {
 
   const sourceList = sourceDay.slots?.[sourceSlot];
   if (!Array.isArray(sourceList)) return;
+  targetDay.slots[targetSlot] = targetDay.slots[targetSlot] || [];
+  const targetList = targetDay.slots[targetSlot];
   const [removed] = sourceList.splice(index, 1);
   if (removed !== id) {
     const fallbackIndex = sourceList.indexOf(id);
@@ -453,8 +811,12 @@ function moveChip(dragData, targetDate, targetSlot) {
     }
   }
 
-  targetDay.slots[targetSlot] = targetDay.slots[targetSlot] || [];
-  targetDay.slots[targetSlot].push(id);
+  let insertIndex = Number.isInteger(targetIndex) ? targetIndex : targetList.length;
+  if (sourceDate === targetDate && sourceSlot === targetSlot && index < insertIndex) {
+    insertIndex -= 1;
+  }
+  insertIndex = Math.max(0, Math.min(insertIndex, targetList.length));
+  targetList.splice(insertIndex, 0, id);
   persistState();
   updateDayCard(sourceDate);
   if (sourceDate !== targetDate) {
@@ -569,31 +931,65 @@ function renderSheet() {
     tabBtn.setAttribute('aria-selected', tabBtn.dataset.tab === tab ? 'true' : 'false');
   });
 
+  const locationOrder = planState.config.locationOrder;
+  const catalog = planState.config.catalog;
+
   if (tab === 'activity') {
-    LOCATION_ORDER.forEach((loc) => {
-      const options = CATALOG.activity.filter((item) => item.city === loc);
+    let hasOptions = false;
+    locationOrder.forEach((loc) => {
+      const options = catalog.activity.filter((item) => item.city === loc);
       if (!options.length) return;
-      sheetBody.appendChild(renderSheetGroup(loc, options, (item) => {
-        addActivity(day, slot, item.id);
-      }));
+      hasOptions = true;
+      sheetBody.appendChild(
+        renderSheetGroup(loc, options, (item) => {
+          addActivity(day, slot, item.id);
+        })
+      );
     });
+    if (!hasOptions) {
+      sheetBody.appendChild(renderEmptyState('No saved activities yet. Add one below.'));
+    }
+    sheetBody.appendChild(renderCustomCreator('activity', day, slot));
   } else if (tab === 'stay') {
     const dayPlan = ensureDay(day);
-    LOCATION_ORDER.forEach((loc) => {
-      const options = CATALOG.stay.filter((item) => item.city === loc);
+    let hasOptions = false;
+    locationOrder.forEach((loc) => {
+      const options = catalog.stay.filter((item) => item.city === loc);
       if (!options.length) return;
-      sheetBody.appendChild(renderSheetGroup(loc, options, (item) => {
-        setStay(day, item.id);
-      }, dayPlan.stay));
+      hasOptions = true;
+      sheetBody.appendChild(
+        renderSheetGroup(
+          loc,
+          options,
+          (item) => {
+            setStay(day, item.id);
+          },
+          dayPlan.stay
+        )
+      );
     });
+    if (!hasOptions) {
+      sheetBody.appendChild(renderEmptyState('No stays saved yet. Add one below.'));
+    }
+    sheetBody.appendChild(renderCustomCreator('stay', day));
   } else if (tab === 'booking') {
-    LOCATION_ORDER.forEach((loc) => {
-      const options = CATALOG.booking.filter((item) => item.city === loc);
+    let hasOptions = false;
+    locationOrder.forEach((loc) => {
+      const options = catalog.booking.filter((item) => item.city === loc);
       if (!options.length) return;
-      sheetBody.appendChild(renderSheetGroup(loc, options, (item) => {
-        window.open(item.url, '_blank', 'noopener');
-      }));
+      hasOptions = true;
+      sheetBody.appendChild(
+        renderSheetGroup(loc, options, (item) => {
+          if (item.url) {
+            window.open(item.url, '_blank', 'noopener');
+          }
+        })
+      );
     });
+    if (!hasOptions) {
+      sheetBody.appendChild(renderEmptyState('No bookings saved yet. Add one below.'));
+    }
+    sheetBody.appendChild(renderCustomCreator('booking'));
   }
 }
 
@@ -605,9 +1001,9 @@ function renderSheetGroup(locationId, items, onSelect, selectedId) {
   header.className = 'sheet-group__header';
   const swatch = document.createElement('span');
   swatch.className = 'sheet-group__swatch';
-  swatch.style.background = LOCATION_META[locationId]?.color || '#d1d5db';
+  swatch.style.background = planState.config.locations[locationId]?.color || '#d1d5db';
   const title = document.createElement('span');
-  title.textContent = locationId.toUpperCase();
+  title.textContent = getLocationLabel(locationId);
   header.append(swatch, title);
   group.appendChild(header);
 
@@ -636,6 +1032,46 @@ function renderSheetGroup(locationId, items, onSelect, selectedId) {
   return group;
 }
 
+function renderEmptyState(message) {
+  const note = document.createElement('p');
+  note.className = 'empty-state';
+  note.textContent = message;
+  return note;
+}
+
+function renderCustomCreator(tab, dayKey, slotName) {
+  const section = document.createElement('section');
+  section.className = 'sheet-custom';
+
+  const title = document.createElement('p');
+  title.className = 'sheet-custom__title';
+  const text = document.createElement('p');
+  text.className = 'sheet-custom__text';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'btn sheet-custom__btn';
+
+  if (tab === 'activity') {
+    title.textContent = 'Add custom activity';
+    text.textContent = 'Create a one-off activity and drop it into this time slot.';
+    button.textContent = 'Add activity';
+    button.addEventListener('click', () => handleCustomActivity(dayKey, slotName));
+  } else if (tab === 'stay') {
+    title.textContent = 'Add custom stay';
+    text.textContent = 'Track a stay even if it is not already in your catalog.';
+    button.textContent = 'Add stay';
+    button.addEventListener('click', () => handleCustomStay(dayKey));
+  } else {
+    title.textContent = 'Add custom booking';
+    text.textContent = 'Save a booking or ticket link for quick access later.';
+    button.textContent = 'Add booking';
+    button.addEventListener('click', handleCustomBooking);
+  }
+
+  section.append(title, text, button);
+  return section;
+}
+
 function attachToolbarEvents() {
   editBtn?.addEventListener('click', () => {
     editing = !editing;
@@ -643,6 +1079,8 @@ function attachToolbarEvents() {
     renderCalendar();
   });
 
+  settingsBtn?.addEventListener('click', openTripSettings);
+  newTripBtn?.addEventListener('click', startNewTrip);
   icsBtn?.addEventListener('click', exportIcs);
 
   sheetBackdrop.addEventListener('click', () => {
@@ -665,28 +1103,10 @@ function attachToolbarEvents() {
     }
   });
 
-  document.querySelector('[data-filter="all"]').addEventListener('click', () => {
+  allFilterBtn?.addEventListener('click', () => {
     filterState = { friend: null, location: null };
     applyFilters();
     updateFilterChips();
-  });
-
-  document.querySelectorAll('.chip[data-friend]').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const friend = chip.dataset.friend;
-      filterState.friend = filterState.friend === friend ? null : friend;
-      applyFilters();
-      updateFilterChips();
-    });
-  });
-
-  document.querySelectorAll('.chip[data-location]').forEach((chip) => {
-    chip.addEventListener('click', () => {
-      const loc = chip.dataset.location;
-      filterState.location = filterState.location === loc ? null : loc;
-      applyFilters();
-      updateFilterChips();
-    });
   });
 }
 
@@ -717,15 +1137,23 @@ function updateFilterChips() {
   document.querySelectorAll('.chip[data-location]').forEach((chip) => {
     chip.setAttribute('aria-pressed', chip.dataset.location === filterState.location ? 'true' : 'false');
   });
-  const allBtn = document.querySelector('[data-filter="all"]');
   const allOn = !filterState.friend && !filterState.location;
-  allBtn.setAttribute('aria-pressed', allOn ? 'true' : 'false');
+  allFilterBtn?.setAttribute('aria-pressed', allOn ? 'true' : 'false');
+  applyFilterChipStyles();
 }
 
 function updateEditButton() {
   if (editBtn) {
-    editBtn.textContent = editing ? 'Done' : 'Edit';
+    editBtn.textContent = editing ? 'Done' : 'Edit plan';
   }
+}
+
+function getLocationLabel(id) {
+  return planState.config.locations[id]?.label || id;
+}
+
+function getDefaultTheme(locationId) {
+  return planState.config.defaultThemes?.[locationId] || '';
 }
 
 function getActivityLabel(id) {
@@ -749,13 +1177,13 @@ function openMap(dateKey) {
   mapOverlay.setAttribute('aria-hidden', 'false');
   document.body.classList.add('map-open');
   const mapTitle = document.getElementById('mapTitle');
-  mapTitle.textContent = `${formatLongDate(dateKey)} — ${plan.theme || DEFAULT_THEMES[plan.loc] || ''}`;
+  mapTitle.textContent = `${formatLongDate(dateKey)} — ${plan.theme || getDefaultTheme(plan.loc) || ''}`;
   const markers = [];
   ['morning', 'afternoon', 'evening'].forEach((slot) => {
     plan.slots[slot]?.forEach((id) => {
       const activity = ACTIVITY_MAP.get(id);
       if (!activity || !activity.coord) return;
-      const coords = MAP_COORDINATES[activity.coord];
+      const coords = planState.config.mapCoordinates[activity.coord];
       if (!coords) return;
       markers.push({ coords, label: activity.label });
     });
@@ -781,7 +1209,12 @@ function openMap(dateKey) {
       });
       mapInstance.fitBounds(bounds, { padding: [32, 32] });
     } else {
-      mapInstance.setView([35.0, 135.5], 5);
+      const fallback = planState.config.mapDefaults;
+      if (fallback?.center) {
+        mapInstance.setView(fallback.center, fallback.zoom || 5);
+      } else {
+        mapInstance.setView([20, 0], 2);
+      }
     }
   }, 50);
 }
@@ -807,7 +1240,7 @@ function exportIcs() {
     const day = ensureDay(dateKey);
     const dateValue = dateKey.replace(/-/g, '');
     const summaryDate = formatSummaryDate(dateKey);
-    const title = day.theme || DEFAULT_THEMES[day.loc] || 'Trip day';
+    const title = day.theme || getDefaultTheme(day.loc) || 'Trip day';
     const slotDescriptions = [];
     const slotTitles = { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening' };
     ['morning', 'afternoon', 'evening'].forEach((slot) => {
@@ -823,7 +1256,7 @@ function exportIcs() {
       slotDescriptions.push(`Friends: ${day.friends.join(', ')}`);
     }
     const description = slotDescriptions.join(' / ');
-    const locationLabel = LOCATION_META[day.loc]?.label || day.loc;
+    const locationLabel = getLocationLabel(day.loc);
 
     lines.push('BEGIN:VEVENT');
     lines.push(`UID:${dateKey}@canvas6`);
@@ -841,11 +1274,198 @@ function exportIcs() {
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement('a');
   anchor.href = url;
-  anchor.download = 'Japan-Trip-Nov-2025.ics';
+  const fileName = `${slugify(planState.config.tripName || 'trip-planner', 'trip-planner')}.ics`;
+  anchor.download = fileName;
   document.body.appendChild(anchor);
   anchor.click();
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
+}
+
+function handleCustomActivity(dayKey, slotName) {
+  if (!dayKey || !slotName) return;
+  const labelInput = window.prompt('Describe the activity');
+  if (!labelInput) return;
+  const day = ensureDay(dayKey);
+  let locationId = day.loc;
+  if (planState.config.locationOrder.length > 1) {
+    const options = planState.config.locationOrder.map(getLocationLabel).join(', ');
+    const response = window.prompt(`Which location should this activity belong to? (${options})`, getLocationLabel(locationId));
+    if (response === null) return;
+    locationId = resolveLocationId(response, locationId);
+  }
+  const activityId = generateCustomId('activity');
+  planState.config.catalog.activity.push({ id: activityId, city: locationId, label: labelInput.trim() });
+  refreshCatalogLookups();
+  addActivity(dayKey, slotName, activityId);
+  renderSheet();
+}
+
+function handleCustomStay(dayKey) {
+  if (!dayKey) return;
+  const labelInput = window.prompt('Stay name');
+  if (!labelInput) return;
+  const urlInput = window.prompt('Link (optional)');
+  const day = ensureDay(dayKey);
+  let locationId = day.loc;
+  if (planState.config.locationOrder.length > 1) {
+    const options = planState.config.locationOrder.map(getLocationLabel).join(', ');
+    const response = window.prompt(`Which location is this stay in? (${options})`, getLocationLabel(locationId));
+    if (response === null) return;
+    locationId = resolveLocationId(response, locationId);
+  }
+  const stayId = generateCustomId('stay');
+  const payload = { id: stayId, city: locationId, label: labelInput.trim() };
+  if (urlInput && urlInput.trim()) {
+    payload.url = urlInput.trim();
+  }
+  planState.config.catalog.stay.push(payload);
+  refreshCatalogLookups();
+  setStay(dayKey, stayId);
+}
+
+function handleCustomBooking() {
+  const labelInput = window.prompt('Booking or ticket name');
+  if (!labelInput) return;
+  const urlInput = window.prompt('Link (optional)');
+  let locationId = planState.config.locationOrder[0];
+  if (planState.config.locationOrder.length > 1) {
+    const options = planState.config.locationOrder.map(getLocationLabel).join(', ');
+    const response = window.prompt(`Which location should this booking be grouped under? (${options})`, getLocationLabel(locationId));
+    if (response === null) return;
+    locationId = resolveLocationId(response, locationId);
+  }
+  const bookingId = generateCustomId('booking');
+  const payload = { id: bookingId, city: locationId, label: labelInput.trim() };
+  if (urlInput && urlInput.trim()) {
+    payload.url = urlInput.trim();
+  }
+  planState.config.catalog.booking.push(payload);
+  refreshCatalogLookups();
+  persistState();
+  renderSheet();
+}
+
+function startNewTrip() {
+  const today = new Date().toISOString().slice(0, 10);
+  const details = promptTripDetails({
+    name: 'New trip',
+    start: today,
+    end: today,
+    friends: '',
+    locations: '',
+  });
+  if (!details) return;
+  applyTripDetails(details, { resetDays: true });
+  closeSheet();
+  closeMap();
+}
+
+function openTripSettings() {
+  const current = planState.config;
+  const details = promptTripDetails({
+    name: current.tripName,
+    start: current.range.start,
+    end: current.range.end,
+    friends: current.friends.join(', '),
+    locations: current.locationOrder.map((id) => getLocationLabel(id)).join(', '),
+  });
+  if (!details) return;
+  applyTripDetails(details, { resetDays: false });
+}
+
+function promptTripDetails(initial) {
+  const nameInput = window.prompt('Trip name', initial.name || '');
+  if (nameInput === null) return null;
+  const startInput = window.prompt('Trip start date (YYYY-MM-DD)', initial.start || '');
+  if (startInput === null) return null;
+  if (!isValidDate(startInput)) {
+    window.alert('Please enter a valid start date in the format YYYY-MM-DD.');
+    return null;
+  }
+  const endInput = window.prompt('Trip end date (YYYY-MM-DD)', initial.end || startInput);
+  if (endInput === null) return null;
+  if (!isValidDate(endInput)) {
+    window.alert('Please enter a valid end date in the format YYYY-MM-DD.');
+    return null;
+  }
+  const startDate = new Date(`${startInput}T00:00:00`);
+  const endDate = new Date(`${endInput}T00:00:00`);
+  if (endDate < startDate) {
+    window.alert('End date must be on or after the start date.');
+    return null;
+  }
+  const friendsInput = window.prompt('Friends (comma separated, optional)', initial.friends || '');
+  if (friendsInput === null) return null;
+  const locationsInput = window.prompt('Locations or regions (comma separated)', initial.locations || '');
+  if (locationsInput === null) return null;
+  return {
+    name: nameInput.trim() || 'Trip Planner',
+    start: startInput,
+    end: endInput,
+    friends: parseList(friendsInput),
+    locations: parseList(locationsInput),
+  };
+}
+
+function applyTripDetails(details, { resetDays = false } = {}) {
+  const previousConfig = resetDays ? null : planState.config;
+  const locationData = buildLocationsFromList(details.locations, previousConfig);
+  const friendColors = assignFriendColors(details.friends, previousConfig?.friendColors || {});
+  const defaultThemes = buildDefaultThemes(locationData.order, locationData.locations, previousConfig?.defaultThemes || {});
+  const fallbackLocation = locationData.order[0];
+  const catalog = resetDays
+    ? { activity: [], stay: [], booking: [] }
+    : {
+        activity: remapCatalogItems(previousConfig.catalog?.activity || [], fallbackLocation, locationData.locations),
+        stay: remapCatalogItems(previousConfig.catalog?.stay || [], fallbackLocation, locationData.locations),
+        booking: remapCatalogItems(previousConfig.catalog?.booking || [], fallbackLocation, locationData.locations),
+      };
+
+  const config = {
+    tripName: details.name,
+    range: { start: details.start, end: details.end },
+    friends: details.friends,
+    friendColors,
+    locations: locationData.locations,
+    locationOrder: locationData.order,
+    defaultThemes,
+    mapDefaults: resetDays ? null : previousConfig?.mapDefaults || null,
+    mapCoordinates: resetDays ? {} : previousConfig?.mapCoordinates || {},
+    catalog,
+  };
+
+  const newSequence = buildDateSequence(details.start, details.end);
+  const newDays = {};
+  if (resetDays) {
+    newSequence.forEach((dateKey) => {
+      newDays[dateKey] = createEmptyDay(config);
+    });
+  } else {
+    const friendSet = new Set(details.friends);
+    newSequence.forEach((dateKey) => {
+      const existing = planState.days?.[dateKey];
+      const cloned = cloneDay(existing, config);
+      cloned.friends = cloned.friends.filter((friend) => friendSet.has(friend));
+      if (!config.locations[cloned.loc]) {
+        cloned.loc = getDefaultLocationId(config);
+      }
+      newDays[dateKey] = cloned;
+    });
+  }
+
+  planState = { config, days: newDays };
+  dateSequence = newSequence;
+  filterState.friend = config.friends.includes(filterState.friend) ? filterState.friend : null;
+  filterState.location = config.locations[filterState.location] ? filterState.location : null;
+  refreshCatalogLookups();
+  renderChrome();
+  renderCalendar();
+  applyFilters();
+  updateFilterChips();
+  closeSheet();
+  closeMap();
+  persistState();
 }
 
 function formatIcsDateTime(date) {
@@ -864,5 +1484,71 @@ function formatSummaryDate(dateKey) {
   const date = new Date(`${dateKey}T00:00:00`);
   const month = date.toLocaleDateString(undefined, { month: 'short' });
   return `${month} ${date.getDate()}`;
+}
+
+function resolveLocationId(input, fallback) {
+  if (!input) return fallback;
+  const normalized = input.trim().toLowerCase();
+  if (!normalized) return fallback;
+  const byId = planState.config.locationOrder.find((id) => id.toLowerCase() === normalized);
+  if (byId) return byId;
+  const byLabel = planState.config.locationOrder.find((id) =>
+    (planState.config.locations[id]?.label || '').toLowerCase() === normalized
+  );
+  return byLabel || fallback;
+}
+
+function generateCustomId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+}
+
+function slugify(value, fallback = 'trip') {
+  const slug = String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-{2,}/g, '-');
+  return slug || fallback;
+}
+
+function lightenColor(color, strength = 0.5) {
+  const rgb = hexToRgb(color);
+  if (!rgb) return color;
+  const mix = (component) => Math.round(component + (255 - component) * strength);
+  return `rgb(${mix(rgb.r)}, ${mix(rgb.g)}, ${mix(rgb.b)})`;
+}
+
+function hexToRgb(color) {
+  if (!color || typeof color !== 'string') return null;
+  const hex = color.replace('#', '');
+  if (hex.length === 3) {
+    const r = parseInt(hex[0] + hex[0], 16);
+    const g = parseInt(hex[1] + hex[1], 16);
+    const b = parseInt(hex[2] + hex[2], 16);
+    return { r, g, b };
+  }
+  if (hex.length === 6) {
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    return { r, g, b };
+  }
+  return null;
+}
+
+function parseList(value) {
+  if (!value) return [];
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function isValidDate(value) {
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+  const timestamp = Date.parse(`${value}T00:00:00`);
+  return Number.isFinite(timestamp);
 }
 
