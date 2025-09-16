@@ -1,0 +1,411 @@
+{
+  "version": 2,
+  "storage": {
+    "baseKey": "jp-canvas6",
+    "schema": 2
+  },
+  "trip": {
+    "title": "Japan Trip — Nov 14–30, 2025",
+    "range": { "start": "2025-11-14", "end": "2025-11-30" },
+    "baseLocation": "osaka"
+  },
+  "people": [
+    { "id": "Nana", "label": "Nana", "color": "#F7E6EC", "constraints": { "workDays": ["Tuesday", "Friday"], "maxAway": 3 } },
+    { "id": "Nicole", "label": "Nicole", "color": "#FFE4F0" },
+    { "id": "Ken", "label": "Ken", "color": "#EAF7EA" },
+    { "id": "James", "label": "James", "color": "#E6EFFA" },
+    { "id": "Phil", "label": "Phil", "color": "#E5F4F1" }
+  ],
+  "locations": [
+    { "id": "osaka", "label": "Osaka/Hirakata", "color": "#2D3A64" },
+    { "id": "kyoto", "label": "Kyoto/Nara/Kōyasan", "color": "#C84E4E" },
+    { "id": "kobe", "label": "Kobe/Arima/Himeji", "color": "#7FAFAE" },
+    { "id": "tokyo", "label": "Tokyo/Chiba", "color": "#EECAD0" },
+    { "id": "work", "label": "Work/Travel", "color": "#9A948C" }
+  ],
+  "themes": {
+    "osaka": "Osaka base day",
+    "kyoto": "Old streets & leaves",
+    "kobe": "Onsen & castles",
+    "tokyo": "Friends & arcades",
+    "work": "Travel / admin"
+  },
+  "coordinates": {
+    "dotonbori": [34.6687, 135.5013],
+    "umedaSky": [34.7051, 135.4899],
+    "abenoHarukas": [34.6464, 135.5134],
+    "midosujiIllumination": [34.6865, 135.4983],
+    "osakaGermanMarket": [34.7023, 135.4979],
+    "nakazakicho": [34.7084, 135.5099],
+    "kuromonMarket": [34.6659, 135.5079],
+    "kaiyukan": [34.6545, 135.4295],
+    "nagaiBotanical": [34.6118, 135.5169],
+    "arashiyama": [35.0136, 135.6736],
+    "kiyomizudera": [34.9948, 135.785],
+    "fushimiInari": [34.9671, 135.7727],
+    "uji": [34.8846, 135.8033],
+    "naraPark": [34.6851, 135.843],
+    "okunoin": [34.215, 135.5858],
+    "eikando": [35.0156, 135.7967],
+    "rurikoin": [35.0866, 135.7869],
+    "philosophersPath": [35.0284, 135.7949],
+    "kurama": [35.1098, 135.7682],
+    "kibune": [35.1164, 135.7629],
+    "toeiKyoto": [34.9989, 135.7062],
+    "arimaOnsen": [34.7968, 135.2495],
+    "harborland": [34.6785, 135.1787],
+    "kitanoIjinkan": [34.6994, 135.1917],
+    "himejiCastle": [34.8393, 134.6939],
+    "disneyResort": [35.6339, 139.8864],
+    "teamlabPlanets": [35.6496, 139.7916],
+    "teamlabBorderless": [35.657, 139.7546],
+    "ghibliMuseum": [35.6962, 139.5704],
+    "odaiba": [35.6267, 139.7767],
+    "shibuyaParco": [35.6605, 139.6983],
+    "takeshitaStreet": [35.6717, 139.7029],
+    "sunshine60": [35.7296, 139.7178],
+    "animateIkebukuro": [35.7317, 139.7153],
+    "akihabara": [35.6987, 139.7714],
+    "shimokitazawa": [35.6616, 139.6673],
+    "nakanoBroadway": [35.7075, 139.6659],
+    "kichijoji": [35.7033, 139.5795],
+    "roppongiMidtown": [35.6665, 139.7316],
+    "meguroRiver": [35.6416, 139.6973],
+    "blueCave": [35.659, 139.7004],
+    "kix": [34.4338, 135.2263],
+    "hirakatashi": [34.8165, 135.6477],
+    "usj": [34.6654, 135.4323]
+  },
+  "catalog": {
+    "activity": [
+      { "id": "act-flight-dxb-arrival", "city": "work", "label": "00:40 Arrive DXB (transit)", "locked": true },
+      { "id": "act-flight-dxb-kix", "city": "work", "label": "03:05 DXB → KIX (EK316)", "coord": "kix", "locked": true },
+      { "id": "act-arrive-kix", "city": "work", "label": "17:05 Arrive KIX", "coord": "kix", "locked": true },
+      { "id": "act-transfer-kix-hirakata", "city": "osaka", "label": "KIX → Hirakata (~90m)", "coord": "hirakatashi" },
+      { "id": "act-dinner-nana", "city": "osaka", "label": "Dinner with Nana (Hirakata)", "coord": "hirakatashi" },
+      { "id": "act-transfer-hirakata-kix", "city": "work", "label": "Hirakata → KIX", "coord": "kix" },
+      { "id": "act-flight-kix-dxb", "city": "work", "label": "23:10 KIX → DXB (EK317)", "coord": "kix", "locked": true },
+      { "id": "act-dotonbori-walk", "city": "osaka", "label": "Dōtonbori walk + street food", "coord": "dotonbori" },
+      { "id": "act-umeda-sky", "city": "osaka", "label": "Umeda Sky Building sunset", "coord": "umedaSky" },
+      { "id": "act-abeno-harukas", "city": "osaka", "label": "Abeno HARUKAS 300 view", "coord": "abenoHarukas" },
+      { "id": "act-kuromon-breakfast", "city": "osaka", "label": "Kuromon Market breakfast crawl", "coord": "kuromonMarket" },
+      { "id": "act-nakazakicho-morning", "city": "osaka", "label": "Nakazakichō slow morning (cafes & vintage)", "coord": "nakazakicho" },
+      { "id": "act-kaiyukan-aquarium", "city": "osaka", "label": "Osaka Aquarium Kaiyukan", "coord": "kaiyukan" },
+      { "id": "act-german-xmas-market", "city": "osaka", "label": "Osaka German Christmas Market (Umeda)", "coord": "osakaGermanMarket" },
+      { "id": "act-teamlab-botanical", "city": "osaka", "label": "teamLab Botanical Garden Osaka night walk", "coord": "nagaiBotanical" },
+      { "id": "act-usj-day", "city": "osaka", "label": "Universal Studios Japan day", "coord": "usj" },
+      { "id": "act-karaoke-namba", "city": "osaka", "label": "Namba karaoke & late izakaya", "coord": "dotonbori" },
+      { "id": "act-arashiyama", "city": "kyoto", "label": "Arashiyama bamboo grove & river", "coord": "arashiyama" },
+      { "id": "act-kiyomizudera", "city": "kyoto", "label": "Kiyomizu-dera & Sannenzaka", "coord": "kiyomizudera" },
+      { "id": "act-fushimi-inari", "city": "kyoto", "label": "Fushimi Inari at dusk", "coord": "fushimiInari" },
+      { "id": "act-philosophers-path", "city": "kyoto", "label": "Philosopher's Path & Higashiyama cafes", "coord": "philosophersPath" },
+      { "id": "act-uji-tea", "city": "kyoto", "label": "Uji tea tastings & Byōdō-in stroll", "coord": "uji" },
+      { "id": "act-nara-park", "city": "kyoto", "label": "Nara Park deer + Tōdai-ji", "coord": "naraPark" },
+      { "id": "act-koyasan-okunoin", "city": "kyoto", "label": "Kōyasan Okunoin night walk", "coord": "okunoin" },
+      { "id": "act-kurama-kibune", "city": "kyoto", "label": "Kurama → Kibune mountain walk", "coord": "kurama" },
+      { "id": "act-toei-studio", "city": "kyoto", "label": "Toei Kyoto Studio Park cosplay day", "coord": "toeiKyoto" },
+      { "id": "act-easy-kawaramachi", "city": "kyoto", "label": "Kawaramachi shopping & dessert crawl", "coord": "kiyomizudera" },
+      { "id": "act-arima-onsen", "city": "kobe", "label": "Arima Onsen golden & silver baths", "coord": "arimaOnsen" },
+      { "id": "act-himeji-castle", "city": "kobe", "label": "Himeji Castle + Kōko-en", "coord": "himejiCastle" },
+      { "id": "act-harborland-night", "city": "kobe", "label": "Kobe Harborland evening lights", "coord": "harborland" },
+      { "id": "act-kitano-ijinkan", "city": "kobe", "label": "Kobe Kitano Ijinkan & cafes", "coord": "kitanoIjinkan" },
+      { "id": "act-disney-day", "city": "tokyo", "label": "Tokyo Disney day (Sea/Land)", "coord": "disneyResort" },
+      { "id": "act-teamlab-planets", "city": "tokyo", "label": "teamLab Planets experience", "coord": "teamlabPlanets" },
+      { "id": "act-teamlab-borderless", "city": "tokyo", "label": "teamLab Borderless (Azabudai Hills)", "coord": "teamlabBorderless" },
+      { "id": "act-ghibli-museum", "city": "tokyo", "label": "Ghibli Museum (Mitaka)", "coord": "ghibliMuseum" },
+      { "id": "act-odaiba-day", "city": "tokyo", "label": "Odaiba DiverCity & Statue walk", "coord": "odaiba" },
+      { "id": "act-nakano-broadway", "city": "tokyo", "label": "Nakano Broadway treasure hunt", "coord": "nakanoBroadway" },
+      { "id": "act-shimokita-vintage", "city": "tokyo", "label": "Shimokitazawa thrift & coffee", "coord": "shimokitazawa" },
+      { "id": "act-kichijoji-day", "city": "tokyo", "label": "Kichijōji & Inokashira stroll", "coord": "kichijoji" },
+      { "id": "act-collab-cafe", "city": "tokyo", "label": "Collab café crawl (Animate/SQEX)", "coord": "sunshine60" },
+      { "id": "act-shibuya-scramble", "city": "tokyo", "label": "Shibuya scramble + PARCO run", "coord": "shibuyaParco" },
+      { "id": "act-harajuku-fashion", "city": "tokyo", "label": "Harajuku fashion lanes", "coord": "takeshitaStreet" },
+      { "id": "act-ikebukuro-day", "city": "tokyo", "label": "Ikebukuro Sunshine & otaku stops", "coord": "sunshine60" },
+      { "id": "act-karaoke-friends", "city": "tokyo", "label": "Late karaoke & izakaya with crew", "coord": "shibuyaParco" }
+    ],
+    "guide": [
+      { "id": "guide-donki-night-run", "city": "osaka", "label": "Donki night run (Dōtonbori)", "coord": "dotonbori" },
+      { "id": "guide-midosuji-lights", "city": "osaka", "label": "Midosuji Illumination highlights", "coord": "midosujiIllumination" },
+      { "id": "guide-german-market", "city": "osaka", "label": "Umeda German Christmas Market picks", "coord": "osakaGermanMarket" },
+      { "id": "guide-kimono-stroll", "city": "kyoto", "label": "Kimono stroll photo spot", "coord": "kiyomizudera" },
+      { "id": "guide-kiyomizu-lightup", "city": "kyoto", "label": "Kiyomizu-dera night illumination tips", "coord": "kiyomizudera" },
+      { "id": "guide-eikando-lightup", "city": "kyoto", "label": "Eikando maple light-up route", "coord": "eikando" },
+      { "id": "guide-rurikoin-autumn", "city": "kyoto", "label": "Rurikō-in garden reflection window", "coord": "rurikoin" },
+      { "id": "guide-nara-night", "city": "kyoto", "label": "Nara lantern evening stroll", "coord": "naraPark" },
+      { "id": "guide-harborland-shops", "city": "kobe", "label": "Harborland harbor cruise & sweets", "coord": "harborland" },
+      { "id": "guide-disney-strategy", "city": "tokyo", "label": "Tokyo Disney quick-start strategy", "coord": "disneyResort" },
+      { "id": "guide-shibuya-sky", "city": "tokyo", "label": "Shibuya SKY (observation deck)", "coord": "shibuyaParco" },
+      { "id": "guide-omotesando-cafes", "city": "tokyo", "label": "Omotesandō cafés & boutiques", "coord": "takeshitaStreet" },
+      { "id": "guide-nintendo-parco", "city": "tokyo", "label": "Nintendo Tokyo & Pokémon Center", "coord": "shibuyaParco" },
+      { "id": "guide-animate-ikebukuro", "city": "tokyo", "label": "Animate Ikebukuro flagship", "coord": "animateIkebukuro" },
+      { "id": "guide-akihabara-arcades", "city": "tokyo", "label": "Akihabara retro arcades crawl", "coord": "akihabara" },
+      { "id": "guide-harajuku-vintage", "city": "tokyo", "label": "Harajuku thrift & vintage run", "coord": "harajukuVintage" },
+      { "id": "guide-roppongi-illumination", "city": "tokyo", "label": "Tokyo Midtown illumination walk", "coord": "roppongiMidtown" },
+      { "id": "guide-meguro-river", "city": "tokyo", "label": "Meguro River light-up & cafes", "coord": "meguroRiver" },
+      { "id": "guide-blue-cave", "city": "tokyo", "label": "Shibuya Ao no Dokutsu route", "coord": "blueCave" }
+    ],
+    "stay": [
+      { "id": "stay-candeo-hirakata", "city": "osaka", "label": "Candeo Hotels Osaka Hirakata", "url": "https://www.candeohotels.com/en/osaka-hirakata/" },
+      { "id": "stay-sunplaza-hirakata", "city": "osaka", "label": "Hirakata SunPlaza Hotel", "url": "https://sunplazahotel.co.jp/en/" },
+      { "id": "stay-cross-hotel-osaka", "city": "osaka", "label": "Cross Hotel Osaka", "url": "https://www.crosshotel.com/osaka/en/" },
+      { "id": "stay-hankyu-respire", "city": "osaka", "label": "Hotel Hankyu RESPIRE Osaka", "url": "https://www.hankyu-hotel.com/en/hotel/respire" },
+      { "id": "stay-the-thousand-kyoto", "city": "kyoto", "label": "THE THOUSAND KYOTO", "url": "https://www.keihanhotels-resorts.co.jp/the-thousand-kyoto/en/" },
+      { "id": "stay-hotel-granvia-kyoto", "city": "kyoto", "label": "Hotel Granvia Kyoto", "url": "https://www.granviakyoto.com/" },
+      { "id": "stay-ekoin-koyasan", "city": "kyoto", "label": "Kōyasan Eko-in temple stay", "url": "https://www.ekoin.jp/en/" },
+      { "id": "stay-hotel-kanra", "city": "kyoto", "label": "Hotel Kanra Kyoto", "url": "https://www.hotelkanra.jp/en/" },
+      { "id": "stay-arima-grand", "city": "kobe", "label": "Arima Grand Hotel", "url": "https://www.arima-gh.jp/en/" },
+      { "id": "stay-la-suite-kobe", "city": "kobe", "label": "Hotel La Suite Kobe Harborland", "url": "https://www.l-s.jp/english/" },
+      { "id": "stay-oriental-hotel-kobe", "city": "kobe", "label": "Oriental Hotel Kobe", "url": "https://www.orientalhotel.jp/en/" },
+      { "id": "stay-mitsui-garden-otemachi", "city": "tokyo", "label": "Mitsui Garden Hotel Otemachi", "url": "https://www.gardenhotels.co.jp/otemachi/eng/" },
+      { "id": "stay-hotel-niwa-tokyo", "city": "tokyo", "label": "Hotel Niwa Tokyo", "url": "https://www.hotelniwa.jp/en/" },
+      { "id": "stay-park-hotel-tokyo", "city": "tokyo", "label": "Park Hotel Tokyo", "url": "https://parkhoteltokyo.com/" },
+      { "id": "stay-shinjuku-granbell", "city": "tokyo", "label": "Shinjuku Granbell Hotel", "url": "https://www.granbellhotel.jp/en/shinjuku/" },
+      { "id": "stay-airbnb-tokyo", "city": "tokyo", "label": "Airbnb — central Tokyo flat", "url": "https://www.airbnb.com/s/Tokyo--Japan/homes" },
+      { "id": "stay-disney-ambassador", "city": "tokyo", "label": "Disney Ambassador Hotel", "url": "https://www.tokyodisneyresort.jp/en/hotel/dh/" },
+      { "id": "stay-disneyland-hotel", "city": "tokyo", "label": "Tokyo Disneyland Hotel", "url": "https://www.tokyodisneyresort.jp/en/hotel/tdh/" },
+      { "id": "stay-disney-celebration", "city": "tokyo", "label": "Tokyo Disney Celebration Hotel", "url": "https://www.tokyodisneyresort.jp/en/hotel/dch/" }
+    ],
+    "booking": [
+      { "id": "book-usj", "city": "osaka", "label": "USJ + Super Nintendo World tickets", "url": "https://www.usj.co.jp/e/ticket/" },
+      { "id": "book-umeda-sky", "city": "osaka", "label": "Umeda Sky Building tickets", "url": "https://www.skybldg.co.jp/en/" },
+      { "id": "book-harukas", "city": "osaka", "label": "Abeno HARUKAS 300 observatory", "url": "https://www.abenoharukas-300.jp/en/" },
+      { "id": "book-midosuji-lights", "city": "osaka", "label": "Osaka Festival of the Lights info", "url": "https://www.hikari-kyoen.com/en/" },
+      { "id": "book-german-market", "city": "osaka", "label": "Osaka German Christmas Market details", "url": "https://www.skybldg.co.jp/event/xmas/" },
+      { "id": "book-mizuno", "city": "osaka", "label": "Okonomiyaki Mizuno reservations", "url": "https://www.gltjp.com/en/directory/item/12081/" },
+      { "id": "book-daruma", "city": "osaka", "label": "Kushikatsu Daruma (Shinsekai)", "url": "https://www.dotonbori.or.jp/en/shops/68" },
+      { "id": "book-teamlab-botanical", "city": "osaka", "label": "teamLab Botanical Garden Osaka", "url": "https://botanical.teamlab.art/" },
+      { "id": "book-sagano", "city": "kyoto", "label": "Sagano Romantic Train tickets", "url": "https://www.sagano-kanko.co.jp/en/ticket/" },
+      { "id": "book-kimono", "city": "kyoto", "label": "Kyoto kimono rental (Yumeyakata)", "url": "https://www.yumeyakata.com/" },
+      { "id": "book-tea-ceremony", "city": "kyoto", "label": "Camellia tea ceremony booking", "url": "https://www.tea-kyoto.com/" },
+      { "id": "book-kiyomizu-night", "city": "kyoto", "label": "Kiyomizu-dera night illumination", "url": "https://www.kiyomizudera.or.jp/en/event/" },
+      { "id": "book-eikando-night", "city": "kyoto", "label": "Eikando maple light-up details", "url": "https://eikando.or.jp/" },
+      { "id": "book-rurikoin", "city": "kyoto", "label": "Rurikō-in autumn visit info", "url": "https://rurikoin.komyoji.com/en/" },
+      { "id": "book-kurama-cable", "city": "kyoto", "label": "Kurama Cable Car & Onsen", "url": "https://www.kuruma-onsen.co.jp/" },
+      { "id": "book-himeji", "city": "kobe", "label": "Himeji Castle timed tickets", "url": "https://himejicastle.ntaticketing.com/" },
+      { "id": "book-kobe-ropeway", "city": "kobe", "label": "Kobe Nunobiki Ropeway", "url": "https://www.kobeherb.com/en/ropeway/" },
+      { "id": "book-arima-onsen", "city": "kobe", "label": "Arima Onsen ryokan reservations", "url": "https://visit.arima-onsen.com/en/hotel/" },
+      { "id": "book-teamlab-planets", "city": "tokyo", "label": "teamLab Planets tickets", "url": "https://teamlabplanets.dmm.com/en" },
+      { "id": "book-teamlab-borderless", "city": "tokyo", "label": "teamLab Borderless (Azabudai Hills)", "url": "https://www.teamlab.art/e/borderless/" },
+      { "id": "book-tokyo-disney", "city": "tokyo", "label": "Tokyo Disney Resort tickets", "url": "https://www.tokyodisneyresort.jp/en/ticket/" },
+      { "id": "book-ghibli", "city": "tokyo", "label": "Ghibli Museum via Lawson", "url": "https://l-tike.com/st1/ghibli-en/" },
+      { "id": "book-shibuya-sky", "city": "tokyo", "label": "Shibuya SKY admission", "url": "https://www.shibuya-scramble-square.com/en/sky/" },
+      { "id": "book-blue-cave", "city": "tokyo", "label": "Ao no Dokutsu (Blue Cave) info", "url": "https://bluecavetokyo.com/" },
+      { "id": "book-midtown-christmas", "city": "tokyo", "label": "Tokyo Midtown Christmas lights", "url": "https://www.tokyo-midtown.com/en/event/xmas/" },
+      { "id": "book-uogashi", "city": "tokyo", "label": "Standing sushi Uogashi (Shibuya)", "url": "https://www.timeout.com/tokyo/restaurants/uogashi-nihon-ichi-shibuya-dogenzaka" },
+      { "id": "book-gyukatsu", "city": "tokyo", "label": "Gyukatsu Motomura Harajuku", "url": "https://s.tabelog.com/en/tokyo/A1306/A130601/13208866/" },
+      { "id": "book-nakano-broadway", "city": "tokyo", "label": "Nakano Broadway floor guide", "url": "https://www.nbw.jp/en/" }
+    ]
+  },
+  "defaults": {
+    "2025-11-14": {
+      "loc": "work",
+      "theme": "Flights → Osaka",
+      "friends": ["Nana"],
+      "stay": null,
+      "slots": {
+        "morning": ["act-flight-dxb-arrival"],
+        "afternoon": ["act-flight-dxb-kix"],
+        "evening": ["act-arrive-kix", "act-transfer-kix-hirakata", "act-dinner-nana"]
+      },
+      "locks": {
+        "act-flight-dxb-arrival": 1,
+        "act-flight-dxb-kix": 1,
+        "act-arrive-kix": 1
+      }
+    },
+    "2025-11-15": {
+      "loc": "kyoto",
+      "theme": "Kyoto sights",
+      "friends": ["Nana"],
+      "stay": null,
+      "slots": {
+        "morning": ["act-arashiyama"],
+        "afternoon": ["act-kiyomizudera"],
+        "evening": ["act-fushimi-inari"]
+      },
+      "locks": {}
+    },
+    "2025-11-16": {
+      "loc": "kyoto",
+      "theme": "Nara or Uji",
+      "friends": ["Nana"],
+      "stay": null,
+      "slots": {
+        "morning": ["act-nara-park"],
+        "afternoon": ["act-uji-tea"],
+        "evening": []
+      },
+      "locks": {}
+    },
+    "2025-11-17": {
+      "loc": "kyoto",
+      "theme": "Kōyasan overnight",
+      "friends": ["Nana"],
+      "stay": "stay-ekoin-koyasan",
+      "slots": {
+        "morning": [],
+        "afternoon": ["act-koyasan-okunoin"],
+        "evening": ["act-koyasan-okunoin"]
+      },
+      "locks": {}
+    },
+    "2025-11-18": {
+      "loc": "work",
+      "theme": "Tue — Nana work",
+      "friends": ["Nana"],
+      "stay": null,
+      "slots": {
+        "morning": [],
+        "afternoon": [],
+        "evening": ["act-dotonbori-walk"]
+      },
+      "locks": {}
+    },
+    "2025-11-19": {
+      "loc": "kobe",
+      "theme": "Arima Onsen + Kobe night",
+      "friends": ["Nana"],
+      "stay": "stay-arima-grand",
+      "slots": {
+        "morning": ["act-arima-onsen"],
+        "afternoon": ["act-harborland-night"],
+        "evening": []
+      },
+      "locks": {}
+    },
+    "2025-11-20": {
+      "loc": "osaka",
+      "theme": "Umeda sunset + karaoke",
+      "friends": ["Nana"],
+      "stay": null,
+      "slots": {
+        "morning": [],
+        "afternoon": ["act-umeda-sky"],
+        "evening": ["act-karaoke-namba"]
+      },
+      "locks": {}
+    },
+    "2025-11-21": {
+      "loc": "work",
+      "theme": "Fri — Nana work",
+      "friends": ["Nana"],
+      "stay": null,
+      "slots": {
+        "morning": [],
+        "afternoon": [],
+        "evening": ["act-abeno-harukas"]
+      },
+      "locks": {}
+    },
+    "2025-11-22": {
+      "loc": "tokyo",
+      "theme": "Disney or teamLab",
+      "friends": ["Nana"],
+      "stay": "stay-disney-ambassador",
+      "slots": {
+        "morning": ["act-disney-day"],
+        "afternoon": ["act-disney-day"],
+        "evening": ["act-disney-day"]
+      },
+      "locks": {}
+    },
+    "2025-11-23": {
+      "loc": "tokyo",
+      "theme": "Nicole + Ken day",
+      "friends": ["Nicole", "Ken", "James"],
+      "stay": "stay-airbnb-tokyo",
+      "slots": {
+        "morning": ["act-teamlab-planets"],
+        "afternoon": ["act-collab-cafe"],
+        "evening": ["act-karaoke-friends"]
+      },
+      "locks": {}
+    },
+    "2025-11-24": {
+      "loc": "tokyo",
+      "theme": "Shibuya / Harajuku",
+      "friends": ["Nicole", "Ken", "James", "Phil"],
+      "stay": "stay-airbnb-tokyo",
+      "slots": {
+        "morning": ["act-shibuya-scramble"],
+        "afternoon": ["act-harajuku-fashion"],
+        "evening": ["act-ikebukuro-day"]
+      },
+      "locks": {}
+    },
+    "2025-11-25": {
+      "loc": "work",
+      "theme": "Tue — Travel/admin",
+      "friends": ["Nana"],
+      "stay": null,
+      "slots": {
+        "morning": [],
+        "afternoon": [],
+        "evening": []
+      },
+      "locks": {}
+    },
+    "2025-11-26": {
+      "loc": "kobe",
+      "theme": "Himeji Castle day",
+      "friends": [],
+      "stay": null,
+      "slots": {
+        "morning": ["act-himeji-castle"],
+        "afternoon": [],
+        "evening": []
+      },
+      "locks": {}
+    },
+    "2025-11-27": {
+      "loc": "kobe",
+      "theme": "Easy Kansai",
+      "friends": [],
+      "stay": null,
+      "slots": {
+        "morning": ["act-harborland-night"],
+        "afternoon": [],
+        "evening": []
+      },
+      "locks": {}
+    },
+    "2025-11-28": {
+      "loc": "osaka",
+      "theme": "Birthday in Osaka",
+      "friends": ["Nana", "Nicole", "Ken", "James"],
+      "stay": null,
+      "slots": {
+        "morning": [],
+        "afternoon": [],
+        "evening": ["act-karaoke-namba"]
+      },
+      "locks": {}
+    },
+    "2025-11-29": {
+      "loc": "kyoto",
+      "theme": "Leaves & tea",
+      "friends": ["Nana"],
+      "stay": null,
+      "slots": {
+        "morning": ["act-uji-tea"],
+        "afternoon": ["act-arashiyama"],
+        "evening": []
+      },
+      "locks": {}
+    },
+    "2025-11-30": {
+      "loc": "work",
+      "theme": "Fly home",
+      "friends": ["Nana"],
+      "stay": null,
+      "slots": {
+        "morning": ["act-transfer-hirakata-kix"],
+        "afternoon": [],
+        "evening": ["act-flight-kix-dxb"]
+      },
+      "locks": {
+        "act-flight-kix-dxb": 1
+      }
+    }
+  }
+}
