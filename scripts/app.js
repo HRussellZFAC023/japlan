@@ -13,6 +13,7 @@ import {
 const calendarEl = document.getElementById('calendar');
 const editBtn = document.querySelector('[data-action="toggle-edit"]');
 const icsBtn = document.querySelector('[data-action="export-ics"]');
+const shareBtn = document.querySelector('[data-action="share-plan"]');
 const sheetEl = document.getElementById('sheet');
 const sheetBackdrop = document.getElementById('sheetBackdrop');
 const sheetTitle = document.getElementById('sheetTitle');
@@ -35,6 +36,8 @@ let cardDragSource = null;
 let chipDragData = null;
 let mapInstance = null;
 let mapMarkersLayer = null;
+const shareBtnDefaultLabel = shareBtn?.textContent?.trim() || 'Share';
+let shareFeedbackTimeoutId = null;
 
 renderCalendar();
 updateFilterChips();
@@ -103,20 +106,55 @@ function loadState() {
     defaults[dateKey] = cloneDay(PREFILL[dateKey] || createEmptyDay());
   });
 
+  const sharedState = getSharedStateFromUrl();
+  const persistedState = sharedState ? null : getPersistedState();
+  const sourceState = sharedState || persistedState;
+
+  const merged = {};
+  dateSequence.forEach((dateKey) => {
+    merged[dateKey] = mergeDayData(defaults[dateKey], sourceState?.days?.[dateKey]);
+  });
+
+  return { days: merged };
+}
+
+function getPersistedState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return { days: defaults };
-    }
+    if (!raw) return null;
     const parsed = JSON.parse(raw);
-    const merged = {};
-    dateSequence.forEach((dateKey) => {
-      merged[dateKey] = mergeDayData(defaults[dateKey], parsed?.days?.[dateKey]);
-    });
-    return { days: merged };
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed;
   } catch (error) {
     console.warn('Unable to load saved state, using defaults.', error);
-    return { days: defaults };
+    return null;
+  }
+}
+
+function getSharedStateFromUrl() {
+  try {
+    const url = new URL(window.location.href);
+    const encoded = url.searchParams.get('state');
+    if (!encoded) return null;
+    const payload = decodeSharePayload(encoded);
+    if (!payload || typeof payload !== 'object') {
+      console.warn('Ignoring invalid shared state payload in URL.');
+      return null;
+    }
+    if (payload.version && payload.version !== STORAGE_VERSION) {
+      console.warn(
+        `Shared state version (${payload.version}) does not match current version (${STORAGE_VERSION}). Attempting to load anyway.`
+      );
+    }
+    const days = payload.days || payload.d || null;
+    if (!days || typeof days !== 'object') {
+      console.warn('Shared state payload is missing day data.');
+      return null;
+    }
+    return { days };
+  } catch (error) {
+    console.warn('Unable to load shared state from URL.', error);
+    return null;
   }
 }
 
@@ -629,6 +667,7 @@ function attachToolbarEvents() {
     renderCalendar();
   });
 
+  shareBtn?.addEventListener('click', sharePlan);
   icsBtn?.addEventListener('click', exportIcs);
 
   sheetBackdrop.addEventListener('click', () => {
@@ -849,5 +888,126 @@ function formatSummaryDate(dateKey) {
   const date = new Date(`${dateKey}T00:00:00`);
   const month = date.toLocaleDateString(undefined, { month: 'short' });
   return `${month} ${date.getDate()}`;
+}
+
+function buildSharePayload() {
+  const snapshot = {};
+  dateSequence.forEach((dateKey) => {
+    snapshot[dateKey] = cloneDay(planState.days[dateKey]);
+  });
+  return { version: STORAGE_VERSION, days: snapshot };
+}
+
+function buildShareUrl() {
+  const payload = buildSharePayload();
+  const encoded = encodeSharePayload(payload);
+  const url = new URL(window.location.href);
+  url.searchParams.set('state', encoded);
+  return url.toString();
+}
+
+async function sharePlan() {
+  if (!shareBtn) return;
+  const shareUrl = buildShareUrl();
+  shareBtn.disabled = true;
+  try {
+    const hasNavigator = typeof navigator !== 'undefined';
+    if (hasNavigator && navigator.share) {
+      try {
+        await navigator.share({ title: document.title, url: shareUrl });
+        showShareFeedback('Shared!');
+        return;
+      } catch (error) {
+        if (error?.name === 'AbortError') {
+          return;
+        }
+        console.warn('Native share failed, falling back to copy.', error);
+      }
+    }
+
+    await copyShareUrlToClipboard(shareUrl);
+    showShareFeedback('Link copied');
+  } catch (error) {
+    console.warn('Unable to copy share link automatically.', error);
+    fallbackSharePrompt(shareUrl);
+  } finally {
+    shareBtn.disabled = false;
+  }
+}
+
+async function copyShareUrlToClipboard(shareUrl) {
+  if (
+    typeof navigator === 'undefined' ||
+    !navigator.clipboard ||
+    typeof navigator.clipboard.writeText !== 'function'
+  ) {
+    throw new Error('Clipboard API unavailable');
+  }
+  await navigator.clipboard.writeText(shareUrl);
+}
+
+function fallbackSharePrompt(shareUrl) {
+  window.prompt('Copy this link to share the plan:', shareUrl);
+  showShareFeedback('Link ready');
+}
+
+function showShareFeedback(message) {
+  if (!shareBtn) return;
+  shareBtn.textContent = message;
+  if (shareFeedbackTimeoutId) {
+    clearTimeout(shareFeedbackTimeoutId);
+  }
+  shareFeedbackTimeoutId = window.setTimeout(() => {
+    shareBtn.textContent = shareBtnDefaultLabel;
+    shareFeedbackTimeoutId = null;
+  }, 2000);
+}
+
+function encodeSharePayload(payload) {
+  const json = JSON.stringify(payload);
+  let base64;
+  if (typeof TextEncoder !== 'undefined') {
+    const bytes = new TextEncoder().encode(json);
+    let binary = '';
+    bytes.forEach((byte) => {
+      binary += String.fromCharCode(byte);
+    });
+    base64 = btoa(binary);
+  } else {
+    const binary = encodeURIComponent(json).replace(/%([0-9A-F]{2})/g, (_, hex) =>
+      String.fromCharCode(parseInt(hex, 16))
+    );
+    base64 = btoa(binary);
+  }
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function decodeSharePayload(encoded) {
+  if (!encoded) return null;
+  try {
+    let base64 = encoded.replace(/-/g, '+').replace(/_/g, '/');
+    const pad = base64.length % 4;
+    if (pad) {
+      base64 += '='.repeat(4 - pad);
+    }
+    const binary = atob(base64);
+    if (typeof TextDecoder !== 'undefined') {
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i += 1) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const json = new TextDecoder().decode(bytes);
+      return JSON.parse(json);
+    }
+    let str = '';
+    for (let i = 0; i < binary.length; i += 1) {
+      const hex = binary.charCodeAt(i).toString(16).padStart(2, '0');
+      str += `%${hex}`;
+    }
+    const json = decodeURIComponent(str);
+    return JSON.parse(json);
+  } catch (error) {
+    return null;
+  }
 }
 
