@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Japan Trip — Nov 14–30, 2025</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <script
+      defer
+      src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+      integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+      crossorigin=""
+    ></script>
+    <script type="module" src="scripts/app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="header-inner">
+        <h1 class="site-title">Japan Trip — Nov 14–30, 2025</h1>
+        <div class="toolbar" role="toolbar" aria-label="Filters and actions">
+          <div class="toolbar-group">
+            <span class="toolbar-label">Show</span>
+            <button class="chip" data-filter="all" aria-pressed="true">All</button>
+          </div>
+          <div class="toolbar-group">
+            <span class="toolbar-label">Friends</span>
+            <button class="chip chip--friend" data-friend="Nana">Nana</button>
+            <button class="chip chip--friend" data-friend="Nicole">Nicole</button>
+            <button class="chip chip--friend" data-friend="Ken">Ken</button>
+            <button class="chip chip--friend" data-friend="James">James</button>
+            <button class="chip chip--friend" data-friend="Phil">Phil</button>
+          </div>
+          <div class="toolbar-group">
+            <span class="toolbar-label">Places</span>
+            <button class="chip chip--location" data-location="osaka">Osaka/Hirakata</button>
+            <button class="chip chip--location" data-location="kyoto">Kyoto/Nara/Kōyasan</button>
+            <button class="chip chip--location" data-location="tokyo">Tokyo/Chiba</button>
+            <button class="chip chip--location" data-location="kobe">Kobe/Arima/Himeji</button>
+            <button class="chip chip--location" data-location="work">Work/Travel</button>
+          </div>
+          <div class="toolbar-group toolbar-group--actions">
+            <button class="btn" data-action="toggle-edit">Edit</button>
+            <button class="btn" data-action="export-ics">Export .ics</button>
+          </div>
+        </div>
+        <div class="legend" aria-label="Color legend">
+          <div class="legend-item"><span class="legend-swatch" data-swatch="osaka"></span>Osaka/Hirakata</div>
+          <div class="legend-item"><span class="legend-swatch" data-swatch="kyoto"></span>Kyoto/Nara/Kōyasan</div>
+          <div class="legend-item"><span class="legend-swatch" data-swatch="tokyo"></span>Tokyo/Chiba</div>
+          <div class="legend-item"><span class="legend-swatch" data-swatch="kobe"></span>Kobe/Arima/Himeji</div>
+          <div class="legend-item"><span class="legend-swatch" data-swatch="work"></span>Work/Travel</div>
+        </div>
+      </div>
+    </header>
+    <main class="main">
+      <section id="calendar" class="calendar" role="grid" aria-label="Trip plan"></section>
+    </main>
+
+    <div id="sheetBackdrop" class="sheet-backdrop" aria-hidden="true"></div>
+    <aside id="sheet" class="sheet" aria-hidden="true" role="dialog" aria-modal="true">
+      <div class="sheet__header">
+        <div>
+          <p class="sheet__subtitle" id="sheetSubtitle"></p>
+          <h2 class="sheet__title" id="sheetTitle">Add to day</h2>
+        </div>
+        <button class="btn btn--subtle" data-action="close-sheet">Close</button>
+      </div>
+      <div class="sheet__tabs" role="tablist">
+        <button class="tab" role="tab" aria-selected="true" data-tab="activity">Activities</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="stay">Stays</button>
+        <button class="tab" role="tab" aria-selected="false" data-tab="booking">Bookings</button>
+      </div>
+      <div class="sheet__body" id="sheetBody"></div>
+    </aside>
+
+    <div id="mapOverlay" class="overlay" aria-hidden="true">
+      <div class="overlay__dialog" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
+        <div class="overlay__header">
+          <h2 class="overlay__title" id="mapTitle">Day map</h2>
+          <button class="btn btn--subtle" data-action="close-map">Close</button>
+        </div>
+        <div id="map" class="overlay__map" role="presentation"></div>
+      </div>
+    </div>
+  </body>
+</html>
