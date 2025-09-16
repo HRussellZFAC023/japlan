@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Japan Trip — Nov 14–30, 2025</title>
+    <title>Japan Trip Planner</title>
     <link rel="stylesheet" href="styles.css" />
     <link
       rel="stylesheet"
@@ -20,44 +20,47 @@
     <script type="module" src="scripts/app.js" defer></script>
   </head>
   <body>
+    <div class="share-banner" id="shareBanner" hidden>
+      <div class="share-banner__content">
+        <span class="share-banner__label">Viewing shared read-only plan.</span>
+        <button class="btn btn--ghost" data-action="exit-share">Return to live view</button>
+      </div>
+    </div>
+
     <header class="site-header">
       <div class="header-inner">
-        <h1 class="site-title">Japan Trip — Nov 14–30, 2025</h1>
+        <div class="title-bar">
+          <h1 class="site-title" id="siteTitle">Trip planner</h1>
+          <div class="title-actions">
+            <button class="btn btn--ghost" data-action="open-wizard">Trip setup</button>
+          </div>
+        </div>
+
         <div class="toolbar" role="toolbar" aria-label="Filters and actions">
-          <div class="toolbar-group">
-            <span class="toolbar-label">Show</span>
-            <button class="chip" data-filter="all" aria-pressed="true">All</button>
+          <div class="toolbar-group toolbar-group--quick">
+            <button class="chip" data-filter="all" aria-pressed="true">All days</button>
+            <button class="chip" data-action="clear-filters">Clear filters</button>
           </div>
           <div class="toolbar-group">
             <span class="toolbar-label">Friends</span>
-            <button class="chip chip--friend" data-friend="Nana">Nana</button>
-            <button class="chip chip--friend" data-friend="Nicole">Nicole</button>
-            <button class="chip chip--friend" data-friend="Ken">Ken</button>
-            <button class="chip chip--friend" data-friend="James">James</button>
-            <button class="chip chip--friend" data-friend="Phil">Phil</button>
+            <div class="chip-row" id="friendFilters"></div>
           </div>
           <div class="toolbar-group">
             <span class="toolbar-label">Places</span>
-            <button class="chip chip--location" data-location="osaka">Osaka/Hirakata</button>
-            <button class="chip chip--location" data-location="kyoto">Kyoto/Nara/Kōyasan</button>
-            <button class="chip chip--location" data-location="tokyo">Tokyo/Chiba</button>
-            <button class="chip chip--location" data-location="kobe">Kobe/Arima/Himeji</button>
-            <button class="chip chip--location" data-location="work">Work/Travel</button>
+            <div class="chip-row" id="locationFilters"></div>
           </div>
           <div class="toolbar-group toolbar-group--actions">
             <button class="btn" data-action="toggle-edit">Edit</button>
+            <button class="btn" data-action="share-plan">Share link</button>
+            <button class="btn" data-action="save-github">Save to GitHub</button>
             <button class="btn" data-action="export-ics">Export .ics</button>
           </div>
         </div>
-        <div class="legend" aria-label="Color legend">
-          <div class="legend-item"><span class="legend-swatch" data-swatch="osaka"></span>Osaka/Hirakata</div>
-          <div class="legend-item"><span class="legend-swatch" data-swatch="kyoto"></span>Kyoto/Nara/Kōyasan</div>
-          <div class="legend-item"><span class="legend-swatch" data-swatch="tokyo"></span>Tokyo/Chiba</div>
-          <div class="legend-item"><span class="legend-swatch" data-swatch="kobe"></span>Kobe/Arima/Himeji</div>
-          <div class="legend-item"><span class="legend-swatch" data-swatch="work"></span>Work/Travel</div>
-        </div>
+        <div class="filter-summary" id="filterSummary"></div>
+        <div class="legend" id="legend" aria-label="Color legend"></div>
       </div>
     </header>
+
     <main class="main">
       <section id="calendar" class="calendar" role="grid" aria-label="Trip plan"></section>
     </main>
@@ -77,6 +80,7 @@
         <button class="tab" role="tab" aria-selected="false" data-tab="booking">Bookings</button>
       </div>
       <div class="sheet__body" id="sheetBody"></div>
+      <div class="sheet__footer" id="sheetFooter"></div>
     </aside>
 
     <div id="mapOverlay" class="overlay" aria-hidden="true">
@@ -88,5 +92,100 @@
         <div id="map" class="overlay__map" role="presentation"></div>
       </div>
     </div>
+
+    <div id="wizardOverlay" class="modal" aria-hidden="true">
+      <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="wizardTitle">
+        <form class="wizard" id="wizardForm">
+          <div class="wizard__header">
+            <h2 class="wizard__title" id="wizardTitle">Trip setup</h2>
+            <p class="wizard__subtitle">Define the basics so the planner can shape your canvas.</p>
+          </div>
+          <div class="wizard__body">
+            <div class="wizard__row">
+              <label class="field">
+                <span class="field__label">Trip start</span>
+                <input type="date" name="start" required />
+              </label>
+              <label class="field">
+                <span class="field__label">Trip end</span>
+                <input type="date" name="end" required />
+              </label>
+            </div>
+            <label class="field">
+              <span class="field__label">Base city</span>
+              <select name="base" required></select>
+            </label>
+            <section class="wizard__section">
+              <div class="wizard__section-head">
+                <h3>People joining</h3>
+                <button type="button" class="btn btn--ghost" data-action="add-person">+ Add person</button>
+              </div>
+              <div class="wizard__people" id="wizardPeopleList"></div>
+            </section>
+            <section class="wizard__section">
+              <h3>Constraints</h3>
+              <div class="wizard__constraint">
+                <label>
+                  <input type="checkbox" name="nanaWork" /> Nana works Tuesdays & Fridays (keep days light)
+                </label>
+              </div>
+              <div class="wizard__constraint">
+                <label class="field field--inline">
+                  <span class="field__label">Max consecutive away days for Nana</span>
+                  <input type="number" name="nanaMaxAway" min="1" max="7" />
+                </label>
+              </div>
+            </section>
+          </div>
+          <div class="wizard__footer">
+            <button type="button" class="btn btn--subtle" data-action="close-wizard">Cancel</button>
+            <button type="submit" class="btn">Save setup</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div id="githubOverlay" class="modal" aria-hidden="true">
+      <div class="modal__dialog" role="dialog" aria-modal="true" aria-labelledby="githubTitle">
+        <form class="wizard" id="githubForm">
+          <div class="wizard__header">
+            <h2 class="wizard__title" id="githubTitle">Save to GitHub</h2>
+            <p class="wizard__subtitle">Push the current trip schema to your repository.</p>
+          </div>
+          <div class="wizard__body">
+            <label class="field">
+              <span class="field__label">Repository owner</span>
+              <input type="text" name="owner" required />
+            </label>
+            <label class="field">
+              <span class="field__label">Repository name</span>
+              <input type="text" name="repo" required />
+            </label>
+            <label class="field">
+              <span class="field__label">Branch</span>
+              <input type="text" name="branch" required />
+            </label>
+            <label class="field">
+              <span class="field__label">File path</span>
+              <input type="text" name="path" required />
+            </label>
+            <label class="field">
+              <span class="field__label">Commit message</span>
+              <input type="text" name="message" placeholder="Update trip.json" />
+            </label>
+            <label class="field">
+              <span class="field__label">GitHub token (repo scope)</span>
+              <input type="password" name="token" required autocomplete="off" />
+            </label>
+          </div>
+          <div class="wizard__footer">
+            <button type="button" class="btn btn--subtle" data-action="close-github">Cancel</button>
+            <button type="submit" class="btn">Save file</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
   </body>
 </html>
