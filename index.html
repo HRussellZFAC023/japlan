@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Japan Trip — Nov 14–30, 2025</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <style>
+    :root {
+      --paper: #fcfaf7;
+      --ink: #111827;
+      --muted: #6b7280;
+      --line: #e7e2d8;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --osaka: #2d3a64;
+      --kyoto: #c84e4e;
+      --tokyo: #eecad0;
+      --kobe: #7fafaE;
+      --work: #9a948c;
+      --nana: #f7e6ec;
+      --nicole: #ffe4f0;
+      --ken: #eaf7ea;
+      --james: #e6effa;
+      --phil: #e5f4f1;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans JP", sans-serif;
+    }
+
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(252, 250, 247, 0.98);
+      backdrop-filter: saturate(1.1) blur(6px);
+      box-shadow: 0 1px 0 var(--line);
+    }
+
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 12px 14px;
+    }
+
+    h1 {
+      margin: 0.25rem 0;
+      font-size: clamp(20px, 5vw, 32px);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .toolbar .group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .chip,
+    .btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 999px;
+      padding: 7px 11px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .btn {
+      border-radius: 10px;
+    }
+
+    .chip[aria-pressed="true"] {
+      outline: 2px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .friend-Nana {
+      background: var(--nana);
+    }
+
+    .friend-Nicole {
+      background: var(--nicole);
+    }
+
+    .friend-Ken {
+      background: var(--ken);
+    }
+
+    .friend-James {
+      background: var(--james);
+    }
+
+    .friend-Phil {
+      background: var(--phil);
+    }
+
+    .loc-osaka {
+      background: rgba(45, 58, 100, 0.1);
+    }
+
+    .loc-kyoto {
+      background: rgba(200, 78, 78, 0.1);
+    }
+
+    .loc-tokyo {
+      background: rgba(238, 202, 208, 0.45);
+    }
+
+    .loc-kobe {
+      background: rgba(127, 175, 174, 0.18);
+    }
+
+    .loc-work {
+      background: rgba(154, 148, 140, 0.18);
+    }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      overflow: auto;
+      padding: 6px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .legend .key {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    .legend .box {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 12px 14px 80px;
+    }
+
+    .calendar {
+      display: grid;
+      gap: 14px;
+      grid-template-columns: 1fr;
+    }
+
+    @media (min-width: 720px) {
+      .calendar {
+        grid-template-columns: repeat(2, minmax(340px, 1fr));
+      }
+    }
+
+    @media (min-width: 1120px) {
+      .calendar {
+        grid-template-columns: repeat(3, minmax(360px, 1fr));
+      }
+    }
+
+    .day {
+      position: relative;
+      min-height: 160px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .stripe {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 8px;
+      border-radius: 18px 0 0 18px;
+    }
+
+    .head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .head .date {
+      font-weight: 800;
+    }
+
+    .head .weekday {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .badges {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .theme {
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      padding: 3px 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .mapBtn {
+      border-radius: 10px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+
+    .slots {
+      display: grid;
+      gap: 8px;
+    }
+
+    .slot {
+      background: #faf7f0;
+      border: 1px dashed var(--line);
+      border-radius: 12px;
+      padding: 8px;
+      min-height: 64px;
+      position: relative;
+    }
+
+    .slot h4 {
+      margin: 0 0 6px;
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.6px;
+    }
+
+    .slot .adder {
+      position: absolute;
+      right: 8px;
+      top: 6px;
+      padding: 4px 10px;
+      font-size: 12px;
+    }
+
+    .chiplet {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin: 4px 6px 0 0;
+      padding: 6px 10px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 13px;
+      cursor: grab;
+    }
+
+    .chiplet.locked {
+      opacity: 0.75;
+      cursor: default;
+    }
+
+    .chiplet .time {
+      font-weight: 800;
+    }
+
+    .chipActions {
+      display: inline-flex;
+      gap: 6px;
+      margin-left: 4px;
+    }
+
+    .chipBtn {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      height: 22px;
+      padding: 0 6px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .friends {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .friendTag {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    .friendTag.is-on {
+      cursor: default;
+    }
+
+    .sheet {
+      position: fixed;
+      inset: auto 0 0 0;
+      background: #fff;
+      border-radius: 16px 16px 0 0;
+      border: 1px solid var(--line);
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.18);
+      transform: translateY(110%);
+      transition: transform 0.25s ease;
+      z-index: 80;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .sheet.open {
+      transform: translateY(0);
+    }
+
+    .sheet-head {
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .sheet-tabs {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .sheet-tab {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .sheet-tab[aria-selected="true"] {
+      outline: 2px solid rgba(0, 0, 0, 0.12);
+    }
+
+    .sheet-body {
+      padding: 12px 14px 18px;
+      max-height: 60vh;
+      overflow: auto;
+    }
+
+    .groupHead {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 12px 0 6px;
+      font-weight: 700;
+    }
+
+    .swatch {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+    }
+
+    .sheet-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 8px;
+    }
+
+    .sheet-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      padding: 10px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .sheet-card .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 90;
+      padding: 12px;
+    }
+
+    .overlay.open {
+      display: flex;
+    }
+
+    .mapWrap {
+      width: min(100vw, 960px);
+      height: min(72vh, 760px);
+      background: #fff;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mapHead {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    #map {
+      flex: 1;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>Japan Trip — Nov 14–30, 2025</h1>
+      <div class="toolbar" role="toolbar" aria-label="Filters &amp; Actions">
+        <div class="group">
+          <span class="label">Show</span>
+          <button class="chip" data-filter="all" aria-pressed="true">All</button>
+        </div>
+        <div class="group">
+          <span class="label">Friends</span>
+          <button class="chip friend-Nana" data-friend="Nana">Nana</button>
+          <button class="chip friend-Nicole" data-friend="Nicole">Nicole</button>
+          <button class="chip friend-Ken" data-friend="Ken">Ken</button>
+          <button class="chip friend-James" data-friend="James">James</button>
+          <button class="chip friend-Phil" data-friend="Phil">Phil</button>
+        </div>
+        <div class="group">
+          <span class="label">Places</span>
+          <button class="chip loc-osaka" data-location="osaka">Osaka</button>
+          <button class="chip loc-kyoto" data-location="kyoto">Kyoto/Nara/Kōyasan</button>
+          <button class="chip loc-tokyo" data-location="tokyo">Tokyo/Chiba</button>
+          <button class="chip loc-kobe" data-location="kobe">Kobe/Arima/Himeji</button>
+          <button class="chip loc-work" data-location="work">Work/Travel</button>
+        </div>
+        <div class="group" style="margin-left: auto">
+          <button class="btn" id="editBtn">Edit</button>
+          <button class="btn" id="icsBtn">Export .ics</button>
+        </div>
+      </div>
+      <div class="legend" aria-label="Legend">
+        <div class="key"><span class="box" style="background: var(--osaka)"></span>Osaka/Hirakata</div>
+        <div class="key"><span class="box" style="background: var(--kyoto)"></span>Kyoto/Nara/Kōyasan</div>
+        <div class="key"><span class="box" style="background: var(--tokyo)"></span>Tokyo/Chiba</div>
+        <div class="key"><span class="box" style="background: var(--kobe)"></span>Kobe/Arima/Himeji</div>
+        <div class="key"><span class="box" style="background: var(--work)"></span>Work/Travel</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="calendar" id="calendar" role="grid" aria-label="Trip days"></section>
+  </main>
+
+  <div class="sheet" id="sheet" aria-hidden="true">
+    <div class="sheet-head">
+      <strong id="sheetTitle">Add to day</strong>
+      <div class="sheet-tabs">
+        <button class="sheet-tab" data-tab="act" aria-selected="true">Activities</button>
+        <button class="sheet-tab" data-tab="stay">Stays</button>
+        <button class="sheet-tab" data-tab="book">Bookings</button>
+      </div>
+      <button class="btn" id="closeSheet">Close</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+
+  <div class="overlay" id="mapOverlay" aria-hidden="true">
+    <div class="mapWrap">
+      <div class="mapHead">
+        <strong id="mapTitle">Map</strong>
+        <button class="btn" id="closeMap">Close</button>
+      </div>
+      <div id="map"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script>
+    const YEAR = 2025;
+    const MONTH = 10; // November (0-indexed)
+    const DAYS = Array.from({ length: 17 }, (_, i) => i + 14);
+    const LS_KEY = 'jp-canvas6-v1';
+    const FRIENDS = ['Nana', 'Nicole', 'Ken', 'James', 'Phil'];
+
+    const LOC_COLORS = {
+      osaka: 'var(--osaka)',
+      kyoto: 'var(--kyoto)',
+      tokyo: 'var(--tokyo)',
+      kobe: 'var(--kobe)',
+      work: 'var(--work)'
+    };
+
+    const COORDS = {
+      dotonbori: [34.6687, 135.5013],
+      umedaSky: [34.7051, 135.4899],
+      harukas: [34.6464, 135.5134],
+      arashiyama: [35.0136, 135.6736],
+      fushimi: [34.9671, 135.7727],
+      kiyomizu: [34.9948, 135.785],
+      uji: [34.8846, 135.8033],
+      naraPark: [34.6851, 135.843],
+      okunoin: [34.215, 135.5858],
+      arima: [34.7968, 135.2495],
+      himeji: [34.8393, 134.6939],
+      harborland: [34.6785, 135.1787],
+      disney: [35.6339, 139.8864],
+      teamlabPlanets: [35.6496, 139.7916],
+      ghibli: [35.6962, 139.5704],
+      shibuyaParco: [35.6605, 139.6983],
+      takeshita: [35.6717, 139.7029],
+      sunshine: [35.7296, 139.7178],
+      kix: [34.4338, 135.2263],
+      hirakatashi: [34.8165, 135.6477]
+    };
+
+    const THEMES = {
+      osaka: 'Osaka base day',
+      kyoto: 'Old streets & leaves',
+      tokyo: 'Friends & arcades',
+      kobe: 'Onsen & castles',
+      work: 'Travel / admin'
+    };
+
+    const CATALOG = {
+      activity: [
+        { id: 'a-00:40-dxb-arrive', city: 'work', label: '00:40 Arrive DXB (transit)', coord: null, locked: true },
+        { id: 'a-03:05-dxb-kix', city: 'work', label: '03:05 DXB → KIX (EK316)', coord: 'kix', locked: true },
+        { id: 'a-17:05-arrive-kix', city: 'work', label: '17:05 Arrive KIX', coord: 'kix', locked: true },
+        { id: 'a-23:10-kix-dxb', city: 'work', label: '23:10 KIX → DXB (EK317)', coord: 'kix', locked: true },
+        { id: 'a-hirakata-kix', city: 'work', label: 'Hirakata → KIX', coord: 'kix' },
+        { id: 'a-kix>hirakata', city: 'osaka', label: 'KIX → Hirakata (~90m)', coord: 'hirakatashi' },
+        { id: 'a-meet-nana', city: 'osaka', label: 'Meet Nana — dinner near Hirakata', coord: 'hirakatashi' },
+        { id: 'a-dotonbori', city: 'osaka', label: 'Dōtonbori walk + street food', coord: 'dotonbori' },
+        { id: 'a-umeda', city: 'osaka', label: 'Umeda Sky sunset', coord: 'umedaSky' },
+        { id: 'a-harukas', city: 'osaka', label: 'Abeno HARUKAS view', coord: 'harukas' },
+        { id: 'a-karaoke-namba', city: 'osaka', label: 'Karaoke / izakaya (Namba)', coord: 'dotonbori' },
+        { id: 'g-donki-run', city: 'osaka', label: 'Donki night run (Dōtonbori)', coord: 'dotonbori' },
+        { id: 'a-arashiyama', city: 'kyoto', label: 'Arashiyama bamboo & river', coord: 'arashiyama' },
+        { id: 'a-kiyomizu', city: 'kyoto', label: 'Kiyomizu-dera & Sannenzaka', coord: 'kiyomizu' },
+        { id: 'a-fushimi', city: 'kyoto', label: 'Fushimi Inari at dusk', coord: 'fushimi' },
+        { id: 'a-uji', city: 'kyoto', label: 'Uji tea tasting', coord: 'uji' },
+        { id: 'a-nara', city: 'kyoto', label: 'Nara Park deer + Tōdai-ji', coord: 'naraPark' },
+        { id: 'a-koyasan', city: 'kyoto', label: 'Kōyasan Okunoin night walk', coord: 'okunoin' },
+        { id: 'g-kimono-photo', city: 'kyoto', label: 'Kimono stroll photo spot', coord: 'kiyomizu' },
+        { id: 'a-arima', city: 'kobe', label: 'Arima Onsen soak', coord: 'arima' },
+        { id: 'a-himeji', city: 'kobe', label: 'Himeji Castle + Koko-en', coord: 'himeji' },
+        { id: 'a-harborland', city: 'kobe', label: 'Kobe Harborland night', coord: 'harborland' },
+        { id: 'a-disney', city: 'tokyo', label: 'Tokyo Disney day', coord: 'disney' },
+        { id: 'a-teamlab', city: 'tokyo', label: 'teamLab (Planets/Borderless)', coord: 'teamlabPlanets' },
+        { id: 'a-ghibli', city: 'tokyo', label: 'Ghibli Museum (Mitaka)', coord: 'ghibli' },
+        { id: 'a-shibuya', city: 'tokyo', label: 'Shibuya scramble + PARCO', coord: 'shibuyaParco' },
+        { id: 'a-harajuku', city: 'tokyo', label: 'Harajuku fashion crawl', coord: 'takeshita' },
+        { id: 'a-ikebukuro', city: 'tokyo', label: 'Ikebukuro — Sunshine City', coord: 'sunshine' },
+        { id: 'a-karaoke', city: 'tokyo', label: 'Karaoke & izakaya with friends', coord: 'shibuyaParco' },
+        { id: 'a-collabcafe', city: 'tokyo', label: 'Collab café (Animate/Capcom/SQEX)', coord: 'sunshine' },
+        { id: 'g-shibuya-sky', city: 'tokyo', label: 'Shibuya SKY (view)', coord: 'shibuyaParco' },
+        { id: 'g-omotesando-cafe', city: 'tokyo', label: 'Omotesandō cafés & boutiques', coord: 'takeshita' }
+      ],
+      stay: [
+        { id: 's-candeo', city: 'osaka', label: 'Candeo Hotels Osaka Hirakata', url: 'https://www.candeohotels.com/en/osaka-hirakata/' },
+        { id: 's-sunplaza', city: 'osaka', label: 'Hirakata SunPlaza Hotel', url: 'https://sunplazahotel.co.jp/en/' },
+        { id: 's-ekoin', city: 'kyoto', label: 'Kōyasan Eko-in (temple stay)', url: 'https://www.ekoin.jp/en/' },
+        { id: 's-arima', city: 'kobe', label: 'Arima Grand Hotel', url: 'https://www.arima-gh.jp/en/' },
+        { id: 's-disney', city: 'tokyo', label: 'Tokyo Disney Hotels', url: 'https://www.tokyodisneyresort.jp/en/hotel/dh.html' },
+        { id: 's-airbnb-tokyo', city: 'tokyo', label: 'Airbnb — Tokyo sleepover', url: 'https://www.airbnb.com/s/Tokyo--Japan/homes' }
+      ],
+      booking: [
+        { id: 'b-usj', city: 'osaka', label: 'USJ + Nintendo World', url: 'https://www.usj.co.jp/e/ticket/' },
+        { id: 'b-umeda', city: 'osaka', label: 'Umeda SKY tickets', url: 'https://www.skybldg.co.jp/en/' },
+        { id: 'b-harukas', city: 'osaka', label: 'Abeno HARUKAS 300', url: 'https://www.abenoharukas-300.jp/en/' },
+        { id: 'r-mizuno', city: 'osaka', label: 'Okonomiyaki Mizuno', url: 'https://www.gltjp.com/en/directory/item/12081/' },
+        { id: 'r-daruma', city: 'osaka', label: 'Kushikatsu Daruma (Shinsekai)', url: 'https://www.dotonbori.or.jp/en/shops/68' },
+        { id: 'b-sagano', city: 'kyoto', label: 'Sagano Romantic Train', url: 'https://www.sagano-kanko.co.jp/en/ticket/' },
+        { id: 'b-kimono', city: 'kyoto', label: 'Kimono rental (Yumeyakata)', url: 'https://www.yumeyakata.com/' },
+        { id: 'b-tea', city: 'kyoto', label: 'Tea ceremony (Camellia)', url: 'https://www.tea-kyoto.com/' },
+        { id: 'b-himeji', city: 'kobe', label: 'Himeji Castle timed', url: 'https://himejicastle.ntaticketing.com/' },
+        { id: 'b-ropeway', city: 'kobe', label: 'Kobe Nunobiki Ropeway', url: 'https://www.kobeherb.com/en/ropeway/' },
+        { id: 'b-ghibli', city: 'tokyo', label: 'Ghibli Museum (Lawson)', url: 'https://l-tike.com/st1/ghibli-en/' },
+        { id: 'b-planets', city: 'tokyo', label: 'teamLab Planets', url: 'https://teamlabplanets.dmm.com/en' },
+        { id: 'b-borderless', city: 'tokyo', label: 'teamLab Borderless', url: 'https://www.teamlab.art/e/tokyo/' },
+        { id: 'b-shibuyasky', city: 'tokyo', label: 'Shibuya SKY', url: 'https://www.shibuya-scramble-square.com/en/sky/' },
+        { id: 'r-uogashi', city: 'tokyo', label: 'Standing sushi Uogashi (Shibuya)', url: 'https://www.timeout.com/tokyo/restaurants/uogashi-nihon-ichi-shibuya-dogenzaka' },
+        { id: 'r-gyukatsu', city: 'tokyo', label: 'Gyukatsu Motomura (Harajuku)', url: 'https://s.tabelog.com/en/tokyo/A1306/A130601/13208866/' }
+      ]
+    };
+
+    const DEFAULT_PLAN = {
+      14: {
+        loc: 'work',
+        theme: 'Flights → Osaka',
+        friends: ['Nana'],
+        slots: {
+          morning: ['a-00:40-dxb-arrive'],
+          afternoon: ['a-03:05-dxb-kix'],
+          evening: ['a-17:05-arrive-kix', 'a-kix>hirakata', 'a-meet-nana']
+        },
+        locks: {
+          'a-00:40-dxb-arrive': 1,
+          'a-03:05-dxb-kix': 1,
+          'a-17:05-arrive-kix': 1
+        }
+      },
+      15: {
+        loc: 'kyoto',
+        theme: 'Kyoto sights',
+        friends: ['Nana'],
+        slots: {
+          morning: ['a-arashiyama'],
+          afternoon: ['a-kiyomizu'],
+          evening: ['a-fushimi']
+        },
+        locks: {}
+      },
+      16: {
+        loc: 'kyoto',
+        theme: 'Nara or Uji',
+        friends: ['Nana'],
+        slots: {
+          morning: ['a-nara'],
+          afternoon: ['a-uji'],
+          evening: []
+        },
+        locks: {}
+      },
+      17: {
+        loc: 'kyoto',
+        theme: 'Kōyasan overnight',
+        friends: ['Nana'],
+        stay: 's-ekoin',
+        slots: {
+          morning: [],
+          afternoon: ['a-koyasan'],
+          evening: ['a-koyasan']
+        },
+        locks: {}
+      },
+      18: {
+        loc: 'work',
+        theme: 'Tue — Nana work',
+        friends: ['Nana'],
+        slots: {
+          morning: [],
+          afternoon: [],
+          evening: ['a-dotonbori']
+        },
+        locks: {}
+      },
+      19: {
+        loc: 'kobe',
+        theme: 'Arima Onsen + Kobe night',
+        friends: ['Nana'],
+        stay: 's-arima',
+        slots: {
+          morning: ['a-arima'],
+          afternoon: ['a-harborland'],
+          evening: []
+        },
+        locks: {}
+      },
+      20: {
+        loc: 'osaka',
+        theme: 'Umeda sunset + karaoke',
+        friends: ['Nana'],
+        slots: {
+          morning: [],
+          afternoon: ['a-umeda'],
+          evening: ['a-karaoke-namba']
+        },
+        locks: {}
+      },
+      21: {
+        loc: 'work',
+        theme: 'Fri — Nana work',
+        friends: ['Nana'],
+        slots: {
+          morning: [],
+          afternoon: [],
+          evening: ['a-harukas']
+        },
+        locks: {}
+      },
+      22: {
+        loc: 'tokyo',
+        theme: 'Disney or teamLab',
+        friends: ['Nana'],
+        stay: 's-disney',
+        slots: {
+          morning: ['a-disney'],
+          afternoon: ['a-disney'],
+          evening: ['a-disney']
+        },
+        locks: {}
+      },
+      23: {
+        loc: 'tokyo',
+        theme: 'Nicole + Ken day',
+        friends: ['Nicole', 'Ken', 'James'],
+        stay: 's-airbnb-tokyo',
+        slots: {
+          morning: ['a-teamlab'],
+          afternoon: ['a-collabcafe'],
+          evening: ['a-karaoke']
+        },
+        locks: {}
+      },
+      24: {
+        loc: 'tokyo',
+        theme: 'Shibuya / Harajuku',
+        friends: ['Nicole', 'Ken', 'James', 'Phil'],
+        stay: 's-airbnb-tokyo',
+        slots: {
+          morning: ['a-shibuya'],
+          afternoon: ['a-harajuku'],
+          evening: ['a-ikebukuro']
+        },
+        locks: {}
+      },
+      25: {
+        loc: 'work',
+        theme: 'Tue — Travel/admin',
+        friends: ['Nana'],
+        slots: {
+          morning: [],
+          afternoon: [],
+          evening: []
+        },
+        locks: {}
+      },
+      26: {
+        loc: 'kobe',
+        theme: 'Himeji Castle day',
+        friends: [],
+        slots: {
+          morning: ['a-himeji'],
+          afternoon: [],
+          evening: []
+        },
+        locks: {}
+      },
+      27: {
+        loc: 'kobe',
+        theme: 'Easy Kansai',
+        friends: [],
+        slots: {
+          morning: ['a-harborland'],
+          afternoon: [],
+          evening: []
+        },
+        locks: {}
+      },
+      28: {
+        loc: 'osaka',
+        theme: 'Birthday in Osaka',
+        friends: ['Nana', 'Nicole', 'Ken', 'James'],
+        slots: {
+          morning: [],
+          afternoon: [],
+          evening: ['a-karaoke-namba']
+        },
+        locks: {}
+      },
+      29: {
+        loc: 'kyoto',
+        theme: 'Leaves & tea',
+        friends: ['Nana'],
+        slots: {
+          morning: ['a-uji'],
+          afternoon: ['a-arashiyama'],
+          evening: []
+        },
+        locks: {}
+      },
+      30: {
+        loc: 'work',
+        theme: 'Fly home',
+        friends: ['Nana'],
+        slots: {
+          morning: ['a-hirakata-kix'],
+          afternoon: [],
+          evening: ['a-23:10-kix-dxb']
+        },
+        locks: {
+          'a-23:10-kix-dxb': 1
+        }
+      }
+    };
+
+    function loadState() {
+      try {
+        const stored = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        const days = Object.assign({}, DEFAULT_PLAN, stored?.days || {});
+        return { days, edit: false };
+      } catch (err) {
+        console.warn('Unable to restore state', err);
+        return { days: { ...DEFAULT_PLAN }, edit: false };
+      }
+    }
+
+    let state = loadState();
+
+    function saveState() {
+      localStorage.setItem(LS_KEY, JSON.stringify({ days: state.days }));
+    }
+
+    const calendarEl = document.getElementById('calendar');
+
+    function ensureDay(day) {
+      if (!state.days[day]) {
+        state.days[day] = {
+          loc: 'work',
+          theme: '',
+          friends: [],
+          slots: { morning: [], afternoon: [], evening: [] },
+          locks: {}
+        };
+      }
+      return state.days[day];
+    }
+
+    function labelFor(id) {
+      const lookup = [...CATALOG.activity, ...CATALOG.stay, ...CATALOG.booking];
+      return lookup.find((entry) => entry.id === id)?.label || id;
+    }
+
+    function activityFor(id) {
+      return CATALOG.activity.find((entry) => entry.id === id);
+    }
+
+    function tokenisedLabel(label) {
+      const match = /^(\d{1,2}:\d{2})\s+(.*)$/.exec(label);
+      return match ? `<span class="time">${match[1]}</span> ${match[2]}` : label;
+    }
+
+    function buildCalendar() {
+      calendarEl.innerHTML = '';
+      DAYS.forEach((day) => {
+        calendarEl.appendChild(renderDay(day));
+      });
+      applyFilters();
+      syncToolbar();
+    }
+
+    function renderDay(day) {
+      const plan = ensureDay(day);
+      const card = document.createElement('article');
+      card.className = 'day';
+      card.dataset.day = String(day);
+      card.dataset.loc = plan.loc;
+      const stripe = document.createElement('div');
+      stripe.className = 'stripe';
+      stripe.style.background = LOC_COLORS[plan.loc];
+      card.appendChild(stripe);
+
+      const head = document.createElement('div');
+      head.className = 'head';
+      const dateWrap = document.createElement('div');
+      const date = new Date(YEAR, MONTH, day);
+      dateWrap.innerHTML = `<div class="date">${day} ${date.toLocaleDateString(undefined, { month: 'short' })}</div><div class="weekday">${date.toLocaleDateString(undefined, { weekday: 'short' })}</div>`;
+      head.appendChild(dateWrap);
+
+      const badges = document.createElement('div');
+      badges.className = 'badges';
+      const theme = document.createElement('span');
+      theme.className = 'theme';
+      theme.textContent = plan.theme || THEMES[plan.loc] || '';
+      badges.appendChild(theme);
+
+      const stayBtn = document.createElement('button');
+      stayBtn.className = 'theme';
+      stayBtn.textContent = plan.stay ? labelFor(plan.stay) : 'Pick stay';
+      stayBtn.addEventListener('click', () => openSheet(day, 'stay'));
+      badges.appendChild(stayBtn);
+
+      const mapBtn = document.createElement('button');
+      mapBtn.className = 'mapBtn btn';
+      mapBtn.textContent = 'Map';
+      mapBtn.addEventListener('click', () => openMap(day));
+      badges.appendChild(mapBtn);
+
+      head.appendChild(badges);
+      card.appendChild(head);
+
+      const slots = document.createElement('div');
+      slots.className = 'slots';
+      ['morning', 'afternoon', 'evening'].forEach((slotName) => {
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+        slot.dataset.slot = slotName;
+        slot.dataset.day = String(day);
+
+        const heading = document.createElement('h4');
+        heading.textContent = slotName.toUpperCase();
+        slot.appendChild(heading);
+
+        const addBtn = document.createElement('button');
+        addBtn.className = 'btn adder';
+        addBtn.textContent = 'Add';
+        addBtn.addEventListener('click', () => openSheet(day, 'act', slotName));
+        slot.appendChild(addBtn);
+
+        (plan.slots[slotName] || []).forEach((id) => {
+          slot.appendChild(renderChip(day, slotName, id));
+        });
+
+        slot.addEventListener('dragover', (event) => {
+          if (!state.edit) return;
+          event.preventDefault();
+        });
+
+        slot.addEventListener('drop', (event) => {
+          if (!state.edit) return;
+          event.preventDefault();
+          const id = event.dataTransfer.getData('text/plain');
+          if (id) {
+            addActivity(day, slotName, id);
+          }
+        });
+
+        slots.appendChild(slot);
+      });
+      card.appendChild(slots);
+
+      const friendRow = document.createElement('div');
+      friendRow.className = 'friends';
+      FRIENDS.forEach((friend) => {
+        const active = (plan.friends || []).includes(friend);
+        const btn = document.createElement('button');
+        btn.textContent = active ? friend : `+ ${friend}`;
+        btn.className = 'friendTag' + (active ? ` is-on friend-${friend}` : '');
+        if (active) {
+          btn.style.background = getComputedStyle(document.documentElement).getPropertyValue(`--${friend.toLowerCase()}`);
+        }
+        btn.addEventListener('click', () => toggleFriend(day, friend));
+        friendRow.appendChild(btn);
+      });
+      card.appendChild(friendRow);
+
+      card.draggable = state.edit;
+      card.addEventListener('dragstart', onCardDragStart);
+      card.addEventListener('dragover', (event) => {
+        if (!state.edit) return;
+        event.preventDefault();
+      });
+      card.addEventListener('drop', onCardDrop);
+
+      return card;
+    }
+
+    function renderChip(day, slot, id) {
+      const plan = ensureDay(day);
+      const activity = activityFor(id) || { label: labelFor(id) };
+      const locked = Boolean((plan.locks && plan.locks[id]) || activity.locked);
+      const chip = document.createElement('span');
+      chip.className = 'chiplet' + (locked ? ' locked' : '');
+      chip.dataset.id = id;
+      chip.innerHTML = tokenisedLabel(activity.label);
+      chip.draggable = state.edit && !locked;
+
+      const actions = document.createElement('span');
+      actions.className = 'chipActions';
+      if (state.edit) {
+        const lockBtn = document.createElement('button');
+        lockBtn.className = 'chipBtn';
+        lockBtn.textContent = locked ? '🔒' : '🔓';
+        lockBtn.title = locked ? 'Unlock' : 'Lock';
+        lockBtn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          toggleLock(day, id);
+        });
+        actions.appendChild(lockBtn);
+
+        if (!locked) {
+          const removeBtn = document.createElement('button');
+          removeBtn.className = 'chipBtn';
+          removeBtn.textContent = '✕';
+          removeBtn.title = 'Remove';
+          removeBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            removeActivity(day, slot, id);
+          });
+          actions.appendChild(removeBtn);
+        }
+      }
+
+      chip.appendChild(actions);
+      chip.addEventListener('dragstart', (event) => {
+        if (!state.edit || locked) return;
+        event.dataTransfer.setData('text/plain', id);
+      });
+
+      chip.addEventListener('dblclick', () => {
+        if (!state.edit || locked) return;
+        const updated = prompt('Edit item (time optional like 08:30 Thing):', activity.label);
+        if (updated) {
+          activity.label = updated.trim();
+          const target = CATALOG.activity.find((entry) => entry.id === activity.id);
+          if (target) {
+            target.label = activity.label;
+          }
+          rebuildDay(day);
+        }
+      });
+
+      return chip;
+    }
+
+    function ensureSlot(plan, slot) {
+      if (!plan.slots[slot]) {
+        plan.slots[slot] = [];
+      }
+      return plan.slots[slot];
+    }
+
+    function addActivity(day, slot, id) {
+      const plan = ensureDay(day);
+      const bucket = ensureSlot(plan, slot);
+      if (!bucket.includes(id)) {
+        bucket.push(id);
+        saveState();
+        rebuildDay(day);
+      }
+    }
+
+    function removeActivity(day, slot, id) {
+      const plan = ensureDay(day);
+      if (plan.locks && plan.locks[id]) return;
+      const bucket = ensureSlot(plan, slot);
+      const idx = bucket.indexOf(id);
+      if (idx >= 0) {
+        bucket.splice(idx, 1);
+        saveState();
+        rebuildDay(day);
+      }
+    }
+
+    function toggleLock(day, id) {
+      const plan = ensureDay(day);
+      plan.locks = plan.locks || {};
+      plan.locks[id] = plan.locks[id] ? 0 : 1;
+      saveState();
+      rebuildDay(day);
+    }
+
+    function toggleFriend(day, friend) {
+      const plan = ensureDay(day);
+      const list = plan.friends || (plan.friends = []);
+      const idx = list.indexOf(friend);
+      if (idx >= 0) {
+        list.splice(idx, 1);
+      } else {
+        list.push(friend);
+      }
+      saveState();
+      rebuildDay(day);
+    }
+
+    let dragDay = null;
+
+    function onCardDragStart(event) {
+      if (!state.edit) return;
+      dragDay = Number(event.currentTarget.dataset.day);
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', 'card');
+    }
+
+    function onCardDrop(event) {
+      if (!state.edit) return;
+      event.preventDefault();
+      if (event.dataTransfer.getData('text/plain') !== 'card') return;
+      const targetDay = Number(event.currentTarget.dataset.day);
+      if (!dragDay || dragDay === targetDay) return;
+      const temp = state.days[dragDay];
+      state.days[dragDay] = state.days[targetDay];
+      state.days[targetDay] = temp;
+      saveState();
+      rebuildDay(dragDay);
+      rebuildDay(targetDay);
+      dragDay = null;
+    }
+
+    let activeFriend = null;
+    let activeLocation = null;
+
+    function applyFilters() {
+      document.querySelectorAll('.day').forEach((card) => {
+        const plan = ensureDay(Number(card.dataset.day));
+        const friendOk = !activeFriend || (plan.friends || []).includes(activeFriend);
+        const locationOk = !activeLocation || plan.loc === activeLocation;
+        card.style.display = friendOk && locationOk ? 'flex' : 'none';
+      });
+    }
+
+    function syncToolbar() {
+      document.querySelectorAll('[data-friend]').forEach((btn) => {
+        btn.setAttribute('aria-pressed', String(activeFriend === btn.dataset.friend));
+      });
+      document.querySelectorAll('[data-location]').forEach((btn) => {
+        btn.setAttribute('aria-pressed', String(activeLocation === btn.dataset.location));
+      });
+      const allBtn = document.querySelector('[data-filter="all"]');
+      if (allBtn) {
+        allBtn.setAttribute('aria-pressed', String(!activeFriend && !activeLocation));
+      }
+    }
+
+    document.addEventListener('click', (event) => {
+      const friendBtn = event.target.closest('[data-friend]');
+      if (friendBtn) {
+        activeFriend = activeFriend === friendBtn.dataset.friend ? null : friendBtn.dataset.friend;
+        applyFilters();
+        syncToolbar();
+        return;
+      }
+
+      const locationBtn = event.target.closest('[data-location]');
+      if (locationBtn) {
+        activeLocation = activeLocation === locationBtn.dataset.location ? null : locationBtn.dataset.location;
+        applyFilters();
+        syncToolbar();
+        return;
+      }
+
+      const allBtn = event.target.closest('[data-filter="all"]');
+      if (allBtn) {
+        activeFriend = null;
+        activeLocation = null;
+        applyFilters();
+        syncToolbar();
+      }
+    });
+
+    const sheetEl = document.getElementById('sheet');
+    const sheetBody = document.getElementById('sheetBody');
+    const sheetTitle = document.getElementById('sheetTitle');
+    let sheetDay = null;
+    let sheetSlot = 'morning';
+    let sheetTab = 'act';
+
+    function openSheet(day, tab = 'act', slot = 'morning') {
+      sheetDay = day;
+      sheetSlot = slot;
+      sheetTab = tab;
+      sheetTitle.textContent = `Day ${day} — Add`;
+      sheetEl.classList.add('open');
+      sheetEl.setAttribute('aria-hidden', 'false');
+      renderSheet();
+    }
+
+    function closeSheet() {
+      sheetEl.classList.remove('open');
+      sheetEl.setAttribute('aria-hidden', 'true');
+    }
+
+    document.getElementById('closeSheet').addEventListener('click', closeSheet);
+
+    document.querySelectorAll('.sheet-tab').forEach((tabBtn) => {
+      tabBtn.addEventListener('click', () => {
+        document.querySelectorAll('.sheet-tab').forEach((btn) => btn.setAttribute('aria-selected', 'false'));
+        tabBtn.setAttribute('aria-selected', 'true');
+        sheetTab = tabBtn.dataset.tab;
+        renderSheet();
+      });
+    });
+
+    function renderSheet() {
+      sheetBody.innerHTML = '';
+      const dayPlan = ensureDay(sheetDay);
+
+      function makeGroup(title, color, items) {
+        if (!items.length) return;
+        const head = document.createElement('div');
+        head.className = 'groupHead';
+        head.innerHTML = `<span class="swatch" style="background: ${color}"></span>${title}`;
+        sheetBody.appendChild(head);
+
+        const grid = document.createElement('div');
+        grid.className = 'sheet-grid';
+        items.forEach((item) => {
+          const btn = document.createElement('button');
+          btn.className = 'sheet-card';
+          btn.innerHTML = `<span>${item.label}</span>`;
+          btn.addEventListener('click', () => {
+            if (sheetTab === 'act') {
+              addActivity(sheetDay, sheetSlot, item.id);
+            } else if (sheetTab === 'stay') {
+              dayPlan.stay = item.id;
+              saveState();
+              rebuildDay(sheetDay);
+            } else if (sheetTab === 'book') {
+              window.open(item.url, '_blank');
+            }
+          });
+          grid.appendChild(btn);
+        });
+        sheetBody.appendChild(grid);
+      }
+
+      if (sheetTab === 'act') {
+        ['osaka', 'kyoto', 'kobe', 'tokyo', 'work'].forEach((city) => {
+          const items = CATALOG.activity.filter((item) => item.city === city);
+          makeGroup(city.toUpperCase(), LOC_COLORS[city], items);
+        });
+      }
+
+      if (sheetTab === 'stay') {
+        ['osaka', 'kyoto', 'kobe', 'tokyo'].forEach((city) => {
+          const items = CATALOG.stay.filter((item) => item.city === city);
+          makeGroup(city.toUpperCase(), LOC_COLORS[city], items);
+        });
+      }
+
+      if (sheetTab === 'book') {
+        ['osaka', 'kyoto', 'kobe', 'tokyo'].forEach((city) => {
+          const items = CATALOG.booking.filter((item) => item.city === city);
+          makeGroup(city.toUpperCase(), LOC_COLORS[city], items);
+        });
+      }
+    }
+
+    document.getElementById('editBtn').addEventListener('click', (event) => {
+      state.edit = !state.edit;
+      event.currentTarget.textContent = state.edit ? 'Done' : 'Edit';
+      document.querySelectorAll('.day').forEach((card) => {
+        card.draggable = state.edit;
+      });
+      rebuildAll();
+    });
+
+    function rebuildAll() {
+      document.querySelectorAll('.day').forEach((card) => {
+        rebuildDay(Number(card.dataset.day));
+      });
+    }
+
+    function rebuildDay(day) {
+      const current = document.querySelector(`.day[data-day="${day}"]`);
+      if (!current) return;
+      const parent = current.parentNode;
+      const next = current.nextSibling;
+      parent.removeChild(current);
+      parent.insertBefore(renderDay(day), next);
+      applyFilters();
+    }
+
+    function pad(number) {
+      return number < 10 ? `0${number}` : String(number);
+    }
+
+    function icsTimestamp(date) {
+      return `${date.getUTCFullYear()}${pad(date.getUTCMonth() + 1)}${pad(date.getUTCDate())}T${pad(date.getUTCHours())}${pad(date.getUTCMinutes())}${pad(date.getUTCSeconds())}Z`;
+    }
+
+    document.getElementById('icsBtn').addEventListener('click', () => {
+      let ics = 'BEGIN:VCALENDAR\nVERSION:2.0\nCALSCALE:GREGORIAN\n';
+      DAYS.forEach((day) => {
+        const plan = ensureDay(day);
+        const start = new Date(YEAR, MONTH, day, 9, 0, 0);
+        const end = new Date(YEAR, MONTH, day, 21, 0, 0);
+        const title = `${day} ${start.toLocaleDateString(undefined, { month: 'short' })} — ${plan.theme || THEMES[plan.loc]}`;
+        const slotDescriptions = ['morning', 'afternoon', 'evening']
+          .map((slot) => (plan.slots[slot] || []).map((id) => labelFor(id)).join(' • '))
+          .filter(Boolean)
+          .join(' / ');
+        const description = `${slotDescriptions}${plan.stay ? ` — Stay: ${labelFor(plan.stay)}` : ''} (Friends: ${(plan.friends || []).join(', ')})`;
+        ics += `BEGIN:VEVENT\nSUMMARY:${title.replace(/\n/g, ' ')}\nDTSTART:${icsTimestamp(start)}\nDTEND:${icsTimestamp(end)}\nDESCRIPTION:${description}\nLOCATION:${plan.loc}\nEND:VEVENT\n`;
+      });
+      ics += 'END:VCALENDAR';
+      const blob = new Blob([ics], { type: 'text/calendar;charset=utf-8' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'Japan-Trip-Nov2025.ics';
+      link.click();
+    });
+
+    const mapOverlay = document.getElementById('mapOverlay');
+    const mapTitle = document.getElementById('mapTitle');
+    let mapInstance = null;
+
+    function openMap(day) {
+      const plan = ensureDay(day);
+      mapOverlay.classList.add('open');
+      mapOverlay.setAttribute('aria-hidden', 'false');
+      mapTitle.textContent = `${day} — ${plan.theme || THEMES[plan.loc]}`;
+      setTimeout(() => {
+        if (!mapInstance) {
+          mapInstance = L.map('map').setView([35, 135.5], 5);
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap contributors'
+          }).addTo(mapInstance);
+        }
+        mapInstance.eachLayer((layer) => {
+          if (layer instanceof L.Marker) {
+            mapInstance.removeLayer(layer);
+          }
+        });
+        const points = [];
+        ['morning', 'afternoon', 'evening'].forEach((slot) => {
+          (plan.slots[slot] || []).forEach((id) => {
+            const activity = activityFor(id);
+            if (!activity?.coord) return;
+            const coords = COORDS[activity.coord];
+            if (!coords) return;
+            points.push(coords);
+            L.marker(coords).addTo(mapInstance).bindPopup(labelFor(id));
+          });
+        });
+        if (points.length) {
+          const bounds = L.latLngBounds(points);
+          mapInstance.fitBounds(bounds.pad(0.2));
+        } else {
+          mapInstance.setView([35, 135.5], 5);
+        }
+      }, 50);
+    }
+
+    document.getElementById('closeMap').addEventListener('click', () => {
+      mapOverlay.classList.remove('open');
+      mapOverlay.setAttribute('aria-hidden', 'true');
+    });
+
+    mapOverlay.addEventListener('click', (event) => {
+      if (event.target === mapOverlay) {
+        mapOverlay.classList.remove('open');
+        mapOverlay.setAttribute('aria-hidden', 'true');
+      }
+    });
+
+    buildCalendar();
+  </script>
+</body>
+</html>
