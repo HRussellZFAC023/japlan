@@ -5,16 +5,6 @@
   --line: #e7e2d8;
   --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
   --radius-card: 18px;
-  --osaka: #2d3a64;
-  --kyoto: #c84e4e;
-  --tokyo: #eecad0;
-  --kobe: #7fafae;
-  --work: #9a948c;
-  --friend-nana: #f7e6ec;
-  --friend-nicole: #ffe4f0;
-  --friend-ken: #eaf7ea;
-  --friend-james: #e6effa;
-  --friend-phil: #e5f4f1;
   --slot-bg: #f8f3eb;
   --tab-bg: rgba(255, 255, 255, 0.9);
 }
@@ -92,6 +82,13 @@ button:disabled {
   align-items: center;
 }
 
+.toolbar-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
 .toolbar-group--actions {
   margin-left: auto;
   gap: 8px;
@@ -126,45 +123,6 @@ button:disabled {
   box-shadow: 0 0 0 2px rgba(17, 24, 39, 0.08);
 }
 
-.chip[data-friend="Nana"] {
-  background: var(--friend-nana);
-}
-
-.chip[data-friend="Nicole"] {
-  background: var(--friend-nicole);
-}
-
-.chip[data-friend="Ken"] {
-  background: var(--friend-ken);
-}
-
-.chip[data-friend="James"] {
-  background: var(--friend-james);
-}
-
-.chip[data-friend="Phil"] {
-  background: var(--friend-phil);
-}
-
-.chip[data-location="osaka"] {
-  background: rgba(45, 58, 100, 0.12);
-}
-
-.chip[data-location="kyoto"] {
-  background: rgba(200, 78, 78, 0.12);
-}
-
-.chip[data-location="tokyo"] {
-  background: rgba(238, 202, 208, 0.6);
-}
-
-.chip[data-location="kobe"] {
-  background: rgba(127, 175, 174, 0.22);
-}
-
-.chip[data-location="work"] {
-  background: rgba(154, 148, 140, 0.22);
-}
 
 .btn {
   background: #fff;
@@ -205,25 +163,6 @@ button:disabled {
   display: inline-block;
 }
 
-.legend-swatch[data-swatch="osaka"] {
-  background: var(--osaka);
-}
-
-.legend-swatch[data-swatch="kyoto"] {
-  background: var(--kyoto);
-}
-
-.legend-swatch[data-swatch="tokyo"] {
-  background: var(--tokyo);
-}
-
-.legend-swatch[data-swatch="kobe"] {
-  background: var(--kobe);
-}
-
-.legend-swatch[data-swatch="work"] {
-  background: var(--work);
-}
 
 .main {
   padding: 24px clamp(16px, 4vw, 24px);
@@ -428,25 +367,10 @@ button:disabled {
   background: #fff;
 }
 
-.friend-chip.friend-chip--on[data-friend="Nana"] {
-  background: var(--friend-nana);
+.friend-chip.friend-chip--on {
+  background: rgba(45, 58, 100, 0.08);
 }
 
-.friend-chip.friend-chip--on[data-friend="Nicole"] {
-  background: var(--friend-nicole);
-}
-
-.friend-chip.friend-chip--on[data-friend="Ken"] {
-  background: var(--friend-ken);
-}
-
-.friend-chip.friend-chip--on[data-friend="James"] {
-  background: var(--friend-james);
-}
-
-.friend-chip.friend-chip--on[data-friend="Phil"] {
-  background: var(--friend-phil);
-}
 
 .sheet-backdrop {
   position: fixed;
@@ -557,6 +481,33 @@ button:disabled {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 10px;
+}
+
+.sheet-custom {
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #fff;
+}
+
+.sheet-custom__title {
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.sheet-custom__text {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.sheet-custom__btn {
+  align-self: flex-start;
 }
 
 .sheet-card {
