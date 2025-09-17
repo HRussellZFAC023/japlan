@@ -289,19 +289,6 @@ button:disabled {
   border-radius: 12px;
 }
 
-.theme-select,
-.theme-input {
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  padding: 6px 10px;
-  font-size: 0.85rem;
-  min-width: 140px;
-}
-
-.theme-select {
-  background: #fff;
-}
-
 .theme-chip.theme-chip--travel {
   background: #eef2ff;
   border-color: rgba(79, 70, 229, 0.35);
