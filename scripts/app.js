@@ -1,40 +1,43 @@
-import { STORAGE_KEY, DEFAULT_TRIP_TEMPLATE, COLOR_PALETTES } from './data.js';
+import { STORAGE_KEY, DEFAULT_TRIP_TEMPLATE, COLOR_PALETTES } from "./data.js";
 
-const calendarEl = document.getElementById('calendar');
-const tripTitleEl = document.getElementById('tripTitle');
-const friendFiltersEl = document.getElementById('friendFilters');
-const locationFiltersEl = document.getElementById('locationFilters');
-const locationLegendEl = document.getElementById('locationLegend');
+const calendarEl = document.getElementById("calendar");
+const tripTitleEl = document.getElementById("tripTitle");
+const friendFiltersEl = document.getElementById("friendFilters");
+const locationFiltersEl = document.getElementById("locationFilters");
+const locationLegendEl = document.getElementById("locationLegend");
 const editBtn = document.querySelector('[data-action="toggle-edit"]');
 const manageTripsBtn = document.querySelector('[data-action="manage-trips"]');
 const settingsBtn = document.querySelector('[data-action="trip-settings"]');
 const newTripBtn = document.querySelector('[data-action="new-trip"]');
 const icsBtn = document.querySelector('[data-action="export-ics"]');
 const allFilterBtn = document.querySelector('[data-filter="all"]');
-const sheetEl = document.getElementById('sheet');
-const sheetBackdrop = document.getElementById('sheetBackdrop');
-const sheetTitle = document.getElementById('sheetTitle');
-const sheetSubtitle = document.getElementById('sheetSubtitle');
-const sheetBody = document.getElementById('sheetBody');
-const mapOverlay = document.getElementById('mapOverlay');
+const sheetEl = document.getElementById("sheet");
+const sheetBackdrop = document.getElementById("sheetBackdrop");
+const sheetTitle = document.getElementById("sheetTitle");
+const sheetSubtitle = document.getElementById("sheetSubtitle");
+const sheetBody = document.getElementById("sheetBody");
+const mapOverlay = document.getElementById("mapOverlay");
 const closeSheetBtn = sheetEl.querySelector('[data-action="close-sheet"]');
 const closeMapBtn = mapOverlay.querySelector('[data-action="close-map"]');
-const configOverlay = document.getElementById('configOverlay');
-const configContent = document.getElementById('configContent');
-const configTitle = document.getElementById('configTitle');
-const configSubtitle = document.getElementById('configSubtitle');
+const configOverlay = document.getElementById("configOverlay");
+const configContent = document.getElementById("configContent");
+const configTitle = document.getElementById("configTitle");
+const configSubtitle = document.getElementById("configSubtitle");
 const closeConfigBtn = document.querySelector('[data-action="close-config"]');
 
 let storageBucket = loadStorageBucket();
 let activeTripId = storageBucket.activeTripId || null;
 let planState = initializeState();
-let dateSequence = buildDateSequence(planState.config.range.start, planState.config.range.end);
+let dateSequence = buildDateSequence(
+  planState.config.range.start,
+  planState.config.range.end
+);
 let ACTIVITY_MAP = new Map();
 let STAY_MAP = new Map();
 refreshCatalogLookups();
 let editing = false;
 let filterState = { friend: null, location: null };
-let sheetState = { open: false, day: null, slot: 'morning', tab: 'activity' };
+let sheetState = { open: false, day: null, slot: "morning", tab: "activity" };
 let cardDragSource = null;
 let chipDragData = null;
 let mapInstance = null;
@@ -43,10 +46,10 @@ let overlayMode = null;
 let wizardState = null;
 let tripLibraryConfirm = null;
 const WIZARD_STEPS = [
-  { id: 'basics', label: 'Basics' },
-  { id: 'friends', label: 'Friends' },
-  { id: 'places', label: 'Places & map' },
-  { id: 'catalog', label: 'Catalog' },
+  { id: "basics", label: "Basics" },
+  { id: "friends", label: "Friends" },
+  { id: "places", label: "Places & map" },
+  { id: "catalog", label: "Catalog" },
 ];
 
 renderChrome();
@@ -73,7 +76,7 @@ function renderChrome() {
 }
 
 function updateTripTitle() {
-  const title = planState.config.tripName || 'Trip Planner';
+  const title = planState.config.tripName || "Trip Planner";
   if (tripTitleEl) {
     tripTitleEl.textContent = title;
   }
@@ -81,22 +84,28 @@ function updateTripTitle() {
 }
 
 function renderFilterChips() {
-  if (filterState.friend && !planState.config.friends.includes(filterState.friend)) {
+  if (
+    filterState.friend &&
+    !planState.config.friends.includes(filterState.friend)
+  ) {
     filterState.friend = null;
   }
-  if (filterState.location && !planState.config.locations[filterState.location]) {
+  if (
+    filterState.location &&
+    !planState.config.locations[filterState.location]
+  ) {
     filterState.location = null;
   }
 
   if (friendFiltersEl) {
-    friendFiltersEl.innerHTML = '';
+    friendFiltersEl.innerHTML = "";
     planState.config.friends.forEach((friend) => {
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'chip chip--friend';
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip chip--friend";
       chip.dataset.friend = friend;
       chip.textContent = friend;
-      chip.addEventListener('click', () => {
+      chip.addEventListener("click", () => {
         filterState.friend = filterState.friend === friend ? null : friend;
         applyFilters();
         updateFilterChips();
@@ -106,16 +115,16 @@ function renderFilterChips() {
   }
 
   if (locationFiltersEl) {
-    locationFiltersEl.innerHTML = '';
+    locationFiltersEl.innerHTML = "";
     planState.config.locationOrder.forEach((loc) => {
       const meta = planState.config.locations[loc];
       if (!meta) return;
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'chip chip--location';
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "chip chip--location";
       chip.dataset.location = loc;
       chip.textContent = meta.label || loc;
-      chip.addEventListener('click', () => {
+      chip.addEventListener("click", () => {
         filterState.location = filterState.location === loc ? null : loc;
         applyFilters();
         updateFilterChips();
@@ -129,16 +138,16 @@ function renderFilterChips() {
 
 function renderLegend() {
   if (!locationLegendEl) return;
-  locationLegendEl.innerHTML = '';
+  locationLegendEl.innerHTML = "";
   planState.config.locationOrder.forEach((loc) => {
     const meta = planState.config.locations[loc];
     if (!meta) return;
-    const item = document.createElement('div');
-    item.className = 'legend-item';
-    const swatch = document.createElement('span');
-    swatch.className = 'legend-swatch';
-    swatch.style.background = meta.color || '#d1d5db';
-    const label = document.createElement('span');
+    const item = document.createElement("div");
+    item.className = "legend-item";
+    const swatch = document.createElement("span");
+    swatch.className = "legend-swatch";
+    swatch.style.background = meta.color || "#d1d5db";
+    const label = document.createElement("span");
     label.textContent = meta.label || loc;
     item.append(swatch, label);
     locationLegendEl.appendChild(item);
@@ -146,24 +155,26 @@ function renderLegend() {
 }
 
 function applyFilterChipStyles() {
-  document.querySelectorAll('.chip[data-friend]').forEach((chip) => {
+  document.querySelectorAll(".chip[data-friend]").forEach((chip) => {
     const friend = chip.dataset.friend;
-    const active = chip.getAttribute('aria-pressed') === 'true';
+    const active = chip.getAttribute("aria-pressed") === "true";
     if (active) {
       const color = planState.config.friendColors?.[friend];
-      chip.style.background = color || 'rgba(45, 58, 100, 0.08)';
+      chip.style.background = color || "rgba(45, 58, 100, 0.08)";
     } else {
-      chip.style.background = '';
+      chip.style.background = "";
     }
   });
-  document.querySelectorAll('.chip[data-location]').forEach((chip) => {
+  document.querySelectorAll(".chip[data-location]").forEach((chip) => {
     const loc = chip.dataset.location;
-    const active = chip.getAttribute('aria-pressed') === 'true';
+    const active = chip.getAttribute("aria-pressed") === "true";
     if (active) {
       const color = planState.config.locations[loc]?.color;
-      chip.style.background = color ? lightenColor(color, 0.6) : 'rgba(45, 58, 100, 0.08)';
+      chip.style.background = color
+        ? lightenColor(color, 0.6)
+        : "rgba(45, 58, 100, 0.08)";
     } else {
-      chip.style.background = '';
+      chip.style.background = "";
     }
   });
 }
@@ -172,7 +183,7 @@ function createEmptyDay(config = planState.config, locationId) {
   const targetLocation = locationId || getDefaultLocationId(config);
   return {
     loc: targetLocation,
-    theme: '',
+    theme: "",
     friends: [],
     stay: null,
     slots: { morning: [], afternoon: [], evening: [] },
@@ -184,20 +195,26 @@ function cloneDay(day, config = planState.config) {
   const base = day || createEmptyDay(config);
   return {
     loc: config.locations?.[base.loc] ? base.loc : getDefaultLocationId(config),
-    theme: base.theme || '',
+    theme: base.theme || "",
     friends: Array.isArray(base.friends) ? [...base.friends] : [],
     stay: base.stay || null,
     slots: {
-      morning: Array.isArray(base.slots?.morning) ? [...base.slots.morning] : [],
-      afternoon: Array.isArray(base.slots?.afternoon) ? [...base.slots.afternoon] : [],
-      evening: Array.isArray(base.slots?.evening) ? [...base.slots.evening] : [],
+      morning: Array.isArray(base.slots?.morning)
+        ? [...base.slots.morning]
+        : [],
+      afternoon: Array.isArray(base.slots?.afternoon)
+        ? [...base.slots.afternoon]
+        : [],
+      evening: Array.isArray(base.slots?.evening)
+        ? [...base.slots.evening]
+        : [],
     },
     locks: { ...(base.locks || {}) },
   };
 }
 
 function initializeState() {
-  if (!storageBucket || typeof storageBucket !== 'object') {
+  if (!storageBucket || typeof storageBucket !== "object") {
     storageBucket = createEmptyBucket();
   }
   if (
@@ -209,12 +226,16 @@ function initializeState() {
     const { id, state } = createNewTripState(DEFAULT_TRIP_TEMPLATE);
     storageBucket.trips[id] = state;
     storageBucket.activeTripId = id;
-    storageBucket.order = storageBucket.order?.includes(id) ? storageBucket.order : [id];
+    storageBucket.order = storageBucket.order?.includes(id)
+      ? storageBucket.order
+      : [id];
     saveStorageBucket(storageBucket);
   }
   activeTripId = storageBucket.activeTripId;
   const activeState = storageBucket.trips[activeTripId];
-  const normalized = normalizeState(activeState) || createStateFromTemplate(DEFAULT_TRIP_TEMPLATE);
+  const normalized =
+    normalizeState(activeState) ||
+    createStateFromTemplate(DEFAULT_TRIP_TEMPLATE);
   storageBucket.trips[activeTripId] = normalized;
   if (!storageBucket.order.includes(activeTripId)) {
     storageBucket.order.push(activeTripId);
@@ -256,11 +277,13 @@ function loadStorageBucket() {
         bucket.order = [...unique, ...missing];
       }
       const proposedActive = parsed.activeTripId;
-      bucket.activeTripId = bucket.trips[proposedActive] ? proposedActive : bucket.order[0] || null;
+      bucket.activeTripId = bucket.trips[proposedActive]
+        ? proposedActive
+        : bucket.order[0] || null;
       return bucket;
     }
   } catch (error) {
-    console.warn('Unable to load stored trips, starting fresh.', error);
+    console.warn("Unable to load stored trips, starting fresh.", error);
   }
   return bucket;
 }
@@ -273,7 +296,7 @@ function saveStorageBucket(bucket) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(bucket));
   } catch (error) {
-    console.warn('Unable to save trip library.', error);
+    console.warn("Unable to save trip library.", error);
   }
 }
 
@@ -294,19 +317,23 @@ function createNewTripState(template = DEFAULT_TRIP_TEMPLATE) {
 
 function createConfigFromTemplate(template) {
   const locations = deepClone(template.locations || {});
-  let locationOrder = Array.isArray(template.locationOrder) && template.locationOrder.length
-    ? [...template.locationOrder]
-    : Object.keys(locations);
+  let locationOrder =
+    Array.isArray(template.locationOrder) && template.locationOrder.length
+      ? [...template.locationOrder]
+      : Object.keys(locations);
   if (!locationOrder.length) {
-    locations.general = { label: 'General', color: '#1f2937' };
-    locationOrder = ['general'];
+    locations.general = { label: "General", color: "#1f2937" };
+    locationOrder = ["general"];
   }
-  const rangeStart = template.range?.start || new Date().toISOString().slice(0, 10);
+  const rangeStart =
+    template.range?.start || new Date().toISOString().slice(0, 10);
   const rangeEnd = template.range?.end || rangeStart;
   const config = {
-    tripName: template.tripName || 'Trip Planner',
+    tripName: template.tripName || "Trip Planner",
     range: { start: rangeStart, end: rangeEnd },
-    friends: Array.isArray(template.friends) ? template.friends.filter(Boolean) : [],
+    friends: Array.isArray(template.friends)
+      ? template.friends.filter(Boolean)
+      : [],
     friendColors: assignFriendColors(
       Array.isArray(template.friends) ? template.friends.filter(Boolean) : [],
       template.friendColors || {}
@@ -331,14 +358,14 @@ function createConfigFromTemplate(template) {
   };
   config.locationOrder.forEach((loc) => {
     if (!config.defaultThemes[loc]) {
-      config.defaultThemes[loc] = config.locations[loc]?.label || '';
+      config.defaultThemes[loc] = config.locations[loc]?.label || "";
     }
   });
   return config;
 }
 
 function normalizeState(raw) {
-  if (!raw || typeof raw !== 'object') return null;
+  if (!raw || typeof raw !== "object") return null;
   const config = normalizeConfig(raw.config || {});
   const sequence = buildDateSequence(config.range.start, config.range.end);
   const days = {};
@@ -352,28 +379,34 @@ function normalizeState(raw) {
 function normalizeConfig(rawConfig) {
   const template = DEFAULT_TRIP_TEMPLATE;
   const fallbackStart = rawConfig.range?.start || template.range.start;
-  const fallbackEnd = rawConfig.range?.end || rawConfig.range?.start || template.range.end;
+  const fallbackEnd =
+    rawConfig.range?.end || rawConfig.range?.start || template.range.end;
   const locations = deepClone(rawConfig.locations || template.locations || {});
-  let locationOrder = Array.isArray(rawConfig.locationOrder) && rawConfig.locationOrder.length
-    ? [...rawConfig.locationOrder]
-    : Object.keys(locations);
+  let locationOrder =
+    Array.isArray(rawConfig.locationOrder) && rawConfig.locationOrder.length
+      ? [...rawConfig.locationOrder]
+      : Object.keys(locations);
   if (!locationOrder.length) {
-    locations.general = { label: 'General', color: '#1f2937' };
-    locationOrder = ['general'];
+    locations.general = { label: "General", color: "#1f2937" };
+    locationOrder = ["general"];
   }
   const friends = Array.isArray(rawConfig.friends)
     ? rawConfig.friends.filter(Boolean)
     : [];
   const config = {
-    tripName: rawConfig.tripName || template.tripName || 'Trip Planner',
+    tripName: rawConfig.tripName || template.tripName || "Trip Planner",
     range: { start: fallbackStart, end: fallbackEnd },
     friends,
     friendColors: assignFriendColors(friends, rawConfig.friendColors || {}),
     locations,
     locationOrder,
     defaultThemes: { ...(rawConfig.defaultThemes || {}) },
-    mapDefaults: rawConfig.mapDefaults ? { ...rawConfig.mapDefaults } : template.mapDefaults || null,
-    mapCoordinates: deepClone(rawConfig.mapCoordinates || template.mapCoordinates || {}),
+    mapDefaults: rawConfig.mapDefaults
+      ? { ...rawConfig.mapDefaults }
+      : template.mapDefaults || null,
+    mapCoordinates: deepClone(
+      rawConfig.mapCoordinates || template.mapCoordinates || {}
+    ),
     mapCoordinateLabels: {
       ...(template.mapCoordinateLabels || {}),
       ...(rawConfig.mapCoordinateLabels || {}),
@@ -392,7 +425,8 @@ function normalizeConfig(rawConfig) {
   };
   config.locationOrder.forEach((loc) => {
     if (!config.defaultThemes[loc]) {
-      const label = config.locations[loc]?.label || template.defaultThemes?.[loc] || '';
+      const label =
+        config.locations[loc]?.label || template.defaultThemes?.[loc] || "";
       config.defaultThemes[loc] = label;
     }
   });
@@ -400,8 +434,12 @@ function normalizeConfig(rawConfig) {
 }
 
 function refreshCatalogLookups() {
-  ACTIVITY_MAP = new Map((planState.config.catalog.activity || []).map((item) => [item.id, item]));
-  STAY_MAP = new Map((planState.config.catalog.stay || []).map((item) => [item.id, item]));
+  ACTIVITY_MAP = new Map(
+    (planState.config.catalog.activity || []).map((item) => [item.id, item])
+  );
+  STAY_MAP = new Map(
+    (planState.config.catalog.stay || []).map((item) => [item.id, item])
+  );
 }
 
 function deepClone(value) {
@@ -413,7 +451,8 @@ function assignFriendColors(friends, existing = {}) {
   let paletteIndex = 0;
   friends.forEach((friend) => {
     if (!colors[friend]) {
-      colors[friend] = COLOR_PALETTES.friends[paletteIndex % COLOR_PALETTES.friends.length];
+      colors[friend] =
+        COLOR_PALETTES.friends[paletteIndex % COLOR_PALETTES.friends.length];
       paletteIndex += 1;
     }
   });
@@ -426,12 +465,16 @@ function assignFriendColors(friends, existing = {}) {
 }
 
 function getDefaultLocationId(config = planState.config) {
-  return config.locationOrder[0] || Object.keys(config.locations || {})[0] || 'general';
+  return (
+    config.locationOrder[0] ||
+    Object.keys(config.locations || {})[0] ||
+    "general"
+  );
 }
 
 function persistState() {
   try {
-    if (!storageBucket || typeof storageBucket !== 'object') {
+    if (!storageBucket || typeof storageBucket !== "object") {
       storageBucket = createEmptyBucket();
     }
     if (!Array.isArray(storageBucket.order)) {
@@ -445,7 +488,7 @@ function persistState() {
     }
     saveStorageBucket(storageBucket);
   } catch (error) {
-    console.warn('Unable to save trip.', error);
+    console.warn("Unable to save trip.", error);
   }
 }
 
@@ -466,13 +509,13 @@ function ensureDay(dateKey) {
   if (!planState.config.locations[day.loc]) {
     day.loc = getDefaultLocationId(planState.config);
   }
-  day.theme = day.theme ?? '';
+  day.theme = day.theme ?? "";
   day.stay = day.stay || null;
   return day;
 }
 
 function renderCalendar() {
-  calendarEl.innerHTML = '';
+  calendarEl.innerHTML = "";
   dateSequence.forEach((dateKey) => {
     const card = renderDayCard(dateKey);
     calendarEl.appendChild(card);
@@ -483,110 +526,123 @@ function renderCalendar() {
 
 function renderDayCard(dateKey) {
   const plan = ensureDay(dateKey);
-  const card = document.createElement('article');
-  card.className = 'day-card';
+  const card = document.createElement("article");
+  card.className = "day-card";
   card.dataset.date = dateKey;
   card.dataset.location = plan.loc;
   card.draggable = editing;
 
-  const stripe = document.createElement('span');
-  stripe.className = 'day-card__stripe';
-  stripe.style.background = planState.config.locations[plan.loc]?.color || '#d1d5db';
+  const stripe = document.createElement("span");
+  stripe.className = "day-card__stripe";
+  stripe.style.background =
+    planState.config.locations[plan.loc]?.color || "#d1d5db";
   card.appendChild(stripe);
 
-  const header = document.createElement('div');
-  header.className = 'day-card__header';
+  const header = document.createElement("div");
+  header.className = "day-card__header";
 
-  const dateBox = document.createElement('div');
-  dateBox.className = 'day-card__date';
+  const dateBox = document.createElement("div");
+  dateBox.className = "day-card__date";
   const date = new Date(`${dateKey}T00:00:00`);
-  const dayNumber = document.createElement('span');
-  dayNumber.className = 'day-card__day-number';
+  const dayNumber = document.createElement("span");
+  dayNumber.className = "day-card__day-number";
   dayNumber.textContent = String(date.getDate());
-  const dateText = document.createElement('div');
-  dateText.className = 'day-card__date-text';
-  const monthText = document.createElement('span');
-  monthText.textContent = date.toLocaleDateString(undefined, { month: 'short' });
-  const weekdayText = document.createElement('span');
-  weekdayText.textContent = date.toLocaleDateString(undefined, { weekday: 'short' });
+  const dateText = document.createElement("div");
+  dateText.className = "day-card__date-text";
+  const monthText = document.createElement("span");
+  monthText.textContent = date.toLocaleDateString(undefined, {
+    month: "short",
+  });
+  const weekdayText = document.createElement("span");
+  weekdayText.textContent = date.toLocaleDateString(undefined, {
+    weekday: "short",
+  });
   dateText.append(monthText, weekdayText);
   dateBox.append(dayNumber, dateText);
 
   header.appendChild(dateBox);
 
-  const badges = document.createElement('div');
-  badges.className = 'day-card__badges';
+  const badges = document.createElement("div");
+  badges.className = "day-card__badges";
 
   if (editing) {
-    const locationSelect = document.createElement('select');
-    locationSelect.className = 'theme-select';
+    const locationSelect = document.createElement("select");
+    locationSelect.className = "theme-select";
     planState.config.locationOrder.forEach((locId) => {
-      const option = document.createElement('option');
+      const option = document.createElement("option");
       option.value = locId;
       option.textContent = getLocationLabel(locId);
       locationSelect.appendChild(option);
     });
     locationSelect.value = plan.loc;
-    locationSelect.addEventListener('change', (event) => setDayLocation(dateKey, event.target.value));
+    locationSelect.addEventListener("change", (event) =>
+      setDayLocation(dateKey, event.target.value)
+    );
     badges.appendChild(locationSelect);
 
-    const themeInput = document.createElement('input');
-    themeInput.type = 'text';
-    themeInput.className = 'theme-input';
-    themeInput.placeholder = 'Set theme';
-    themeInput.value = plan.theme || '';
+    const themeInput = document.createElement("input");
+    themeInput.type = "text";
+    themeInput.className = "theme-input";
+    themeInput.placeholder = "Set theme";
+    themeInput.value = plan.theme || "";
     const commitTheme = (value) => setDayTheme(dateKey, value);
-    themeInput.addEventListener('change', (event) => commitTheme(event.target.value));
-    themeInput.addEventListener('blur', (event) => commitTheme(event.target.value));
+    themeInput.addEventListener("change", (event) =>
+      commitTheme(event.target.value)
+    );
+    themeInput.addEventListener("blur", (event) =>
+      commitTheme(event.target.value)
+    );
     badges.appendChild(themeInput);
   } else {
-    const locationChip = document.createElement('span');
-    locationChip.className = 'theme-chip';
+    const locationChip = document.createElement("span");
+    locationChip.className = "theme-chip";
     locationChip.textContent = getLocationLabel(plan.loc);
     badges.appendChild(locationChip);
 
-    const themeLabel = plan.theme || getDefaultTheme(plan.loc) || '';
-    const themeChip = document.createElement('span');
-    themeChip.className = 'theme-chip';
-    themeChip.textContent = themeLabel || 'Set theme';
+    const themeLabel = plan.theme || getDefaultTheme(plan.loc) || "";
+    const themeChip = document.createElement("span");
+    themeChip.className = "theme-chip";
+    themeChip.textContent = themeLabel || "Set theme";
     badges.appendChild(themeChip);
   }
 
-  const stayButton = document.createElement('button');
-  stayButton.type = 'button';
-  stayButton.className = 'theme-chip theme-chip--link';
-  stayButton.textContent = plan.stay ? getStayLabel(plan.stay) : 'Pick stay';
-  stayButton.addEventListener('click', () => openSheet(dateKey, 'stay'));
+  const stayButton = document.createElement("button");
+  stayButton.type = "button";
+  stayButton.className = "theme-chip theme-chip--link";
+  stayButton.textContent = plan.stay ? getStayLabel(plan.stay) : "Pick stay";
+  stayButton.addEventListener("click", () => openSheet(dateKey, "stay"));
   badges.appendChild(stayButton);
 
-  const mapButton = document.createElement('button');
-  mapButton.type = 'button';
-  mapButton.className = 'theme-chip theme-chip--map';
-  mapButton.textContent = 'Map';
-  mapButton.addEventListener('click', () => openMap(dateKey));
+  const mapButton = document.createElement("button");
+  mapButton.type = "button";
+  mapButton.className = "theme-chip theme-chip--map";
+  mapButton.textContent = "Map";
+  mapButton.addEventListener("click", () => openMap(dateKey));
   badges.appendChild(mapButton);
 
   header.appendChild(badges);
   card.appendChild(header);
 
-  const slotsWrap = document.createElement('div');
-  slotsWrap.className = 'slots';
-  ['morning', 'afternoon', 'evening'].forEach((slotName) => {
-    const slotSection = document.createElement('section');
-    slotSection.className = 'slot';
+  const slotsWrap = document.createElement("div");
+  slotsWrap.className = "slots";
+  ["morning", "afternoon", "evening"].forEach((slotName) => {
+    const slotSection = document.createElement("section");
+    slotSection.className = "slot";
     slotSection.dataset.slot = slotName;
     slotSection.dataset.date = dateKey;
 
-    const slotHeader = document.createElement('div');
-    slotHeader.className = 'slot__header';
-    const slotTitle = document.createElement('span');
-    slotTitle.className = 'slot__title';
+    const slotHeader = document.createElement("div");
+    slotHeader.className = "slot__header";
+    const slotTitle = document.createElement("span");
+    slotTitle.className = "slot__title";
     slotTitle.textContent = slotName.toUpperCase();
-    const addBtn = document.createElement('button');
-    addBtn.type = 'button';
-    addBtn.className = 'btn slot__add';
-    addBtn.textContent = 'Add';
-    addBtn.addEventListener('click', () => openSheet(dateKey, 'activity', slotName));
+    const addBtn = document.createElement("button");
+    addBtn.type = "button";
+    addBtn.className = "btn slot__add";
+    addBtn.textContent = "Add";
+    addBtn.addEventListener("click", () =>
+      openSheet(dateKey, "activity", slotName)
+    );
     slotHeader.append(slotTitle, addBtn);
     slotSection.appendChild(slotHeader);
 
@@ -596,21 +652,21 @@ function renderDayCard(dateKey) {
       slotSection.appendChild(chip);
     });
 
-    slotSection.addEventListener('dragover', handleSlotDragOver);
-    slotSection.addEventListener('dragleave', handleSlotDragLeave);
-    slotSection.addEventListener('drop', handleSlotDrop);
+    slotSection.addEventListener("dragover", handleSlotDragOver);
+    slotSection.addEventListener("dragleave", handleSlotDragLeave);
+    slotSection.addEventListener("drop", handleSlotDrop);
 
     slotsWrap.appendChild(slotSection);
   });
   card.appendChild(slotsWrap);
 
-  const friendRow = document.createElement('div');
-  friendRow.className = 'day-card__friends';
+  const friendRow = document.createElement("div");
+  friendRow.className = "day-card__friends";
   planState.config.friends.forEach((friend) => {
     const isActive = plan.friends.includes(friend);
-    const friendBtn = document.createElement('button');
-    friendBtn.type = 'button';
-    friendBtn.className = 'friend-chip' + (isActive ? ' friend-chip--on' : '');
+    const friendBtn = document.createElement("button");
+    friendBtn.type = "button";
+    friendBtn.className = "friend-chip" + (isActive ? " friend-chip--on" : "");
     friendBtn.dataset.friend = friend;
     friendBtn.textContent = isActive ? friend : `+ ${friend}`;
     if (isActive) {
@@ -619,30 +675,30 @@ function renderDayCard(dateKey) {
         friendBtn.style.background = color;
       }
     } else {
-      friendBtn.style.background = '';
+      friendBtn.style.background = "";
     }
-    friendBtn.addEventListener('click', () => toggleFriend(dateKey, friend));
+    friendBtn.addEventListener("click", () => toggleFriend(dateKey, friend));
     friendRow.appendChild(friendBtn);
   });
   card.appendChild(friendRow);
 
-  card.addEventListener('dragstart', handleCardDragStart);
-  card.addEventListener('dragend', () => {
+  card.addEventListener("dragstart", handleCardDragStart);
+  card.addEventListener("dragend", () => {
     cardDragSource = null;
   });
-  card.addEventListener('dragover', (event) => {
+  card.addEventListener("dragover", (event) => {
     if (!editing) return;
     event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
+    event.dataTransfer.dropEffect = "move";
   });
-  card.addEventListener('drop', handleCardDrop);
+  card.addEventListener("drop", handleCardDrop);
 
   return card;
 }
 
 function renderChip(dateKey, slotName, itemId, index) {
-  const chip = document.createElement('span');
-  chip.className = 'chiplet';
+  const chip = document.createElement("span");
+  chip.className = "chiplet";
   chip.dataset.date = dateKey;
   chip.dataset.slot = slotName;
   chip.dataset.index = String(index);
@@ -654,37 +710,37 @@ function renderChip(dateKey, slotName, itemId, index) {
 
   const locked = isChipLocked(dateKey, itemId);
   if (locked) {
-    chip.classList.add('locked');
+    chip.classList.add("locked");
   }
 
   chip.draggable = editing && !locked;
   if (chip.draggable) {
-    chip.addEventListener('dragstart', handleChipDragStart);
-    chip.addEventListener('dragend', handleChipDragEnd);
+    chip.addEventListener("dragstart", handleChipDragStart);
+    chip.addEventListener("dragend", handleChipDragEnd);
   }
 
   if (editing) {
-    const actions = document.createElement('span');
-    actions.className = 'chiplet__actions';
+    const actions = document.createElement("span");
+    actions.className = "chiplet__actions";
 
-    const lockBtn = document.createElement('button');
-    lockBtn.type = 'button';
-    lockBtn.className = 'chiplet__btn';
-    lockBtn.title = locked ? 'Unlock' : 'Lock';
-    lockBtn.textContent = locked ? '🔒' : '🔓';
-    lockBtn.addEventListener('click', (event) => {
+    const lockBtn = document.createElement("button");
+    lockBtn.type = "button";
+    lockBtn.className = "chiplet__btn";
+    lockBtn.title = locked ? "Unlock" : "Lock";
+    lockBtn.textContent = locked ? "🔒" : "🔓";
+    lockBtn.addEventListener("click", (event) => {
       event.stopPropagation();
       toggleLock(dateKey, itemId);
     });
     actions.appendChild(lockBtn);
 
     if (!locked) {
-      const removeBtn = document.createElement('button');
-      removeBtn.type = 'button';
-      removeBtn.className = 'chiplet__btn';
-      removeBtn.title = 'Remove';
-      removeBtn.textContent = '✕';
-      removeBtn.addEventListener('click', (event) => {
+      const removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "chiplet__btn";
+      removeBtn.title = "Remove";
+      removeBtn.textContent = "✕";
+      removeBtn.addEventListener("click", (event) => {
         event.stopPropagation();
         removeChip(dateKey, slotName, index);
       });
@@ -701,8 +757,8 @@ function buildChipContent(label) {
   const fragment = document.createDocumentFragment();
   const match = /^([0-2]?\d:[0-5]\d)\s+(.*)$/.exec(label);
   if (match) {
-    const time = document.createElement('span');
-    time.className = 'chiplet__time';
+    const time = document.createElement("span");
+    time.className = "chiplet__time";
     time.textContent = match[1];
     fragment.appendChild(time);
     fragment.appendChild(document.createTextNode(` ${match[2]}`));
@@ -753,32 +809,35 @@ function handleChipDragStart(event) {
     index: Number(chip.dataset.index),
     id: chip.dataset.id,
   };
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setData('text/plain', JSON.stringify({ type: 'chip', id: chip.dataset.id }));
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData(
+    "text/plain",
+    JSON.stringify({ type: "chip", id: chip.dataset.id })
+  );
 }
 
 function handleChipDragEnd() {
   chipDragData = null;
-  document.querySelectorAll('.slot[data-drop-hover]').forEach((slot) => {
-    slot.removeAttribute('data-drop-hover');
+  document.querySelectorAll(".slot[data-drop-hover]").forEach((slot) => {
+    slot.removeAttribute("data-drop-hover");
   });
 }
 
 function handleSlotDragOver(event) {
   if (!editing) return;
   event.preventDefault();
-  event.currentTarget.dataset.dropHover = 'true';
-  event.dataTransfer.dropEffect = 'move';
+  event.currentTarget.dataset.dropHover = "true";
+  event.dataTransfer.dropEffect = "move";
 }
 
 function handleSlotDragLeave(event) {
-  event.currentTarget.removeAttribute('data-drop-hover');
+  event.currentTarget.removeAttribute("data-drop-hover");
 }
 
 function handleSlotDrop(event) {
   if (!editing) return;
   event.preventDefault();
-  event.currentTarget.removeAttribute('data-drop-hover');
+  event.currentTarget.removeAttribute("data-drop-hover");
   if (!chipDragData) return;
   const targetDate = event.currentTarget.dataset.date;
   const targetSlot = event.currentTarget.dataset.slot;
@@ -818,8 +877,8 @@ function handleCardDragStart(event) {
     return;
   }
   cardDragSource = event.currentTarget.dataset.date;
-  event.dataTransfer.effectAllowed = 'move';
-  event.dataTransfer.setData('text/plain', 'day-card');
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", "day-card");
 }
 
 function handleCardDrop(event) {
@@ -836,7 +895,9 @@ function handleCardDrop(event) {
 }
 
 function updateDayCard(dateKey) {
-  const existing = calendarEl.querySelector(`.day-card[data-date="${dateKey}"]`);
+  const existing = calendarEl.querySelector(
+    `.day-card[data-date="${dateKey}"]`
+  );
   if (!existing) return;
   const replacement = renderDayCard(dateKey);
   calendarEl.replaceChild(replacement, existing);
@@ -858,7 +919,9 @@ function toggleFriend(dateKey, friend) {
 function setDayLocation(dateKey, locationId) {
   if (!editing) return;
   const day = ensureDay(dateKey);
-  const next = planState.config.locations[locationId] ? locationId : getDefaultLocationId(planState.config);
+  const next = planState.config.locations[locationId]
+    ? locationId
+    : getDefaultLocationId(planState.config);
   if (day.loc !== next) {
     day.loc = next;
     persistState();
@@ -869,7 +932,7 @@ function setDayLocation(dateKey, locationId) {
 function setDayTheme(dateKey, value) {
   if (!editing) return;
   const day = ensureDay(dateKey);
-  const next = (value || '').trim();
+  const next = (value || "").trim();
   if (day.theme !== next) {
     day.theme = next;
     persistState();
@@ -890,26 +953,26 @@ function setStay(dateKey, stayId) {
   day.stay = stayId;
   persistState();
   updateDayCard(dateKey);
-  if (sheetState.open && sheetState.tab === 'stay') {
+  if (sheetState.open && sheetState.tab === "stay") {
     renderSheet();
   }
 }
 
-function openSheet(dateKey, tab = 'activity', slot = 'morning') {
+function openSheet(dateKey, tab = "activity", slot = "morning") {
   sheetState = { open: true, day: dateKey, tab, slot };
-  sheetEl.classList.add('sheet--open');
-  sheetEl.setAttribute('aria-hidden', 'false');
-  sheetBackdrop.classList.add('is-visible');
-  document.body.classList.add('sheet-open');
+  sheetEl.classList.add("sheet--open");
+  sheetEl.setAttribute("aria-hidden", "false");
+  sheetBackdrop.classList.add("is-visible");
+  document.body.classList.add("sheet-open");
   renderSheet();
 }
 
 function closeSheet() {
   sheetState.open = false;
-  sheetEl.classList.remove('sheet--open');
-  sheetEl.setAttribute('aria-hidden', 'true');
-  sheetBackdrop.classList.remove('is-visible');
-  document.body.classList.remove('sheet-open');
+  sheetEl.classList.remove("sheet--open");
+  sheetEl.setAttribute("aria-hidden", "true");
+  sheetBackdrop.classList.remove("is-visible");
+  document.body.classList.remove("sheet-open");
 }
 
 function renderSheet() {
@@ -917,23 +980,26 @@ function renderSheet() {
   const { day, tab, slot } = sheetState;
   const dayLabel = formatLongDate(day);
   sheetTitle.textContent = dayLabel;
-  if (tab === 'activity') {
+  if (tab === "activity") {
     sheetSubtitle.textContent = `${slot.toUpperCase()} SLOT`;
-  } else if (tab === 'stay') {
-    sheetSubtitle.textContent = 'Choose stay';
+  } else if (tab === "stay") {
+    sheetSubtitle.textContent = "Choose stay";
   } else {
-    sheetSubtitle.textContent = 'Bookings & tickets';
+    sheetSubtitle.textContent = "Bookings & tickets";
   }
 
-  sheetBody.innerHTML = '';
-  sheetEl.querySelectorAll('.tab').forEach((tabBtn) => {
-    tabBtn.setAttribute('aria-selected', tabBtn.dataset.tab === tab ? 'true' : 'false');
+  sheetBody.innerHTML = "";
+  sheetEl.querySelectorAll(".tab").forEach((tabBtn) => {
+    tabBtn.setAttribute(
+      "aria-selected",
+      tabBtn.dataset.tab === tab ? "true" : "false"
+    );
   });
 
   const locationOrder = planState.config.locationOrder;
   const catalog = planState.config.catalog;
 
-  if (tab === 'activity') {
+  if (tab === "activity") {
     let hasOptions = false;
     locationOrder.forEach((loc) => {
       const options = catalog.activity.filter((item) => item.city === loc);
@@ -946,10 +1012,12 @@ function renderSheet() {
       );
     });
     if (!hasOptions) {
-      sheetBody.appendChild(renderEmptyState('No saved activities yet. Add one below.'));
+      sheetBody.appendChild(
+        renderEmptyState("No saved activities yet. Add one below.")
+      );
     }
-    sheetBody.appendChild(renderCustomCreator('activity', day, slot));
-  } else if (tab === 'stay') {
+    sheetBody.appendChild(renderCustomCreator("activity", day, slot));
+  } else if (tab === "stay") {
     const dayPlan = ensureDay(day);
     let hasOptions = false;
     locationOrder.forEach((loc) => {
@@ -968,10 +1036,12 @@ function renderSheet() {
       );
     });
     if (!hasOptions) {
-      sheetBody.appendChild(renderEmptyState('No stays saved yet. Add one below.'));
+      sheetBody.appendChild(
+        renderEmptyState("No stays saved yet. Add one below.")
+      );
     }
-    sheetBody.appendChild(renderCustomCreator('stay', day));
-  } else if (tab === 'booking') {
+    sheetBody.appendChild(renderCustomCreator("stay", day));
+  } else if (tab === "booking") {
     let hasOptions = false;
     locationOrder.forEach((loc) => {
       const options = catalog.booking.filter((item) => item.city === loc);
@@ -980,51 +1050,54 @@ function renderSheet() {
       sheetBody.appendChild(
         renderSheetGroup(loc, options, (item) => {
           if (item.url) {
-            window.open(item.url, '_blank', 'noopener');
+            window.open(item.url, "_blank", "noopener");
           }
         })
       );
     });
     if (!hasOptions) {
-      sheetBody.appendChild(renderEmptyState('No bookings saved yet. Add one below.'));
+      sheetBody.appendChild(
+        renderEmptyState("No bookings saved yet. Add one below.")
+      );
     }
-    sheetBody.appendChild(renderCustomCreator('booking'));
+    sheetBody.appendChild(renderCustomCreator("booking"));
   }
 }
 
 function renderSheetGroup(locationId, items, onSelect, selectedId) {
-  const group = document.createElement('section');
-  group.className = 'sheet-group';
+  const group = document.createElement("section");
+  group.className = "sheet-group";
 
-  const header = document.createElement('div');
-  header.className = 'sheet-group__header';
-  const swatch = document.createElement('span');
-  swatch.className = 'sheet-group__swatch';
-  swatch.style.background = planState.config.locations[locationId]?.color || '#d1d5db';
-  const title = document.createElement('span');
+  const header = document.createElement("div");
+  header.className = "sheet-group__header";
+  const swatch = document.createElement("span");
+  swatch.className = "sheet-group__swatch";
+  swatch.style.background =
+    planState.config.locations[locationId]?.color || "#d1d5db";
+  const title = document.createElement("span");
   title.textContent = getLocationLabel(locationId);
   header.append(swatch, title);
   group.appendChild(header);
 
-  const list = document.createElement('div');
-  list.className = 'sheet-group__list';
+  const list = document.createElement("div");
+  list.className = "sheet-group__list";
   items.forEach((item) => {
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'sheet-card';
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "sheet-card";
     if (selectedId && item.id === selectedId) {
-      button.classList.add('sheet-card--selected');
+      button.classList.add("sheet-card--selected");
     }
-    const label = document.createElement('span');
+    const label = document.createElement("span");
     label.textContent = item.label;
     button.appendChild(label);
     if (selectedId && item.id === selectedId) {
-      const meta = document.createElement('span');
-      meta.className = 'sheet-card__meta';
-      meta.textContent = 'Selected';
+      const meta = document.createElement("span");
+      meta.className = "sheet-card__meta";
+      meta.textContent = "Selected";
       button.appendChild(meta);
     }
-    button.addEventListener('click', () => onSelect(item));
+    button.addEventListener("click", () => onSelect(item));
     list.appendChild(button);
   });
   group.appendChild(list);
@@ -1032,64 +1105,74 @@ function renderSheetGroup(locationId, items, onSelect, selectedId) {
 }
 
 function renderEmptyState(message) {
-  const note = document.createElement('p');
-  note.className = 'empty-state';
+  const note = document.createElement("p");
+  note.className = "empty-state";
   note.textContent = message;
   return note;
 }
 
 function renderCustomCreator(tab, dayKey, slotName) {
-  const section = document.createElement('section');
-  section.className = 'sheet-custom';
+  const section = document.createElement("section");
+  section.className = "sheet-custom";
 
-  const title = document.createElement('p');
-  title.className = 'sheet-custom__title';
-  const text = document.createElement('p');
-  text.className = 'sheet-custom__text';
+  const title = document.createElement("p");
+  title.className = "sheet-custom__title";
+  const text = document.createElement("p");
+  text.className = "sheet-custom__text";
 
-  if (tab === 'activity') {
-    title.textContent = 'Add custom activity';
-    text.textContent = 'Create a one-off activity with an optional map pin.';
-  } else if (tab === 'stay') {
-    title.textContent = 'Add custom stay';
-    text.textContent = 'Track a stay even if it is not already in your catalog.';
+  if (tab === "activity") {
+    title.textContent = "Add custom activity";
+    text.textContent = "Create a one-off activity with an optional map pin.";
+  } else if (tab === "stay") {
+    title.textContent = "Add custom stay";
+    text.textContent =
+      "Track a stay even if it is not already in your catalog.";
   } else {
-    title.textContent = 'Add custom booking';
-    text.textContent = 'Save a booking or ticket link for quick access later.';
+    title.textContent = "Add custom booking";
+    text.textContent = "Save a booking or ticket link for quick access later.";
   }
 
-  const form = document.createElement('form');
-  form.className = 'custom-form';
+  const form = document.createElement("form");
+  form.className = "custom-form";
   form.noValidate = true;
 
-  const fields = document.createElement('div');
-  fields.className = 'custom-form__grid';
+  const fields = document.createElement("div");
+  fields.className = "custom-form__grid";
 
-  const errorEl = document.createElement('p');
-  errorEl.className = 'form-error';
+  const errorEl = document.createElement("p");
+  errorEl.className = "form-error";
   errorEl.hidden = true;
 
   const dayPlan = ensureDay(dayKey);
-  const defaultLocation = planState.config.locations[dayPlan.loc] ? dayPlan.loc : getDefaultLocationId();
+  const defaultLocation = planState.config.locations[dayPlan.loc]
+    ? dayPlan.loc
+    : getDefaultLocationId();
   const locationOptions = planState.config.locationOrder.map((locId) => ({
     value: locId,
     label: getLocationLabel(locId),
   }));
   if (!locationOptions.length) {
-    locationOptions.push({ value: defaultLocation, label: getLocationLabel(defaultLocation) });
+    locationOptions.push({
+      value: defaultLocation,
+      label: getLocationLabel(defaultLocation),
+    });
   }
 
   const { wrapper: labelField, input: labelInput } = createLabeledInput({
-    label: tab === 'booking' ? 'Booking name' : 'Name',
-    placeholder: tab === 'activity' ? 'Morning walk, museum visit...' : 'Add a description',
+    label: tab === "booking" ? "Booking name" : "Name",
+    placeholder:
+      tab === "activity"
+        ? "Morning walk, museum visit..."
+        : "Add a description",
   });
   fields.appendChild(labelField);
 
-  const { wrapper: locationField, select: locationSelect } = createLabeledSelect({
-    label: 'Location',
-    value: defaultLocation,
-    options: locationOptions,
-  });
+  const { wrapper: locationField, select: locationSelect } =
+    createLabeledSelect({
+      label: "Location",
+      value: defaultLocation,
+      options: locationOptions,
+    });
   fields.appendChild(locationField);
 
   let coordSelect;
@@ -1099,57 +1182,94 @@ function renderCustomCreator(tab, dayKey, slotName) {
   let coordLngInput;
   let urlInput;
 
-  if (tab === 'activity') {
+  if (tab === "activity") {
     const coordinateOptions = [
-      { value: '', label: 'No map pin' },
-      ...Object.entries(planState.config.mapCoordinates || {}).map(([id, coords]) => {
-        const pair = Array.isArray(coords) ? coords : [coords?.[0], coords?.[1]];
-        const label = planState.config.mapCoordinateLabels?.[id] || humanizeId(id);
-        const suffix = pair.every((num) => Number.isFinite(Number(num)))
-          ? ` (${Number(pair[0]).toFixed(3)}, ${Number(pair[1]).toFixed(3)})`
-          : '';
-        return { value: id, label: `${label}${suffix}` };
-      }),
-      { value: '__new__', label: 'Create new pin…' },
+      { value: "", label: "No map pin" },
+      ...Object.entries(planState.config.mapCoordinates || {}).map(
+        ([id, coords]) => {
+          const pair = Array.isArray(coords)
+            ? coords
+            : [coords?.[0], coords?.[1]];
+          const label =
+            planState.config.mapCoordinateLabels?.[id] || humanizeId(id);
+          const suffix = pair.every((num) => Number.isFinite(Number(num)))
+            ? ` (${Number(pair[0]).toFixed(3)}, ${Number(pair[1]).toFixed(3)})`
+            : "";
+          return { value: id, label: `${label}${suffix}` };
+        }
+      ),
+      { value: "__new__", label: "Create new pin…" },
     ];
-    const coordinateField = createLabeledSelect({ label: 'Map pin', options: coordinateOptions, value: '' });
+    const coordinateField = createLabeledSelect({
+      label: "Map pin",
+      options: coordinateOptions,
+      value: "",
+    });
     coordSelect = coordinateField.select;
     fields.appendChild(coordinateField.wrapper);
 
-    coordFields = document.createElement('div');
-    coordFields.className = 'custom-form__grid custom-form__grid--coords';
+    coordFields = document.createElement("div");
+    coordFields.className = "custom-form__grid custom-form__grid--coords";
     coordFields.hidden = true;
-    const coordLabelField = createLabeledInput({ label: 'Pin label', placeholder: 'Shown on the map', value: '' });
+    const coordLabelField = createLabeledInput({
+      label: "Pin label",
+      placeholder: "Shown on the map",
+      value: "",
+    });
     coordLabelInput = coordLabelField.input;
-    const coordLatField = createLabeledInput({ label: 'Latitude', type: 'number', step: '0.0001', placeholder: '34.6937' });
+    const coordLatField = createLabeledInput({
+      label: "Latitude",
+      type: "number",
+      step: "0.0001",
+      placeholder: "34.6937",
+    });
     coordLatInput = coordLatField.input;
-    const coordLngField = createLabeledInput({ label: 'Longitude', type: 'number', step: '0.0001', placeholder: '135.5023' });
+    const coordLngField = createLabeledInput({
+      label: "Longitude",
+      type: "number",
+      step: "0.0001",
+      placeholder: "135.5023",
+    });
     coordLngInput = coordLngField.input;
-    coordFields.append(coordLabelField.wrapper, coordLatField.wrapper, coordLngField.wrapper);
+    coordFields.append(
+      coordLabelField.wrapper,
+      coordLatField.wrapper,
+      coordLngField.wrapper
+    );
 
-    coordSelect.addEventListener('change', () => {
-      coordFields.hidden = coordSelect.value !== '__new__';
+    coordSelect.addEventListener("change", () => {
+      coordFields.hidden = coordSelect.value !== "__new__";
     });
   } else {
-    const labelText = tab === 'stay' ? 'Link (optional)' : 'Booking link (optional)';
-    const urlField = createLabeledInput({ label: labelText, type: 'url', placeholder: 'https://…' });
+    const labelText =
+      tab === "stay" ? "Link (optional)" : "Booking link (optional)";
+    const urlField = createLabeledInput({
+      label: labelText,
+      type: "url",
+      placeholder: "https://…",
+    });
     urlInput = urlField.input;
     fields.appendChild(urlField.wrapper);
   }
 
-  const submitBtn = document.createElement('button');
-  submitBtn.type = 'submit';
-  submitBtn.className = 'btn sheet-custom__btn';
-  submitBtn.textContent = tab === 'activity' ? 'Add activity' : tab === 'stay' ? 'Add stay' : 'Add booking';
+  const submitBtn = document.createElement("button");
+  submitBtn.type = "submit";
+  submitBtn.className = "btn sheet-custom__btn";
+  submitBtn.textContent =
+    tab === "activity"
+      ? "Add activity"
+      : tab === "stay"
+      ? "Add stay"
+      : "Add booking";
 
-  form.addEventListener('submit', (event) => {
+  form.addEventListener("submit", (event) => {
     event.preventDefault();
-    errorEl.textContent = '';
+    errorEl.textContent = "";
     errorEl.hidden = true;
 
     const name = labelInput.value.trim();
     if (!name) {
-      errorEl.textContent = 'Please enter a name before saving.';
+      errorEl.textContent = "Please enter a name before saving.";
       errorEl.hidden = false;
       labelInput.focus();
       return;
@@ -1159,13 +1279,14 @@ function renderCustomCreator(tab, dayKey, slotName) {
       ? locationSelect.value
       : getDefaultLocationId();
 
-    if (tab === 'activity') {
-      let coordId = coordSelect?.value || '';
-      if (coordId === '__new__') {
+    if (tab === "activity") {
+      let coordId = coordSelect?.value || "";
+      if (coordId === "__new__") {
         const lat = Number(coordLatInput.value.trim());
         const lng = Number(coordLngInput.value.trim());
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-          errorEl.textContent = 'Enter a valid latitude and longitude to create a map pin.';
+          errorEl.textContent =
+            "Enter a valid latitude and longitude to create a map pin.";
           errorEl.hidden = false;
           coordLatInput.focus();
           return;
@@ -1177,14 +1298,17 @@ function renderCustomCreator(tab, dayKey, slotName) {
         if (!planState.config.mapCoordinateLabels) {
           planState.config.mapCoordinateLabels = {};
         }
-        coordId = generateCoordinateIdFromLabel(pinLabel, planState.config.mapCoordinates);
+        coordId = generateCoordinateIdFromLabel(
+          pinLabel,
+          planState.config.mapCoordinates
+        );
         planState.config.mapCoordinates[coordId] = [lat, lng];
         planState.config.mapCoordinateLabels[coordId] = pinLabel;
       } else if (coordId && !planState.config.mapCoordinates[coordId]) {
-        coordId = '';
+        coordId = "";
       }
 
-      const activityId = generateCustomId('activity');
+      const activityId = generateCustomId("activity");
       const payload = { id: activityId, city: selectedLocation, label: name };
       if (coordId) {
         payload.coord = coordId;
@@ -1196,8 +1320,8 @@ function renderCustomCreator(tab, dayKey, slotName) {
       form.reset();
       coordFields && (coordFields.hidden = true);
       locationSelect.value = selectedLocation;
-    } else if (tab === 'stay') {
-      const stayId = generateCustomId('stay');
+    } else if (tab === "stay") {
+      const stayId = generateCustomId("stay");
       const payload = { id: stayId, city: selectedLocation, label: name };
       const link = urlInput.value.trim();
       if (link) {
@@ -1209,7 +1333,7 @@ function renderCustomCreator(tab, dayKey, slotName) {
       form.reset();
       locationSelect.value = selectedLocation;
     } else {
-      const bookingId = generateCustomId('booking');
+      const bookingId = generateCustomId("booking");
       const payload = { id: bookingId, city: selectedLocation, label: name };
       const link = urlInput.value.trim();
       if (link) {
@@ -1235,49 +1359,51 @@ function renderCustomCreator(tab, dayKey, slotName) {
 }
 
 function attachToolbarEvents() {
-  editBtn?.addEventListener('click', () => {
+  editBtn?.addEventListener("click", () => {
     editing = !editing;
     updateEditButton();
     renderCalendar();
   });
 
-  manageTripsBtn?.addEventListener('click', openTripLibrary);
-  settingsBtn?.addEventListener('click', () => openTripWizard({ mode: 'edit' }));
-  newTripBtn?.addEventListener('click', () => openTripWizard({ mode: 'new' }));
-  icsBtn?.addEventListener('click', exportIcs);
+  manageTripsBtn?.addEventListener("click", openTripLibrary);
+  settingsBtn?.addEventListener("click", () =>
+    openTripWizard({ mode: "edit" })
+  );
+  newTripBtn?.addEventListener("click", () => openTripWizard({ mode: "new" }));
+  icsBtn?.addEventListener("click", exportIcs);
 
-  sheetBackdrop.addEventListener('click', () => {
+  sheetBackdrop.addEventListener("click", () => {
     if (sheetState.open) closeSheet();
   });
-  closeSheetBtn?.addEventListener('click', closeSheet);
+  closeSheetBtn?.addEventListener("click", closeSheet);
 
-  document.querySelectorAll('.sheet__tabs .tab').forEach((tabBtn) => {
-    tabBtn.addEventListener('click', () => {
+  document.querySelectorAll(".sheet__tabs .tab").forEach((tabBtn) => {
+    tabBtn.addEventListener("click", () => {
       if (!sheetState.open) return;
       sheetState.tab = tabBtn.dataset.tab;
       renderSheet();
     });
   });
 
-  closeMapBtn?.addEventListener('click', closeMap);
-  mapOverlay.addEventListener('click', (event) => {
+  closeMapBtn?.addEventListener("click", closeMap);
+  mapOverlay.addEventListener("click", (event) => {
     if (event.target === mapOverlay) {
       closeMap();
     }
   });
 
-  closeConfigBtn?.addEventListener('click', closeConfigOverlay);
-  configOverlay?.addEventListener('click', (event) => {
+  closeConfigBtn?.addEventListener("click", closeConfigOverlay);
+  configOverlay?.addEventListener("click", (event) => {
     if (event.target === configOverlay) {
       closeConfigOverlay();
       return;
     }
-    const actionTarget = event.target.closest('[data-action]');
+    const actionTarget = event.target.closest("[data-action]");
     if (!actionTarget) return;
     handleConfigAction(actionTarget);
   });
 
-  allFilterBtn?.addEventListener('click', () => {
+  allFilterBtn?.addEventListener("click", () => {
     filterState = { friend: null, location: null };
     applyFilters();
     updateFilterChips();
@@ -1285,41 +1411,49 @@ function attachToolbarEvents() {
 }
 
 function attachGlobalShortcuts() {
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
       if (sheetState.open) closeSheet();
-      if (mapOverlay.classList.contains('is-open')) closeMap();
-      if (configOverlay.classList.contains('is-open')) closeConfigOverlay();
+      if (mapOverlay.classList.contains("is-open")) closeMap();
+      if (configOverlay.classList.contains("is-open")) closeConfigOverlay();
     }
   });
 }
 
 function applyFilters() {
-  const cards = calendarEl.querySelectorAll('.day-card');
+  const cards = calendarEl.querySelectorAll(".day-card");
   cards.forEach((card) => {
     const dateKey = card.dataset.date;
     const plan = ensureDay(dateKey);
-    const matchesFriend = !filterState.friend || plan.friends.includes(filterState.friend);
-    const matchesLocation = !filterState.location || plan.loc === filterState.location;
-    card.style.display = matchesFriend && matchesLocation ? '' : 'none';
+    const matchesFriend =
+      !filterState.friend || plan.friends.includes(filterState.friend);
+    const matchesLocation =
+      !filterState.location || plan.loc === filterState.location;
+    card.style.display = matchesFriend && matchesLocation ? "" : "none";
   });
 }
 
 function updateFilterChips() {
-  document.querySelectorAll('.chip[data-friend]').forEach((chip) => {
-    chip.setAttribute('aria-pressed', chip.dataset.friend === filterState.friend ? 'true' : 'false');
+  document.querySelectorAll(".chip[data-friend]").forEach((chip) => {
+    chip.setAttribute(
+      "aria-pressed",
+      chip.dataset.friend === filterState.friend ? "true" : "false"
+    );
   });
-  document.querySelectorAll('.chip[data-location]').forEach((chip) => {
-    chip.setAttribute('aria-pressed', chip.dataset.location === filterState.location ? 'true' : 'false');
+  document.querySelectorAll(".chip[data-location]").forEach((chip) => {
+    chip.setAttribute(
+      "aria-pressed",
+      chip.dataset.location === filterState.location ? "true" : "false"
+    );
   });
   const allOn = !filterState.friend && !filterState.location;
-  allFilterBtn?.setAttribute('aria-pressed', allOn ? 'true' : 'false');
+  allFilterBtn?.setAttribute("aria-pressed", allOn ? "true" : "false");
   applyFilterChipStyles();
 }
 
 function updateEditButton() {
   if (editBtn) {
-    editBtn.textContent = editing ? 'Done' : 'Edit plan';
+    editBtn.textContent = editing ? "Done" : "Edit plan";
   }
 }
 
@@ -1328,7 +1462,7 @@ function getLocationLabel(id) {
 }
 
 function getDefaultTheme(locationId) {
-  return planState.config.defaultThemes?.[locationId] || '';
+  return planState.config.defaultThemes?.[locationId] || "";
 }
 
 function getActivityLabel(id) {
@@ -1341,20 +1475,22 @@ function getStayLabel(id) {
 
 function formatLongDate(dateKey) {
   const date = new Date(`${dateKey}T00:00:00`);
-  const weekday = date.toLocaleDateString(undefined, { weekday: 'long' });
-  const month = date.toLocaleDateString(undefined, { month: 'short' });
+  const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
+  const month = date.toLocaleDateString(undefined, { month: "short" });
   return `${weekday}, ${month} ${date.getDate()}`;
 }
 
 function openMap(dateKey) {
   const plan = ensureDay(dateKey);
-  mapOverlay.classList.add('is-open');
-  mapOverlay.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('map-open');
-  const mapTitle = document.getElementById('mapTitle');
-  mapTitle.textContent = `${formatLongDate(dateKey)} — ${plan.theme || getDefaultTheme(plan.loc) || ''}`;
+  mapOverlay.classList.add("is-open");
+  mapOverlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("map-open");
+  const mapTitle = document.getElementById("mapTitle");
+  mapTitle.textContent = `${formatLongDate(dateKey)} — ${
+    plan.theme || getDefaultTheme(plan.loc) || ""
+  }`;
   const markers = [];
-  ['morning', 'afternoon', 'evening'].forEach((slot) => {
+  ["morning", "afternoon", "evening"].forEach((slot) => {
     plan.slots[slot]?.forEach((id) => {
       const activity = ACTIVITY_MAP.get(id);
       if (!activity || !activity.coord) return;
@@ -1366,9 +1502,9 @@ function openMap(dateKey) {
 
   setTimeout(() => {
     if (!mapInstance) {
-      mapInstance = window.L.map('map');
-      window.L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
+      mapInstance = window.L.map("map");
+      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap contributors",
         maxZoom: 19,
       }).addTo(mapInstance);
       mapMarkersLayer = window.L.layerGroup().addTo(mapInstance);
@@ -1395,44 +1531,50 @@ function openMap(dateKey) {
 }
 
 function closeMap() {
-  mapOverlay.classList.remove('is-open');
-  mapOverlay.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('map-open');
+  mapOverlay.classList.remove("is-open");
+  mapOverlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("map-open");
 }
 
 function exportIcs() {
   const now = new Date();
   const dtstamp = formatIcsDateTime(now);
   const lines = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'CALSCALE:GREGORIAN',
-    'PRODID:-//Canvas6 Trip Planner//EN',
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "CALSCALE:GREGORIAN",
+    "PRODID:-//Canvas6 Trip Planner//EN",
   ];
 
   dateSequence.forEach((dateKey) => {
     const day = ensureDay(dateKey);
-    const dateValue = dateKey.replace(/-/g, '');
+    const dateValue = dateKey.replace(/-/g, "");
     const summaryDate = formatSummaryDate(dateKey);
-    const title = day.theme || getDefaultTheme(day.loc) || 'Trip day';
+    const title = day.theme || getDefaultTheme(day.loc) || "Trip day";
     const slotDescriptions = [];
-    const slotTitles = { morning: 'Morning', afternoon: 'Afternoon', evening: 'Evening' };
-    ['morning', 'afternoon', 'evening'].forEach((slot) => {
-      const labels = (day.slots[slot] || []).map(getActivityLabel).filter(Boolean);
+    const slotTitles = {
+      morning: "Morning",
+      afternoon: "Afternoon",
+      evening: "Evening",
+    };
+    ["morning", "afternoon", "evening"].forEach((slot) => {
+      const labels = (day.slots[slot] || [])
+        .map(getActivityLabel)
+        .filter(Boolean);
       if (labels.length) {
-        slotDescriptions.push(`${slotTitles[slot]}: ${labels.join(' • ')}`);
+        slotDescriptions.push(`${slotTitles[slot]}: ${labels.join(" • ")}`);
       }
     });
     if (day.stay) {
       slotDescriptions.push(`Stay: ${getStayLabel(day.stay)}`);
     }
     if (day.friends?.length) {
-      slotDescriptions.push(`Friends: ${day.friends.join(', ')}`);
+      slotDescriptions.push(`Friends: ${day.friends.join(", ")}`);
     }
-    const description = slotDescriptions.join(' / ');
+    const description = slotDescriptions.join(" / ");
     const locationLabel = getLocationLabel(day.loc);
 
-    lines.push('BEGIN:VEVENT');
+    lines.push("BEGIN:VEVENT");
     lines.push(`UID:${dateKey}@canvas6`);
     lines.push(`DTSTAMP:${dtstamp}`);
     lines.push(`SUMMARY:${escapeIcsText(`${summaryDate} — ${title}`)}`);
@@ -1440,15 +1582,20 @@ function exportIcs() {
     lines.push(`DTEND:${dateValue}T210000`);
     lines.push(`DESCRIPTION:${escapeIcsText(description)}`);
     lines.push(`LOCATION:${escapeIcsText(locationLabel)}`);
-    lines.push('END:VEVENT');
+    lines.push("END:VEVENT");
   });
 
-  lines.push('END:VCALENDAR');
-  const blob = new Blob([lines.join('\r\n')], { type: 'text/calendar;charset=utf-8' });
+  lines.push("END:VCALENDAR");
+  const blob = new Blob([lines.join("\r\n")], {
+    type: "text/calendar;charset=utf-8",
+  });
   const url = URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
+  const anchor = document.createElement("a");
   anchor.href = url;
-  const fileName = `${slugify(planState.config.tripName || 'trip-planner', 'trip-planner')}.ics`;
+  const fileName = `${slugify(
+    planState.config.tripName || "trip-planner",
+    "trip-planner"
+  )}.ics`;
   anchor.download = fileName;
   document.body.appendChild(anchor);
   anchor.click();
@@ -1457,39 +1604,39 @@ function exportIcs() {
 }
 
 function openTripLibrary() {
-  overlayMode = 'library';
+  overlayMode = "library";
   wizardState = null;
   tripLibraryConfirm = null;
-  configTitle.textContent = 'Trip library';
-  configSubtitle.textContent = 'Load, duplicate, or remove saved trips.';
-  configOverlay.classList.add('is-open');
-  configOverlay.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('config-open');
+  configTitle.textContent = "Trip library";
+  configSubtitle.textContent = "Load, duplicate, or remove saved trips.";
+  configOverlay.classList.add("is-open");
+  configOverlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("config-open");
   renderTripLibrary();
 }
 
 function renderTripLibrary() {
-  if (overlayMode !== 'library') return;
-  configContent.innerHTML = '';
-  const wrapper = document.createElement('div');
-  wrapper.className = 'library';
+  if (overlayMode !== "library") return;
+  configContent.innerHTML = "";
+  const wrapper = document.createElement("div");
+  wrapper.className = "library";
 
-  const actions = document.createElement('div');
-  actions.className = 'library__actions';
-  const newBtn = document.createElement('button');
-  newBtn.type = 'button';
-  newBtn.className = 'btn btn--primary';
-  newBtn.dataset.action = 'library-new';
-  newBtn.textContent = 'Create new trip';
+  const actions = document.createElement("div");
+  actions.className = "library__actions";
+  const newBtn = document.createElement("button");
+  newBtn.type = "button";
+  newBtn.className = "btn btn--primary";
+  newBtn.dataset.action = "library-new";
+  newBtn.textContent = "Create new trip";
   actions.appendChild(newBtn);
   wrapper.appendChild(actions);
 
-  const list = document.createElement('div');
-  list.className = 'library__list';
+  const list = document.createElement("div");
+  list.className = "library__list";
   if (!storageBucket.order.length) {
-    const empty = document.createElement('p');
-    empty.className = 'empty-state';
-    empty.textContent = 'No trips saved yet. Create a new trip to get started.';
+    const empty = document.createElement("p");
+    empty.className = "empty-state";
+    empty.textContent = "No trips saved yet. Create a new trip to get started.";
     list.appendChild(empty);
   } else {
     storageBucket.order.forEach((id) => {
@@ -1503,103 +1650,107 @@ function renderTripLibrary() {
 }
 
 function createLibraryCard(tripId, state) {
-  const card = document.createElement('article');
-  card.className = 'library-card';
+  const card = document.createElement("article");
+  card.className = "library-card";
   if (tripId === activeTripId) {
-    card.classList.add('library-card--active');
+    card.classList.add("library-card--active");
   }
 
-  const title = document.createElement('h3');
-  title.className = 'library-card__title';
-  title.textContent = state?.config?.tripName || 'Untitled trip';
+  const title = document.createElement("h3");
+  title.className = "library-card__title";
+  title.textContent = state?.config?.tripName || "Untitled trip";
   card.appendChild(title);
 
-  const meta = document.createElement('p');
-  meta.className = 'library-card__meta';
-  const start = state?.config?.range?.start || '—';
+  const meta = document.createElement("p");
+  meta.className = "library-card__meta";
+  const start = state?.config?.range?.start || "—";
   const end = state?.config?.range?.end || start;
   const placeCount = state?.config?.locationOrder?.length || 0;
-  meta.textContent = `${start} → ${end} • ${placeCount} place${placeCount === 1 ? '' : 's'}`;
+  meta.textContent = `${start} → ${end} • ${placeCount} place${
+    placeCount === 1 ? "" : "s"
+  }`;
   card.appendChild(meta);
 
-  const actions = document.createElement('div');
-  actions.className = 'library-card__actions';
+  const actions = document.createElement("div");
+  actions.className = "library-card__actions";
 
-  const loadBtn = document.createElement('button');
-  loadBtn.type = 'button';
-  loadBtn.className = 'btn btn--subtle';
-  loadBtn.dataset.action = 'library-load';
+  const loadBtn = document.createElement("button");
+  loadBtn.type = "button";
+  loadBtn.className = "btn btn--subtle";
+  loadBtn.dataset.action = "library-load";
   loadBtn.dataset.tripId = tripId;
-  loadBtn.textContent = tripId === activeTripId ? 'Active' : 'Load';
+  loadBtn.textContent = tripId === activeTripId ? "Active" : "Load";
   if (tripId === activeTripId) {
     loadBtn.disabled = true;
   }
   actions.appendChild(loadBtn);
 
-  const editBtn = document.createElement('button');
-  editBtn.type = 'button';
-  editBtn.className = 'btn btn--subtle';
-  editBtn.dataset.action = 'library-edit';
+  const editBtn = document.createElement("button");
+  editBtn.type = "button";
+  editBtn.className = "btn btn--subtle";
+  editBtn.dataset.action = "library-edit";
   editBtn.dataset.tripId = tripId;
-  editBtn.textContent = 'Edit settings';
+  editBtn.textContent = "Edit settings";
   actions.appendChild(editBtn);
 
-  const duplicateBtn = document.createElement('button');
-  duplicateBtn.type = 'button';
-  duplicateBtn.className = 'btn btn--subtle';
-  duplicateBtn.dataset.action = 'library-duplicate';
+  const duplicateBtn = document.createElement("button");
+  duplicateBtn.type = "button";
+  duplicateBtn.className = "btn btn--subtle";
+  duplicateBtn.dataset.action = "library-duplicate";
   duplicateBtn.dataset.tripId = tripId;
-  duplicateBtn.textContent = 'Duplicate';
+  duplicateBtn.textContent = "Duplicate";
   actions.appendChild(duplicateBtn);
 
-  const deleteBtn = document.createElement('button');
-  deleteBtn.type = 'button';
-  deleteBtn.className = 'btn btn--danger btn--subtle';
-  deleteBtn.dataset.action = 'library-delete';
+  const deleteBtn = document.createElement("button");
+  deleteBtn.type = "button";
+  deleteBtn.className = "btn btn--danger btn--subtle";
+  deleteBtn.dataset.action = "library-delete";
   deleteBtn.dataset.tripId = tripId;
-  deleteBtn.textContent = tripLibraryConfirm === tripId ? 'Confirm delete' : 'Delete';
+  deleteBtn.textContent =
+    tripLibraryConfirm === tripId ? "Confirm delete" : "Delete";
   actions.appendChild(deleteBtn);
 
   card.appendChild(actions);
   return card;
 }
 
-function openTripWizard({ mode = 'edit', tripId = activeTripId } = {}) {
-  overlayMode = 'wizard';
+function openTripWizard({ mode = "edit", tripId = activeTripId } = {}) {
+  overlayMode = "wizard";
   tripLibraryConfirm = null;
-  if (mode === 'edit' && tripId && tripId !== activeTripId) {
+  if (mode === "edit" && tripId && tripId !== activeTripId) {
     setActiveTrip(tripId);
   }
-  configTitle.textContent = mode === 'new' ? 'Create a trip' : 'Trip settings';
+  configTitle.textContent = mode === "new" ? "Create a trip" : "Trip settings";
   configSubtitle.textContent =
-    mode === 'new'
-      ? 'Set up the basics before planning.'
-      : 'Update people, places, and your saved catalog.';
-  configOverlay.classList.add('is-open');
-  configOverlay.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('config-open');
+    mode === "new"
+      ? "Set up the basics before planning."
+      : "Update people, places, and your saved catalog.";
+  configOverlay.classList.add("is-open");
+  configOverlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("config-open");
 
-  const baseState = mode === 'new' ? createStateFromTemplate(DEFAULT_TRIP_TEMPLATE) : planState;
+  const baseState =
+    mode === "new" ? createStateFromTemplate(DEFAULT_TRIP_TEMPLATE) : planState;
   wizardState = {
     mode,
     stepIndex: 0,
     data: extractWizardData(baseState),
-    sourceId: mode === 'new' ? 'default' : activeTripId,
+    sourceId: mode === "new" ? "default" : activeTripId,
   };
-  if (mode === 'new') {
+  if (mode === "new") {
     wizardState.sources = buildWizardSources();
   }
   renderWizard();
 }
 
 function renderWizard() {
-  if (overlayMode !== 'wizard' || !wizardState) return;
-  configContent.innerHTML = '';
-  const container = document.createElement('div');
-  container.className = 'wizard';
+  if (overlayMode !== "wizard" || !wizardState) return;
+  configContent.innerHTML = "";
+  const container = document.createElement("div");
+  container.className = "wizard";
   container.appendChild(renderWizardNav());
-  const body = document.createElement('div');
-  body.className = 'wizard__body';
+  const body = document.createElement("div");
+  body.className = "wizard__body";
   body.appendChild(renderWizardStep());
   container.appendChild(body);
   container.appendChild(renderWizardFooter());
@@ -1607,19 +1758,19 @@ function renderWizard() {
 }
 
 function renderWizardNav() {
-  const list = document.createElement('ol');
-  list.className = 'wizard__steps';
+  const list = document.createElement("ol");
+  list.className = "wizard__steps";
   WIZARD_STEPS.forEach((step, index) => {
-    const item = document.createElement('li');
-    item.className = 'wizard__steps-item';
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.className = 'wizard__step';
+    const item = document.createElement("li");
+    item.className = "wizard__steps-item";
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "wizard__step";
     button.textContent = `${index + 1}. ${step.label}`;
     if (index === wizardState.stepIndex) {
-      button.classList.add('is-active');
+      button.classList.add("is-active");
     } else if (index < wizardState.stepIndex) {
-      button.dataset.action = 'wizard-jump';
+      button.dataset.action = "wizard-jump";
       button.dataset.stepIndex = String(index);
     } else {
       button.disabled = true;
@@ -1632,55 +1783,58 @@ function renderWizardNav() {
 
 function renderWizardStep() {
   const step = WIZARD_STEPS[wizardState.stepIndex];
-  const section = document.createElement('div');
-  section.className = 'wizard-step';
+  const section = document.createElement("div");
+  section.className = "wizard-step";
   if (!step) return section;
-  if (step.id === 'basics') {
+  if (step.id === "basics") {
     section.appendChild(renderWizardBasicsStep());
-  } else if (step.id === 'friends') {
+  } else if (step.id === "friends") {
     section.appendChild(renderWizardFriendsStep());
-  } else if (step.id === 'places') {
+  } else if (step.id === "places") {
     section.appendChild(renderWizardPlacesStep());
-  } else if (step.id === 'catalog') {
+  } else if (step.id === "catalog") {
     section.appendChild(renderWizardCatalogStep());
   }
   return section;
 }
 
 function renderWizardFooter() {
-  const footer = document.createElement('div');
-  footer.className = 'wizard__footer';
-  const progress = document.createElement('div');
-  progress.className = 'wizard__progress';
-  progress.textContent = `Step ${wizardState.stepIndex + 1} of ${WIZARD_STEPS.length}`;
+  const footer = document.createElement("div");
+  footer.className = "wizard__footer";
+  const progress = document.createElement("div");
+  progress.className = "wizard__progress";
+  progress.textContent = `Step ${wizardState.stepIndex + 1} of ${
+    WIZARD_STEPS.length
+  }`;
   footer.appendChild(progress);
 
-  const actions = document.createElement('div');
-  actions.className = 'wizard__actions';
+  const actions = document.createElement("div");
+  actions.className = "wizard__actions";
 
-  const backBtn = document.createElement('button');
-  backBtn.type = 'button';
-  backBtn.className = 'btn btn--subtle';
-  backBtn.dataset.action = 'wizard-prev';
-  backBtn.textContent = 'Back';
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.className = "btn btn--subtle";
+  backBtn.dataset.action = "wizard-prev";
+  backBtn.textContent = "Back";
   if (wizardState.stepIndex === 0) {
     backBtn.disabled = true;
   }
   actions.appendChild(backBtn);
 
   if (wizardState.stepIndex < WIZARD_STEPS.length - 1) {
-    const nextBtn = document.createElement('button');
-    nextBtn.type = 'button';
-    nextBtn.className = 'btn btn--primary';
-    nextBtn.dataset.action = 'wizard-next';
-    nextBtn.textContent = 'Next';
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className = "btn btn--primary";
+    nextBtn.dataset.action = "wizard-next";
+    nextBtn.textContent = "Next";
     actions.appendChild(nextBtn);
   } else {
-    const saveBtn = document.createElement('button');
-    saveBtn.type = 'button';
-    saveBtn.className = 'btn btn--primary';
-    saveBtn.dataset.action = 'wizard-save';
-    saveBtn.textContent = wizardState.mode === 'new' ? 'Create trip' : 'Save changes';
+    const saveBtn = document.createElement("button");
+    saveBtn.type = "button";
+    saveBtn.className = "btn btn--primary";
+    saveBtn.dataset.action = "wizard-save";
+    saveBtn.textContent =
+      wizardState.mode === "new" ? "Create trip" : "Save changes";
     actions.appendChild(saveBtn);
   }
   footer.appendChild(actions);
@@ -1688,50 +1842,56 @@ function renderWizardFooter() {
 }
 
 function renderWizardBasicsStep() {
-  const grid = document.createElement('div');
-  grid.className = 'wizard-grid';
+  const grid = document.createElement("div");
+  grid.className = "wizard-grid";
 
   const { wrapper: nameField, input: nameInput } = createLabeledInput({
-    label: 'Trip name',
-    value: wizardState.data.tripName || '',
-    placeholder: 'e.g., Summer in Italy',
+    label: "Trip name",
+    value: wizardState.data.tripName || "",
+    placeholder: "e.g., Summer in Italy",
   });
-  nameInput.addEventListener('input', (event) => {
+  nameInput.addEventListener("input", (event) => {
     wizardState.data.tripName = event.target.value;
   });
   grid.appendChild(nameField);
 
   const { wrapper: startField, input: startInput } = createLabeledInput({
-    label: 'Start date',
-    type: 'date',
-    value: wizardState.data.startDate || '',
+    label: "Start date",
+    type: "date",
+    value: wizardState.data.startDate || "",
   });
-  startInput.addEventListener('change', (event) => {
+  startInput.addEventListener("change", (event) => {
     wizardState.data.startDate = event.target.value;
   });
   grid.appendChild(startField);
 
   const { wrapper: endField, input: endInput } = createLabeledInput({
-    label: 'End date',
-    type: 'date',
-    value: wizardState.data.endDate || '',
+    label: "End date",
+    type: "date",
+    value: wizardState.data.endDate || "",
   });
-  endInput.addEventListener('change', (event) => {
+  endInput.addEventListener("change", (event) => {
     wizardState.data.endDate = event.target.value;
   });
   grid.appendChild(endField);
 
-  if (wizardState.mode === 'new') {
+  if (wizardState.mode === "new") {
     const sources = wizardState.sources || buildWizardSources();
     const { wrapper: sourceField, select: sourceSelect } = createLabeledSelect({
-      label: 'Start from',
-      value: wizardState.sourceId || 'default',
-      options: sources.map((entry) => ({ value: entry.id, label: entry.label })),
+      label: "Start from",
+      value: wizardState.sourceId || "default",
+      options: sources.map((entry) => ({
+        value: entry.id,
+        label: entry.label,
+      })),
     });
-    sourceSelect.addEventListener('change', (event) => {
+    sourceSelect.addEventListener("change", (event) => {
       const value = event.target.value;
       wizardState.sourceId = value;
-      const base = value === 'default' ? createStateFromTemplate(DEFAULT_TRIP_TEMPLATE) : getStoredTripState(value);
+      const base =
+        value === "default"
+          ? createStateFromTemplate(DEFAULT_TRIP_TEMPLATE)
+          : getStoredTripState(value);
       if (base) {
         wizardState.data = extractWizardData(base);
         wizardState.stepIndex = 0;
@@ -1745,21 +1905,21 @@ function renderWizardBasicsStep() {
 }
 
 function renderWizardFriendsStep() {
-  const container = document.createElement('div');
-  container.className = 'wizard-stack';
+  const container = document.createElement("div");
+  container.className = "wizard-stack";
 
-  const list = document.createElement('div');
-  list.className = 'wizard-list';
+  const list = document.createElement("div");
+  list.className = "wizard-list";
   wizardState.data.friends.forEach((friend, index) => {
-    const row = document.createElement('div');
-    row.className = 'wizard-row';
+    const row = document.createElement("div");
+    row.className = "wizard-row";
 
     const { wrapper: nameField, input: nameInput } = createLabeledInput({
-      label: 'Name',
-      value: friend.name || '',
-      placeholder: 'Friend name',
+      label: "Name",
+      value: friend.name || "",
+      placeholder: "Friend name",
     });
-    nameInput.addEventListener('input', (event) => {
+    nameInput.addEventListener("input", (event) => {
       wizardState.data.friends[index].name = event.target.value;
     });
     row.appendChild(nameField);
@@ -1767,42 +1927,42 @@ function renderWizardFriendsStep() {
     const palette = COLOR_PALETTES.friends;
     const fallbackColor = palette[index % palette.length];
     const { wrapper: colorField, input: colorInput } = createLabeledInput({
-      label: 'Color',
-      type: 'color',
+      label: "Color",
+      type: "color",
       value: sanitizeHexColor(friend.color, fallbackColor),
     });
-    colorInput.addEventListener('input', (event) => {
+    colorInput.addEventListener("input", (event) => {
       wizardState.data.friends[index].color = event.target.value;
     });
     row.appendChild(colorField);
 
-    const actions = document.createElement('div');
-    actions.className = 'wizard-row__actions';
+    const actions = document.createElement("div");
+    actions.className = "wizard-row__actions";
 
-    const upBtn = document.createElement('button');
-    upBtn.type = 'button';
-    upBtn.className = 'btn btn--subtle';
-    upBtn.dataset.action = 'friends-move-up';
+    const upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "btn btn--subtle";
+    upBtn.dataset.action = "friends-move-up";
     upBtn.dataset.index = index;
-    upBtn.textContent = 'Move up';
+    upBtn.textContent = "Move up";
     upBtn.disabled = index === 0;
     actions.appendChild(upBtn);
 
-    const downBtn = document.createElement('button');
-    downBtn.type = 'button';
-    downBtn.className = 'btn btn--subtle';
-    downBtn.dataset.action = 'friends-move-down';
+    const downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "btn btn--subtle";
+    downBtn.dataset.action = "friends-move-down";
     downBtn.dataset.index = index;
-    downBtn.textContent = 'Move down';
+    downBtn.textContent = "Move down";
     downBtn.disabled = index === wizardState.data.friends.length - 1;
     actions.appendChild(downBtn);
 
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'btn btn--danger btn--subtle';
-    removeBtn.dataset.action = 'friends-remove';
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "btn btn--danger btn--subtle";
+    removeBtn.dataset.action = "friends-remove";
     removeBtn.dataset.index = index;
-    removeBtn.textContent = 'Remove';
+    removeBtn.textContent = "Remove";
     actions.appendChild(removeBtn);
 
     row.appendChild(actions);
@@ -1810,19 +1970,19 @@ function renderWizardFriendsStep() {
   });
   container.appendChild(list);
 
-  const addBtn = document.createElement('button');
-  addBtn.type = 'button';
-  addBtn.className = 'btn btn--primary';
-  addBtn.dataset.action = 'friends-add';
-  addBtn.textContent = 'Add friend';
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "btn btn--primary";
+  addBtn.dataset.action = "friends-add";
+  addBtn.textContent = "Add friend";
   container.appendChild(addBtn);
 
   return container;
 }
 
 function renderWizardPlacesStep() {
-  const stack = document.createElement('div');
-  stack.className = 'wizard-stack';
+  const stack = document.createElement("div");
+  stack.className = "wizard-stack";
   stack.appendChild(renderLocationsEditor());
   stack.appendChild(renderMapDefaultsEditor());
   stack.appendChild(renderCoordinateEditor());
@@ -1830,76 +1990,76 @@ function renderWizardPlacesStep() {
 }
 
 function renderLocationsEditor() {
-  const section = document.createElement('section');
-  section.className = 'wizard-section';
-  const heading = document.createElement('h3');
-  heading.textContent = 'Places';
+  const section = document.createElement("section");
+  section.className = "wizard-section";
+  const heading = document.createElement("h3");
+  heading.textContent = "Places";
   section.appendChild(heading);
 
-  const list = document.createElement('div');
-  list.className = 'wizard-list';
+  const list = document.createElement("div");
+  list.className = "wizard-list";
   wizardState.data.locations.forEach((loc, index) => {
-    const row = document.createElement('div');
-    row.className = 'wizard-row';
+    const row = document.createElement("div");
+    row.className = "wizard-row";
 
     const { wrapper: labelField, input: labelInput } = createLabeledInput({
-      label: 'Label',
-      value: loc.label || '',
-      placeholder: 'City or region name',
+      label: "Label",
+      value: loc.label || "",
+      placeholder: "City or region name",
     });
-    labelInput.addEventListener('input', (event) => {
+    labelInput.addEventListener("input", (event) => {
       wizardState.data.locations[index].label = event.target.value;
     });
     row.appendChild(labelField);
 
     const { wrapper: themeField, input: themeInput } = createLabeledInput({
-      label: 'Default theme',
-      value: loc.theme || '',
-      placeholder: 'Optional default theme',
+      label: "Default theme",
+      value: loc.theme || "",
+      placeholder: "Optional default theme",
     });
-    themeInput.addEventListener('input', (event) => {
+    themeInput.addEventListener("input", (event) => {
       wizardState.data.locations[index].theme = event.target.value;
     });
     row.appendChild(themeField);
 
     const palette = COLOR_PALETTES.locations;
     const { wrapper: colorField, input: colorInput } = createLabeledInput({
-      label: 'Color',
-      type: 'color',
+      label: "Color",
+      type: "color",
       value: sanitizeHexColor(loc.color, palette[index % palette.length]),
     });
-    colorInput.addEventListener('input', (event) => {
+    colorInput.addEventListener("input", (event) => {
       wizardState.data.locations[index].color = event.target.value;
     });
     row.appendChild(colorField);
 
-    const actions = document.createElement('div');
-    actions.className = 'wizard-row__actions';
+    const actions = document.createElement("div");
+    actions.className = "wizard-row__actions";
 
-    const upBtn = document.createElement('button');
-    upBtn.type = 'button';
-    upBtn.className = 'btn btn--subtle';
-    upBtn.dataset.action = 'locations-move-up';
+    const upBtn = document.createElement("button");
+    upBtn.type = "button";
+    upBtn.className = "btn btn--subtle";
+    upBtn.dataset.action = "locations-move-up";
     upBtn.dataset.index = index;
-    upBtn.textContent = 'Move up';
+    upBtn.textContent = "Move up";
     upBtn.disabled = index === 0;
     actions.appendChild(upBtn);
 
-    const downBtn = document.createElement('button');
-    downBtn.type = 'button';
-    downBtn.className = 'btn btn--subtle';
-    downBtn.dataset.action = 'locations-move-down';
+    const downBtn = document.createElement("button");
+    downBtn.type = "button";
+    downBtn.className = "btn btn--subtle";
+    downBtn.dataset.action = "locations-move-down";
     downBtn.dataset.index = index;
-    downBtn.textContent = 'Move down';
+    downBtn.textContent = "Move down";
     downBtn.disabled = index === wizardState.data.locations.length - 1;
     actions.appendChild(downBtn);
 
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'btn btn--danger btn--subtle';
-    removeBtn.dataset.action = 'locations-remove';
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "btn btn--danger btn--subtle";
+    removeBtn.dataset.action = "locations-remove";
     removeBtn.dataset.index = index;
-    removeBtn.textContent = 'Remove';
+    removeBtn.textContent = "Remove";
     removeBtn.disabled = wizardState.data.locations.length <= 1;
     actions.appendChild(removeBtn);
 
@@ -1908,55 +2068,55 @@ function renderLocationsEditor() {
   });
   section.appendChild(list);
 
-  const addBtn = document.createElement('button');
-  addBtn.type = 'button';
-  addBtn.className = 'btn btn--primary';
-  addBtn.dataset.action = 'locations-add';
-  addBtn.textContent = 'Add place';
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "btn btn--primary";
+  addBtn.dataset.action = "locations-add";
+  addBtn.textContent = "Add place";
   section.appendChild(addBtn);
 
   return section;
 }
 
 function renderMapDefaultsEditor() {
-  const section = document.createElement('section');
-  section.className = 'wizard-section';
-  const heading = document.createElement('h3');
-  heading.textContent = 'Map defaults';
+  const section = document.createElement("section");
+  section.className = "wizard-section";
+  const heading = document.createElement("h3");
+  heading.textContent = "Map defaults";
   section.appendChild(heading);
 
-  const grid = document.createElement('div');
-  grid.className = 'wizard-grid';
+  const grid = document.createElement("div");
+  grid.className = "wizard-grid";
 
   const { wrapper: latField, input: latInput } = createLabeledInput({
-    label: 'Center latitude',
-    type: 'number',
-    step: '0.0001',
-    value: wizardState.data.mapDefaults.centerLat || '',
+    label: "Center latitude",
+    type: "number",
+    step: "0.0001",
+    value: wizardState.data.mapDefaults.centerLat || "",
   });
-  latInput.addEventListener('input', (event) => {
+  latInput.addEventListener("input", (event) => {
     wizardState.data.mapDefaults.centerLat = event.target.value;
   });
   grid.appendChild(latField);
 
   const { wrapper: lngField, input: lngInput } = createLabeledInput({
-    label: 'Center longitude',
-    type: 'number',
-    step: '0.0001',
-    value: wizardState.data.mapDefaults.centerLng || '',
+    label: "Center longitude",
+    type: "number",
+    step: "0.0001",
+    value: wizardState.data.mapDefaults.centerLng || "",
   });
-  lngInput.addEventListener('input', (event) => {
+  lngInput.addEventListener("input", (event) => {
     wizardState.data.mapDefaults.centerLng = event.target.value;
   });
   grid.appendChild(lngField);
 
   const { wrapper: zoomField, input: zoomInput } = createLabeledInput({
-    label: 'Default zoom',
-    type: 'number',
-    step: '1',
-    value: wizardState.data.mapDefaults.zoom || '',
+    label: "Default zoom",
+    type: "number",
+    step: "1",
+    value: wizardState.data.mapDefaults.zoom || "",
   });
-  zoomInput.addEventListener('input', (event) => {
+  zoomInput.addEventListener("input", (event) => {
     wizardState.data.mapDefaults.zoom = event.target.value;
   });
   grid.appendChild(zoomField);
@@ -1966,68 +2126,68 @@ function renderMapDefaultsEditor() {
 }
 
 function renderCoordinateEditor() {
-  const section = document.createElement('section');
-  section.className = 'wizard-section';
-  const heading = document.createElement('h3');
-  heading.textContent = 'Map pins';
+  const section = document.createElement("section");
+  section.className = "wizard-section";
+  const heading = document.createElement("h3");
+  heading.textContent = "Map pins";
   section.appendChild(heading);
 
-  const list = document.createElement('div');
-  list.className = 'wizard-list';
+  const list = document.createElement("div");
+  list.className = "wizard-list";
   wizardState.data.mapCoordinates.forEach((pin, index) => {
-    const row = document.createElement('div');
-    row.className = 'wizard-row';
+    const row = document.createElement("div");
+    row.className = "wizard-row";
 
-    const idLabel = document.createElement('div');
-    idLabel.className = 'form-field form-field--readonly';
-    const idTitle = document.createElement('span');
-    idTitle.className = 'form-label';
-    idTitle.textContent = 'Key';
-    const idValue = document.createElement('code');
+    const idLabel = document.createElement("div");
+    idLabel.className = "form-field form-field--readonly";
+    const idTitle = document.createElement("span");
+    idTitle.className = "form-label";
+    idTitle.textContent = "Key";
+    const idValue = document.createElement("code");
     idValue.textContent = pin.id;
     idLabel.append(idTitle, idValue);
     row.appendChild(idLabel);
 
     const { wrapper: nameField, input: nameInput } = createLabeledInput({
-      label: 'Label',
-      value: pin.label || '',
-      placeholder: 'Display name',
+      label: "Label",
+      value: pin.label || "",
+      placeholder: "Display name",
     });
-    nameInput.addEventListener('input', (event) => {
+    nameInput.addEventListener("input", (event) => {
       wizardState.data.mapCoordinates[index].label = event.target.value;
     });
     row.appendChild(nameField);
 
     const { wrapper: latField, input: latInput } = createLabeledInput({
-      label: 'Latitude',
-      type: 'number',
-      step: '0.0001',
-      value: pin.lat || '',
+      label: "Latitude",
+      type: "number",
+      step: "0.0001",
+      value: pin.lat || "",
     });
-    latInput.addEventListener('input', (event) => {
+    latInput.addEventListener("input", (event) => {
       wizardState.data.mapCoordinates[index].lat = event.target.value;
     });
     row.appendChild(latField);
 
     const { wrapper: lngField, input: lngInput } = createLabeledInput({
-      label: 'Longitude',
-      type: 'number',
-      step: '0.0001',
-      value: pin.lng || '',
+      label: "Longitude",
+      type: "number",
+      step: "0.0001",
+      value: pin.lng || "",
     });
-    lngInput.addEventListener('input', (event) => {
+    lngInput.addEventListener("input", (event) => {
       wizardState.data.mapCoordinates[index].lng = event.target.value;
     });
     row.appendChild(lngField);
 
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'btn btn--danger btn--subtle';
-    removeBtn.dataset.action = 'coords-remove';
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "btn btn--danger btn--subtle";
+    removeBtn.dataset.action = "coords-remove";
     removeBtn.dataset.index = index;
-    removeBtn.textContent = 'Remove';
-    const actions = document.createElement('div');
-    actions.className = 'wizard-row__actions';
+    removeBtn.textContent = "Remove";
+    const actions = document.createElement("div");
+    actions.className = "wizard-row__actions";
     actions.appendChild(removeBtn);
     row.appendChild(actions);
 
@@ -2035,102 +2195,116 @@ function renderCoordinateEditor() {
   });
   section.appendChild(list);
 
-  const addBtn = document.createElement('button');
-  addBtn.type = 'button';
-  addBtn.className = 'btn btn--primary';
-  addBtn.dataset.action = 'coords-add';
-  addBtn.textContent = 'Add map pin';
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "btn btn--primary";
+  addBtn.dataset.action = "coords-add";
+  addBtn.textContent = "Add map pin";
   section.appendChild(addBtn);
 
   return section;
 }
 
 function renderWizardCatalogStep() {
-  const container = document.createElement('div');
-  container.className = 'wizard-stack';
-  container.appendChild(renderCatalogSection('activity', 'Activities'));
-  container.appendChild(renderCatalogSection('stay', 'Stays'));
-  container.appendChild(renderCatalogSection('booking', 'Bookings'));
+  const container = document.createElement("div");
+  container.className = "wizard-stack";
+  container.appendChild(renderCatalogSection("activity", "Activities"));
+  container.appendChild(renderCatalogSection("stay", "Stays"));
+  container.appendChild(renderCatalogSection("booking", "Bookings"));
   return container;
 }
 
 function renderCatalogSection(type, headingText) {
-  const section = document.createElement('section');
-  section.className = 'wizard-section';
-  const heading = document.createElement('h3');
+  const section = document.createElement("section");
+  section.className = "wizard-section";
+  const heading = document.createElement("h3");
   heading.textContent = headingText;
   section.appendChild(heading);
 
-  const list = document.createElement('div');
-  list.className = 'wizard-list';
+  const list = document.createElement("div");
+  list.className = "wizard-list";
   const items = wizardState.data.catalog[type] || [];
-  const locationOptions = wizardState.data.locations.map((loc) => ({ value: loc.id, label: loc.label || loc.id }));
-  const coordinateOptions = wizardState.data.mapCoordinates.map((pin) => ({ value: pin.id, label: pin.label || pin.id }));
+  const locationOptions = wizardState.data.locations.map((loc) => ({
+    value: loc.id,
+    label: loc.label || loc.id,
+  }));
+  const coordinateOptions = wizardState.data.mapCoordinates.map((pin) => ({
+    value: pin.id,
+    label: pin.label || pin.id,
+  }));
 
   items.forEach((item, index) => {
-    const row = document.createElement('div');
-    row.className = 'wizard-row';
+    const row = document.createElement("div");
+    row.className = "wizard-row";
 
     const placeholder =
-      type === 'activity' ? 'Activity name' : type === 'stay' ? 'Stay name' : 'Booking name';
+      type === "activity"
+        ? "Activity name"
+        : type === "stay"
+        ? "Stay name"
+        : "Booking name";
     const { wrapper: nameField, input: nameInput } = createLabeledInput({
-      label: 'Label',
-      value: item.label || '',
+      label: "Label",
+      value: item.label || "",
       placeholder,
     });
-    nameInput.addEventListener('input', (event) => {
+    nameInput.addEventListener("input", (event) => {
       wizardState.data.catalog[type][index].label = event.target.value;
     });
     row.appendChild(nameField);
 
-    const { wrapper: locationField, select: locationSelect } = createLabeledSelect({
-      label: 'Location',
-      value: item.city || locationOptions[0]?.value || '',
-      options: locationOptions,
-    });
-    locationSelect.addEventListener('change', (event) => {
+    const { wrapper: locationField, select: locationSelect } =
+      createLabeledSelect({
+        label: "Location",
+        value: item.city || locationOptions[0]?.value || "",
+        options: locationOptions,
+      });
+    locationSelect.addEventListener("change", (event) => {
       wizardState.data.catalog[type][index].city = event.target.value;
     });
     row.appendChild(locationField);
 
-    if (type === 'activity') {
+    if (type === "activity") {
       const coordField = createLabeledSelect({
-        label: 'Map pin',
-        value: item.coord || '',
-        options: [{ value: '', label: 'None' }, ...coordinateOptions],
+        label: "Map pin",
+        value: item.coord || "",
+        options: [{ value: "", label: "None" }, ...coordinateOptions],
       });
-      coordField.select.addEventListener('change', (event) => {
-        wizardState.data.catalog[type][index].coord = event.target.value || '';
+      coordField.select.addEventListener("change", (event) => {
+        wizardState.data.catalog[type][index].coord = event.target.value || "";
       });
       row.appendChild(coordField.wrapper);
 
-      const lockField = createToggleField({ label: 'Lock', checked: Boolean(item.locked) });
-      lockField.input.addEventListener('change', (event) => {
+      const lockField = createToggleField({
+        label: "Lock",
+        checked: Boolean(item.locked),
+      });
+      lockField.input.addEventListener("change", (event) => {
         wizardState.data.catalog[type][index].locked = event.target.checked;
       });
       row.appendChild(lockField.wrapper);
     } else {
       const { wrapper: urlField, input: urlInput } = createLabeledInput({
-        label: 'Link (optional)',
-        type: 'url',
-        value: item.url || '',
-        placeholder: 'https://…',
+        label: "Link (optional)",
+        type: "url",
+        value: item.url || "",
+        placeholder: "https://…",
       });
-      urlInput.addEventListener('input', (event) => {
+      urlInput.addEventListener("input", (event) => {
         wizardState.data.catalog[type][index].url = event.target.value;
       });
       row.appendChild(urlField);
     }
 
-    const removeBtn = document.createElement('button');
-    removeBtn.type = 'button';
-    removeBtn.className = 'btn btn--danger btn--subtle';
-    removeBtn.dataset.action = 'catalog-remove';
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "btn btn--danger btn--subtle";
+    removeBtn.dataset.action = "catalog-remove";
     removeBtn.dataset.type = type;
     removeBtn.dataset.index = index;
-    removeBtn.textContent = 'Remove';
-    const actions = document.createElement('div');
-    actions.className = 'wizard-row__actions';
+    removeBtn.textContent = "Remove";
+    const actions = document.createElement("div");
+    actions.className = "wizard-row__actions";
     actions.appendChild(removeBtn);
     row.appendChild(actions);
 
@@ -2138,10 +2312,10 @@ function renderCatalogSection(type, headingText) {
   });
   section.appendChild(list);
 
-  const addBtn = document.createElement('button');
-  addBtn.type = 'button';
-  addBtn.className = 'btn btn--primary';
-  addBtn.dataset.action = 'catalog-add';
+  const addBtn = document.createElement("button");
+  addBtn.type = "button";
+  addBtn.className = "btn btn--primary";
+  addBtn.dataset.action = "catalog-add";
   addBtn.dataset.type = type;
   addBtn.textContent = `Add ${type}`;
   section.appendChild(addBtn);
@@ -2153,22 +2327,22 @@ function handleConfigAction(target) {
   const action = target.dataset.action;
   if (!action) return;
   switch (action) {
-    case 'close-config':
+    case "close-config":
       closeConfigOverlay();
       break;
-    case 'wizard-prev':
+    case "wizard-prev":
       if (wizardState && wizardState.stepIndex > 0) {
         wizardState.stepIndex -= 1;
         renderWizard();
       }
       break;
-    case 'wizard-next':
+    case "wizard-next":
       if (wizardState && wizardState.stepIndex < WIZARD_STEPS.length - 1) {
         wizardState.stepIndex += 1;
         renderWizard();
       }
       break;
-    case 'wizard-jump': {
+    case "wizard-jump": {
       if (!wizardState) break;
       const index = Number(target.dataset.stepIndex);
       if (!Number.isNaN(index) && index <= wizardState.stepIndex) {
@@ -2177,31 +2351,31 @@ function handleConfigAction(target) {
       }
       break;
     }
-    case 'wizard-save':
+    case "wizard-save":
       submitWizard();
       break;
-    case 'friends-add':
+    case "friends-add":
       if (wizardState) {
         const palette = COLOR_PALETTES.friends;
         wizardState.data.friends.push({
-          name: '',
+          name: "",
           color: palette[wizardState.data.friends.length % palette.length],
         });
         renderWizard();
       }
       break;
-    case 'friends-remove': {
+    case "friends-remove": {
       if (!wizardState) break;
       const index = Number(target.dataset.index);
       wizardState.data.friends.splice(index, 1);
       renderWizard();
       break;
     }
-    case 'friends-move-up':
-    case 'friends-move-down': {
+    case "friends-move-up":
+    case "friends-move-down": {
       if (!wizardState) break;
       const index = Number(target.dataset.index);
-      const offset = action === 'friends-move-up' ? -1 : 1;
+      const offset = action === "friends-move-up" ? -1 : 1;
       const swap = index + offset;
       if (swap >= 0 && swap < wizardState.data.friends.length) {
         const [item] = wizardState.data.friends.splice(index, 1);
@@ -2210,7 +2384,7 @@ function handleConfigAction(target) {
       }
       break;
     }
-    case 'locations-add':
+    case "locations-add":
       if (wizardState) {
         const palette = COLOR_PALETTES.locations;
         const baseLabel = `New place ${wizardState.data.locations.length + 1}`;
@@ -2224,18 +2398,18 @@ function handleConfigAction(target) {
         renderWizard();
       }
       break;
-    case 'locations-remove': {
+    case "locations-remove": {
       if (!wizardState || wizardState.data.locations.length <= 1) break;
       const index = Number(target.dataset.index);
       wizardState.data.locations.splice(index, 1);
       renderWizard();
       break;
     }
-    case 'locations-move-up':
-    case 'locations-move-down': {
+    case "locations-move-up":
+    case "locations-move-down": {
       if (!wizardState) break;
       const index = Number(target.dataset.index);
-      const offset = action === 'locations-move-up' ? -1 : 1;
+      const offset = action === "locations-move-up" ? -1 : 1;
       const swap = index + offset;
       if (swap >= 0 && swap < wizardState.data.locations.length) {
         const [item] = wizardState.data.locations.splice(index, 1);
@@ -2244,36 +2418,46 @@ function handleConfigAction(target) {
       }
       break;
     }
-    case 'coords-add':
+    case "coords-add":
       if (wizardState) {
-        const existing = Object.fromEntries(wizardState.data.mapCoordinates.map((entry) => [entry.id, true]));
-        const id = generateCoordinateIdFromLabel(`pin-${wizardState.data.mapCoordinates.length + 1}`, existing);
-        wizardState.data.mapCoordinates.push({ id, label: '', lat: '', lng: '' });
+        const existing = Object.fromEntries(
+          wizardState.data.mapCoordinates.map((entry) => [entry.id, true])
+        );
+        const id = generateCoordinateIdFromLabel(
+          `pin-${wizardState.data.mapCoordinates.length + 1}`,
+          existing
+        );
+        wizardState.data.mapCoordinates.push({
+          id,
+          label: "",
+          lat: "",
+          lng: "",
+        });
         renderWizard();
       }
       break;
-    case 'coords-remove': {
+    case "coords-remove": {
       if (!wizardState) break;
       const index = Number(target.dataset.index);
       wizardState.data.mapCoordinates.splice(index, 1);
       renderWizard();
       break;
     }
-    case 'catalog-add': {
+    case "catalog-add": {
       if (!wizardState) break;
       const type = target.dataset.type;
-      const defaultLoc = wizardState.data.locations[0]?.id || 'general';
-      const entry = { id: generateCustomId(type), label: '', city: defaultLoc };
-      if (type === 'activity') {
-        entry.coord = '';
+      const defaultLoc = wizardState.data.locations[0]?.id || "general";
+      const entry = { id: generateCustomId(type), label: "", city: defaultLoc };
+      if (type === "activity") {
+        entry.coord = "";
       } else {
-        entry.url = '';
+        entry.url = "";
       }
       wizardState.data.catalog[type].push(entry);
       renderWizard();
       break;
     }
-    case 'catalog-remove': {
+    case "catalog-remove": {
       if (!wizardState) break;
       const type = target.dataset.type;
       const index = Number(target.dataset.index);
@@ -2281,28 +2465,28 @@ function handleConfigAction(target) {
       renderWizard();
       break;
     }
-    case 'library-new':
+    case "library-new":
       closeConfigOverlay();
-      openTripWizard({ mode: 'new' });
+      openTripWizard({ mode: "new" });
       break;
-    case 'library-load':
+    case "library-load":
       setActiveTrip(target.dataset.tripId);
       closeConfigOverlay();
       break;
-    case 'library-edit':
+    case "library-edit":
       closeConfigOverlay();
-      openTripWizard({ mode: 'edit', tripId: target.dataset.tripId });
+      openTripWizard({ mode: "edit", tripId: target.dataset.tripId });
       break;
-    case 'library-duplicate':
+    case "library-duplicate":
       duplicateTrip(target.dataset.tripId);
-      if (overlayMode === 'library') renderTripLibrary();
+      if (overlayMode === "library") renderTripLibrary();
       break;
-    case 'library-delete': {
+    case "library-delete": {
       const tripId = target.dataset.tripId;
       if (tripLibraryConfirm === tripId) {
         deleteTrip(tripId);
         tripLibraryConfirm = null;
-        if (overlayMode === 'library') renderTripLibrary();
+        if (overlayMode === "library") renderTripLibrary();
       } else {
         tripLibraryConfirm = tripId;
         renderTripLibrary();
@@ -2316,25 +2500,25 @@ function handleConfigAction(target) {
 
 function submitWizard() {
   if (!wizardState) return;
-  const start = wizardState.data.startDate || '';
+  const start = wizardState.data.startDate || "";
   const end = wizardState.data.endDate || start;
   if (!isValidDate(start) || !isValidDate(end)) {
-    configSubtitle.textContent = 'Enter valid start and end dates to continue.';
+    configSubtitle.textContent = "Enter valid start and end dates to continue.";
     return;
   }
   const startDate = new Date(`${start}T00:00:00`);
   const endDate = new Date(`${end}T00:00:00`);
   if (endDate < startDate) {
-    configSubtitle.textContent = 'End date must be on or after the start date.';
+    configSubtitle.textContent = "End date must be on or after the start date.";
     return;
   }
 
   configSubtitle.textContent =
-    wizardState.mode === 'new'
-      ? 'Set up the basics before planning.'
-      : 'Update people, places, and your saved catalog.';
+    wizardState.mode === "new"
+      ? "Set up the basics before planning."
+      : "Update people, places, and your saved catalog.";
 
-  if (wizardState.mode === 'new') {
+  if (wizardState.mode === "new") {
     const newState = buildStateFromWizardData(wizardState.data);
     const newId = generateTripId();
     storageBucket.trips[newId] = newState;
@@ -2345,7 +2529,10 @@ function submitWizard() {
     storageBucket.activeTripId = newId;
     activeTripId = newId;
     planState = newState;
-    dateSequence = buildDateSequence(planState.config.range.start, planState.config.range.end);
+    dateSequence = buildDateSequence(
+      planState.config.range.start,
+      planState.config.range.end
+    );
     filterState.friend = null;
     filterState.location = null;
     refreshCatalogLookups();
@@ -2366,11 +2553,11 @@ function submitWizard() {
 }
 
 function buildWizardSources() {
-  const sources = [{ id: 'default', label: 'Default template' }];
+  const sources = [{ id: "default", label: "Default template" }];
   (storageBucket.order || []).forEach((id) => {
     const state = storageBucket.trips[id];
     if (!state) return;
-    sources.push({ id, label: state.config?.tripName || 'Saved trip' });
+    sources.push({ id, label: state.config?.tripName || "Saved trip" });
   });
   return sources;
 }
@@ -2384,30 +2571,47 @@ function getStoredTripState(tripId) {
 function extractWizardData(state) {
   const config = state.config || {};
   return {
-    tripName: config.tripName || 'Trip planner',
+    tripName: config.tripName || "Trip planner",
     startDate: config.range?.start || new Date().toISOString().slice(0, 10),
-    endDate: config.range?.end || config.range?.start || new Date().toISOString().slice(0, 10),
-    friends: (config.friends || []).map((name) => ({ name, color: config.friendColors?.[name] || '' })),
+    endDate:
+      config.range?.end ||
+      config.range?.start ||
+      new Date().toISOString().slice(0, 10),
+    friends: (config.friends || []).map((name) => ({
+      name,
+      color: config.friendColors?.[name] || "",
+    })),
     locations: (config.locationOrder || []).map((id) => ({
       id,
       label: config.locations?.[id]?.label || id,
-      color: config.locations?.[id]?.color || '#1f2937',
-      theme: config.defaultThemes?.[id] || config.locations?.[id]?.label || '',
+      color: config.locations?.[id]?.color || "#1f2937",
+      theme: config.defaultThemes?.[id] || config.locations?.[id]?.label || "",
     })),
     mapDefaults: {
-      centerLat: config.mapDefaults?.center?.[0] != null ? String(config.mapDefaults.center[0]) : '',
-      centerLng: config.mapDefaults?.center?.[1] != null ? String(config.mapDefaults.center[1]) : '',
-      zoom: config.mapDefaults?.zoom != null ? String(config.mapDefaults.zoom) : '',
+      centerLat:
+        config.mapDefaults?.center?.[0] != null
+          ? String(config.mapDefaults.center[0])
+          : "",
+      centerLng:
+        config.mapDefaults?.center?.[1] != null
+          ? String(config.mapDefaults.center[1])
+          : "",
+      zoom:
+        config.mapDefaults?.zoom != null ? String(config.mapDefaults.zoom) : "",
     },
-    mapCoordinates: Object.entries(config.mapCoordinates || {}).map(([id, coords]) => {
-      const pair = Array.isArray(coords) ? coords : [coords?.[0], coords?.[1]];
-      return {
-        id,
-        label: config.mapCoordinateLabels?.[id] || humanizeId(id),
-        lat: pair?.[0] != null ? String(pair[0]) : '',
-        lng: pair?.[1] != null ? String(pair[1]) : '',
-      };
-    }),
+    mapCoordinates: Object.entries(config.mapCoordinates || {}).map(
+      ([id, coords]) => {
+        const pair = Array.isArray(coords)
+          ? coords
+          : [coords?.[0], coords?.[1]];
+        return {
+          id,
+          label: config.mapCoordinateLabels?.[id] || humanizeId(id),
+          lat: pair?.[0] != null ? String(pair[0]) : "",
+          lng: pair?.[1] != null ? String(pair[1]) : "",
+        };
+      }
+    ),
     catalog: {
       activity: (config.catalog?.activity || []).map((item) => ({ ...item })),
       stay: (config.catalog?.stay || []).map((item) => ({ ...item })),
@@ -2419,11 +2623,16 @@ function extractWizardData(state) {
 function buildConfigFromWizardData(data) {
   const start = data.startDate || new Date().toISOString().slice(0, 10);
   const end = data.endDate || start;
-  const friends = data.friends.map((entry) => entry.name.trim()).filter(Boolean);
+  const friends = data.friends
+    .map((entry) => entry.name.trim())
+    .filter(Boolean);
   const friendColors = {};
   const palette = COLOR_PALETTES.friends;
   friends.forEach((name, index) => {
-    const color = sanitizeHexColor(data.friends[index]?.color, palette[index % palette.length]);
+    const color = sanitizeHexColor(
+      data.friends[index]?.color,
+      palette[index % palette.length]
+    );
     friendColors[name] = color;
   });
 
@@ -2437,14 +2646,17 @@ function buildConfigFromWizardData(data) {
     locationOrder.push(id);
     locations[id] = {
       label,
-      color: sanitizeHexColor(entry.color, COLOR_PALETTES.locations[index % COLOR_PALETTES.locations.length]),
+      color: sanitizeHexColor(
+        entry.color,
+        COLOR_PALETTES.locations[index % COLOR_PALETTES.locations.length]
+      ),
     };
     defaultThemes[id] = entry.theme?.trim() || label;
   });
   if (!locationOrder.length) {
-    locations.general = { label: 'General', color: '#1f2937' };
-    locationOrder.push('general');
-    defaultThemes.general = 'General';
+    locations.general = { label: "General", color: "#1f2937" };
+    locationOrder.push("general");
+    defaultThemes.general = "General";
   }
 
   const mapCoordinates = {};
@@ -2466,7 +2678,7 @@ function buildConfigFromWizardData(data) {
 
   data.catalog.activity.forEach((item, index) => {
     if (!item.label) return;
-    const id = item.id || generateCustomId('activity');
+    const id = item.id || generateCustomId("activity");
     const city = locationSet.has(item.city) ? item.city : locationOrder[0];
     const payload = { id, label: item.label, city };
     if (item.coord && coordinateSet.has(item.coord)) {
@@ -2478,7 +2690,7 @@ function buildConfigFromWizardData(data) {
     catalog.activity.push(payload);
   });
 
-  ['stay', 'booking'].forEach((type) => {
+  ["stay", "booking"].forEach((type) => {
     data.catalog[type].forEach((item) => {
       if (!item.label) return;
       const id = item.id || generateCustomId(type);
@@ -2492,7 +2704,7 @@ function buildConfigFromWizardData(data) {
   });
 
   return {
-    tripName: (data.tripName || '').trim() || 'Trip planner',
+    tripName: (data.tripName || "").trim() || "Trip planner",
     range: { start, end },
     friends,
     friendColors,
@@ -2518,7 +2730,7 @@ function buildStateFromWizardData(data) {
 
 function buildMapDefaultsObject(raw) {
   if (!raw) return null;
-  if (raw.centerLat === '' || raw.centerLng === '') return null;
+  if (raw.centerLat === "" || raw.centerLng === "") return null;
   const lat = Number(raw.centerLat);
   const lng = Number(raw.centerLng);
   const zoom = Number(raw.zoom);
@@ -2534,20 +2746,31 @@ function buildMapDefaultsObject(raw) {
 
 function applyConfigUpdate(nextConfig, { resetDays = false } = {}) {
   const config = {
-    tripName: nextConfig.tripName || 'Trip planner',
+    tripName: nextConfig.tripName || "Trip planner",
     range: { ...nextConfig.range },
     friends: Array.isArray(nextConfig.friends) ? nextConfig.friends : [],
-    friendColors: assignFriendColors(nextConfig.friends || [], nextConfig.friendColors || {}),
+    friendColors: assignFriendColors(
+      nextConfig.friends || [],
+      nextConfig.friendColors || {}
+    ),
     locations: nextConfig.locations || {},
-    locationOrder: Array.isArray(nextConfig.locationOrder) ? nextConfig.locationOrder : Object.keys(nextConfig.locations || {}),
+    locationOrder: Array.isArray(nextConfig.locationOrder)
+      ? nextConfig.locationOrder
+      : Object.keys(nextConfig.locations || {}),
     defaultThemes: { ...(nextConfig.defaultThemes || {}) },
     mapDefaults: nextConfig.mapDefaults ? { ...nextConfig.mapDefaults } : null,
     mapCoordinates: deepClone(nextConfig.mapCoordinates || {}),
     mapCoordinateLabels: { ...(nextConfig.mapCoordinateLabels || {}) },
     catalog: {
-      activity: Array.isArray(nextConfig.catalog?.activity) ? nextConfig.catalog.activity.map((item) => ({ ...item })) : [],
-      stay: Array.isArray(nextConfig.catalog?.stay) ? nextConfig.catalog.stay.map((item) => ({ ...item })) : [],
-      booking: Array.isArray(nextConfig.catalog?.booking) ? nextConfig.catalog.booking.map((item) => ({ ...item })) : [],
+      activity: Array.isArray(nextConfig.catalog?.activity)
+        ? nextConfig.catalog.activity.map((item) => ({ ...item }))
+        : [],
+      stay: Array.isArray(nextConfig.catalog?.stay)
+        ? nextConfig.catalog.stay.map((item) => ({ ...item }))
+        : [],
+      booking: Array.isArray(nextConfig.catalog?.booking)
+        ? nextConfig.catalog.booking.map((item) => ({ ...item }))
+        : [],
     },
   };
 
@@ -2565,10 +2788,13 @@ function applyConfigUpdate(nextConfig, { resetDays = false } = {}) {
       const existing = planState.days?.[dateKey];
       const cloned = cloneDay(existing, config);
       cloned.friends = cloned.friends.filter((friend) => friendSet.has(friend));
-      ['morning', 'afternoon', 'evening'].forEach((slot) => {
-        cloned.slots[slot] = (cloned.slots[slot] || []).filter((id) => activitySet.has(id));
+      ["morning", "afternoon", "evening"].forEach((slot) => {
+        cloned.slots[slot] = (cloned.slots[slot] || []).filter((id) =>
+          activitySet.has(id)
+        );
       });
-      cloned.stay = cloned.stay && staySet.has(cloned.stay) ? cloned.stay : null;
+      cloned.stay =
+        cloned.stay && staySet.has(cloned.stay) ? cloned.stay : null;
       if (!config.locations[cloned.loc]) {
         cloned.loc = getDefaultLocationId(config);
       }
@@ -2585,8 +2811,12 @@ function applyConfigUpdate(nextConfig, { resetDays = false } = {}) {
 
   planState = { config, days: newDays };
   dateSequence = sequence;
-  filterState.friend = config.friends.includes(filterState.friend) ? filterState.friend : null;
-  filterState.location = config.locations[filterState.location] ? filterState.location : null;
+  filterState.friend = config.friends.includes(filterState.friend)
+    ? filterState.friend
+    : null;
+  filterState.location = config.locations[filterState.location]
+    ? filterState.location
+    : null;
   refreshCatalogLookups();
   renderChrome();
   renderCalendar();
@@ -2600,9 +2830,16 @@ function setActiveTrip(tripId) {
   storageBucket.activeTripId = tripId;
   planState = normalizeState(storageBucket.trips[tripId]) || planState;
   storageBucket.trips[tripId] = planState;
-  dateSequence = buildDateSequence(planState.config.range.start, planState.config.range.end);
-  filterState.friend = planState.config.friends.includes(filterState.friend) ? filterState.friend : null;
-  filterState.location = planState.config.locations[filterState.location] ? filterState.location : null;
+  dateSequence = buildDateSequence(
+    planState.config.range.start,
+    planState.config.range.end
+  );
+  filterState.friend = planState.config.friends.includes(filterState.friend)
+    ? filterState.friend
+    : null;
+  filterState.location = planState.config.locations[filterState.location]
+    ? filterState.location
+    : null;
   refreshCatalogLookups();
   renderChrome();
   renderCalendar();
@@ -2614,7 +2851,7 @@ function duplicateTrip(tripId) {
   const source = storageBucket.trips?.[tripId];
   if (!source) return;
   const clone = normalizeState(deepClone(source));
-  clone.config.tripName = `${clone.config.tripName || 'Trip'} copy`;
+  clone.config.tripName = `${clone.config.tripName || "Trip"} copy`;
   const newId = generateTripId();
   storageBucket.trips[newId] = clone;
   storageBucket.order = storageBucket.order || [];
@@ -2622,7 +2859,10 @@ function duplicateTrip(tripId) {
   storageBucket.activeTripId = newId;
   activeTripId = newId;
   planState = clone;
-  dateSequence = buildDateSequence(planState.config.range.start, planState.config.range.end);
+  dateSequence = buildDateSequence(
+    planState.config.range.start,
+    planState.config.range.end
+  );
   filterState.friend = null;
   filterState.location = null;
   refreshCatalogLookups();
@@ -2635,7 +2875,9 @@ function duplicateTrip(tripId) {
 function deleteTrip(tripId) {
   if (!storageBucket.trips?.[tripId]) return;
   delete storageBucket.trips[tripId];
-  storageBucket.order = (storageBucket.order || []).filter((id) => id !== tripId);
+  storageBucket.order = (storageBucket.order || []).filter(
+    (id) => id !== tripId
+  );
   if (!storageBucket.order.length) {
     const { id, state } = createNewTripState(DEFAULT_TRIP_TEMPLATE);
     storageBucket.trips[id] = state;
@@ -2649,9 +2891,16 @@ function deleteTrip(tripId) {
     activeTripId = nextId;
     planState = normalizeState(storageBucket.trips[nextId]);
   }
-  dateSequence = buildDateSequence(planState.config.range.start, planState.config.range.end);
-  filterState.friend = planState.config.friends.includes(filterState.friend) ? filterState.friend : null;
-  filterState.location = planState.config.locations[filterState.location] ? filterState.location : null;
+  dateSequence = buildDateSequence(
+    planState.config.range.start,
+    planState.config.range.end
+  );
+  filterState.friend = planState.config.friends.includes(filterState.friend)
+    ? filterState.friend
+    : null;
+  filterState.location = planState.config.locations[filterState.location]
+    ? filterState.location
+    : null;
   refreshCatalogLookups();
   renderChrome();
   renderCalendar();
@@ -2663,28 +2912,30 @@ function closeConfigOverlay() {
   overlayMode = null;
   wizardState = null;
   tripLibraryConfirm = null;
-  configOverlay.classList.remove('is-open');
-  configOverlay.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('config-open');
-  configSubtitle.textContent = '';
+  configOverlay.classList.remove("is-open");
+  configOverlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("config-open");
+  configSubtitle.textContent = "";
 }
 
-
 function formatIcsDateTime(date) {
-  return date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  return date
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}Z$/, "Z");
 }
 
 function escapeIcsText(value) {
-  return String(value || '')
-    .replace(/\\/g, '\\\\')
-    .replace(/\n/g, '\\n')
-    .replace(/,/g, '\\,')
-    .replace(/;/g, '\\;');
+  return String(value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
 }
 
 function formatSummaryDate(dateKey) {
   const date = new Date(`${dateKey}T00:00:00`);
-  const month = date.toLocaleDateString(undefined, { month: 'short' });
+  const month = date.toLocaleDateString(undefined, { month: "short" });
   return `${month} ${date.getDate()}`;
 }
 
@@ -2693,33 +2944,36 @@ function generateCustomId(prefix) {
 }
 
 function generateTripId() {
-  return generateCustomId('trip');
+  return generateCustomId("trip");
 }
 
 let uniqueIdCounter = 0;
 
-function nextId(prefix = 'field') {
+function nextId(prefix = "field") {
   uniqueIdCounter += 1;
   return `${prefix}-${uniqueIdCounter}`;
 }
 
 function sanitizeHexColor(value, fallback) {
-  if (typeof value !== 'string') return fallback;
+  if (typeof value !== "string") return fallback;
   const hex = value.trim();
   return /^#([0-9a-fA-F]{6})$/.test(hex) ? hex : fallback;
 }
 
 function humanizeId(value) {
-  if (!value) return '';
+  if (!value) return "";
   return String(value)
-    .replace(/[-_]+/g, ' ')
-    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/[-_]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
     .replace(/\b\w/g, (char) => char.toUpperCase())
     .trim();
 }
 
-function generateCoordinateIdFromLabel(label, existing = planState?.config?.mapCoordinates || {}) {
-  const base = slugify(label || 'pin', 'pin');
+function generateCoordinateIdFromLabel(
+  label,
+  existing = planState?.config?.mapCoordinates || {}
+) {
+  const base = slugify(label || "pin", "pin");
   let candidate = base;
   let counter = 2;
   while (existing[candidate]) {
@@ -2729,8 +2983,10 @@ function generateCoordinateIdFromLabel(label, existing = planState?.config?.mapC
 }
 
 function generateUniqueLocationId(label) {
-  const existing = new Set((wizardState?.data.locations || []).map((loc) => loc.id));
-  const base = slugify(label || 'place', 'place');
+  const existing = new Set(
+    (wizardState?.data.locations || []).map((loc) => loc.id)
+  );
+  const base = slugify(label || "place", "place");
   let candidate = base;
   let counter = 2;
   while (existing.has(candidate)) {
@@ -2739,17 +2995,25 @@ function generateUniqueLocationId(label) {
   return candidate;
 }
 
-function createLabeledInput({ label, type = 'text', value = '', placeholder = '', required = false, step, min }) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'form-field';
-  const labelEl = document.createElement('label');
-  labelEl.className = 'form-label';
-  const inputId = nextId('input');
-  labelEl.setAttribute('for', inputId);
+function createLabeledInput({
+  label,
+  type = "text",
+  value = "",
+  placeholder = "",
+  required = false,
+  step,
+  min,
+}) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "form-field";
+  const labelEl = document.createElement("label");
+  labelEl.className = "form-label";
+  const inputId = nextId("input");
+  labelEl.setAttribute("for", inputId);
   labelEl.textContent = label;
-  const input = document.createElement('input');
+  const input = document.createElement("input");
   input.id = inputId;
-  input.className = 'form-input';
+  input.className = "form-input";
   input.type = type;
   if (value !== null && value !== undefined) {
     input.value = value;
@@ -2770,19 +3034,19 @@ function createLabeledInput({ label, type = 'text', value = '', placeholder = ''
   return { wrapper, input };
 }
 
-function createLabeledSelect({ label, value = '', options = [] }) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'form-field';
-  const labelEl = document.createElement('label');
-  labelEl.className = 'form-label';
-  const selectId = nextId('select');
-  labelEl.setAttribute('for', selectId);
+function createLabeledSelect({ label, value = "", options = [] }) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "form-field";
+  const labelEl = document.createElement("label");
+  labelEl.className = "form-label";
+  const selectId = nextId("select");
+  labelEl.setAttribute("for", selectId);
   labelEl.textContent = label;
-  const select = document.createElement('select');
+  const select = document.createElement("select");
   select.id = selectId;
-  select.className = 'form-select';
+  select.className = "form-select";
   options.forEach((option) => {
-    const optEl = document.createElement('option');
+    const optEl = document.createElement("option");
     optEl.value = option.value;
     optEl.textContent = option.label;
     select.appendChild(optEl);
@@ -2795,36 +3059,37 @@ function createLabeledSelect({ label, value = '', options = [] }) {
 }
 
 function createToggleField({ label, checked = false }) {
-  const wrapper = document.createElement('label');
-  wrapper.className = 'form-toggle';
-  const input = document.createElement('input');
-  input.type = 'checkbox';
+  const wrapper = document.createElement("label");
+  wrapper.className = "form-toggle";
+  const input = document.createElement("input");
+  input.type = "checkbox";
   input.checked = checked;
-  const span = document.createElement('span');
+  const span = document.createElement("span");
   span.textContent = label;
   wrapper.append(input, span);
   return { wrapper, input };
 }
 
-function slugify(value, fallback = 'trip') {
-  const slug = String(value || '')
+function slugify(value, fallback = "trip") {
+  const slug = String(value || "")
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .replace(/-{2,}/g, '-');
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .replace(/-{2,}/g, "-");
   return slug || fallback;
 }
 
 function lightenColor(color, strength = 0.5) {
   const rgb = hexToRgb(color);
   if (!rgb) return color;
-  const mix = (component) => Math.round(component + (255 - component) * strength);
+  const mix = (component) =>
+    Math.round(component + (255 - component) * strength);
   return `rgb(${mix(rgb.r)}, ${mix(rgb.g)}, ${mix(rgb.b)})`;
 }
 
 function hexToRgb(color) {
-  if (!color || typeof color !== 'string') return null;
-  const hex = color.replace('#', '');
+  if (!color || typeof color !== "string") return null;
+  const hex = color.replace("#", "");
   if (hex.length === 3) {
     const r = parseInt(hex[0] + hex[0], 16);
     const g = parseInt(hex[1] + hex[1], 16);
@@ -2847,4 +3112,3 @@ function isValidDate(value) {
   const timestamp = Date.parse(`${value}T00:00:00`);
   return Number.isFinite(timestamp);
 }
-
