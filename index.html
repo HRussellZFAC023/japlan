@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Japan Trip — Nov 14–30, 2025</title>
+    <title>Trip Planner</title>
     <link rel="stylesheet" href="styles.css" />
     <link
       rel="stylesheet"
@@ -22,7 +22,7 @@
   <body>
     <header class="site-header">
       <div class="header-inner">
-        <h1 class="site-title">Japan Trip — Nov 14–30, 2025</h1>
+        <h1 class="site-title" id="tripTitle">Trip Planner</h1>
         <div class="toolbar" role="toolbar" aria-label="Filters and actions">
           <div class="toolbar-group">
             <span class="toolbar-label">Show</span>
@@ -30,32 +30,21 @@
           </div>
           <div class="toolbar-group">
             <span class="toolbar-label">Friends</span>
-            <button class="chip chip--friend" data-friend="Nana">Nana</button>
-            <button class="chip chip--friend" data-friend="Nicole">Nicole</button>
-            <button class="chip chip--friend" data-friend="Ken">Ken</button>
-            <button class="chip chip--friend" data-friend="James">James</button>
-            <button class="chip chip--friend" data-friend="Phil">Phil</button>
+            <div class="toolbar-chips" id="friendFilters"></div>
           </div>
           <div class="toolbar-group">
             <span class="toolbar-label">Places</span>
-            <button class="chip chip--location" data-location="osaka">Osaka/Hirakata</button>
-            <button class="chip chip--location" data-location="kyoto">Kyoto/Nara/Kōyasan</button>
-            <button class="chip chip--location" data-location="tokyo">Tokyo/Chiba</button>
-            <button class="chip chip--location" data-location="kobe">Kobe/Arima/Himeji</button>
-            <button class="chip chip--location" data-location="work">Work/Travel</button>
+            <div class="toolbar-chips" id="locationFilters"></div>
           </div>
           <div class="toolbar-group toolbar-group--actions">
-            <button class="btn" data-action="toggle-edit">Edit</button>
+            <button class="btn" data-action="manage-trips">Trips</button>
+            <button class="btn" data-action="trip-settings">Trip settings</button>
+            <button class="btn" data-action="new-trip">New trip</button>
+            <button class="btn" data-action="toggle-edit">Edit plan</button>
             <button class="btn" data-action="export-ics">Export .ics</button>
           </div>
         </div>
-        <div class="legend" aria-label="Color legend">
-          <div class="legend-item"><span class="legend-swatch" data-swatch="osaka"></span>Osaka/Hirakata</div>
-          <div class="legend-item"><span class="legend-swatch" data-swatch="kyoto"></span>Kyoto/Nara/Kōyasan</div>
-          <div class="legend-item"><span class="legend-swatch" data-swatch="tokyo"></span>Tokyo/Chiba</div>
-          <div class="legend-item"><span class="legend-swatch" data-swatch="kobe"></span>Kobe/Arima/Himeji</div>
-          <div class="legend-item"><span class="legend-swatch" data-swatch="work"></span>Work/Travel</div>
-        </div>
+        <div class="legend" id="locationLegend" aria-label="Color legend"></div>
       </div>
     </header>
     <main class="main">
@@ -86,6 +75,24 @@
           <button class="btn btn--subtle" data-action="close-map">Close</button>
         </div>
         <div id="map" class="overlay__map" role="presentation"></div>
+      </div>
+    </div>
+
+    <div id="configOverlay" class="overlay" aria-hidden="true">
+      <div
+        class="overlay__dialog overlay__dialog--wide"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="configTitle"
+      >
+        <div class="overlay__header">
+          <div>
+            <p class="overlay__subtitle" id="configSubtitle"></p>
+            <h2 class="overlay__title" id="configTitle">Trip setup</h2>
+          </div>
+          <button class="btn btn--subtle" data-action="close-config">Close</button>
+        </div>
+        <div class="config-content" id="configContent"></div>
       </div>
     </div>
   </body>
