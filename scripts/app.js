@@ -697,12 +697,25 @@ function handleChipDragStart(event) {
     index: Number(chip.dataset.index),
     id: chip.dataset.id,
   };
+  // Prevent the card's dragstart from also firing when a chip is dragged.
+  // Stopping propagation here avoids accidentally initiating a card swap.
+  event.stopPropagation();
   event.dataTransfer.effectAllowed = 'move';
   event.dataTransfer.setData('text/plain', JSON.stringify({ type: 'chip', id: chip.dataset.id }));
 }
 
 function handleChipDragEnd() {
   chipDragData = null;
+  // Ensure the dragend doesn't bubble up to the card and trigger card-level logic.
+  // If an event object is available, stop its propagation.
+  try {
+    // In some browsers dragend is called without an event argument when used as a listener reference,
+    // so we defensively check `arguments[0]`.
+    const evt = arguments[0];
+    if (evt && typeof evt.stopPropagation === 'function') evt.stopPropagation();
+  } catch (e) {
+    // ignore
+  }
   document.querySelectorAll('.slot').forEach((slot) => {
     slot.removeAttribute('data-drop-hover');
     clearSlotDropIndicator(slot);
@@ -811,7 +824,14 @@ function moveChip(dragData, targetDate, targetSlot, targetIndex) {
 }
 
 function handleCardDragStart(event) {
+  // If we're not in editing mode, don't allow dragging.
   if (!editing) {
+    event.preventDefault();
+    return;
+  }
+  // If a chip is currently being dragged, don't treat this as a card drag.
+  // This prevents card swapping when the user is moving a chip between slots.
+  if (chipDragData) {
     event.preventDefault();
     return;
   }
