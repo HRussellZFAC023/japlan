@@ -412,15 +412,25 @@ function normalizeConfig(rawConfig) {
     locations,
     locationOrder,
     defaultThemes: { ...(rawConfig.defaultThemes || {}) },
-    mapDefaults: rawConfig.mapDefaults ? { ...rawConfig.mapDefaults } : template.mapDefaults || null,
-    mapCoordinates: deepClone(rawConfig.mapCoordinates || template.mapCoordinates || {}),
+    mapDefaults: rawConfig.mapDefaults
+      ? { ...rawConfig.mapDefaults }
+      : template.mapDefaults || null,
+    mapCoordinates: deepClone(
+      rawConfig.mapCoordinates || template.mapCoordinates || {}
+    ),
     mapCoordinateLabels: {
       ...(template.mapCoordinateLabels || {}),
       ...(rawConfig.mapCoordinateLabels || {}),
     },
     routing: {
-      provider: rawConfig.routing?.provider || template.routing?.provider || 'openrouteservice',
-      openRouteApiKey: rawConfig.routing?.openRouteApiKey || template.routing?.openRouteApiKey || '',
+      provider:
+        rawConfig.routing?.provider ||
+        template.routing?.provider ||
+        "openrouteservice",
+      openRouteApiKey:
+        rawConfig.routing?.openRouteApiKey ||
+        template.routing?.openRouteApiKey ||
+        "",
     },
     catalog: {
       activity: Array.isArray(rawConfig.catalog?.activity)
@@ -522,7 +532,7 @@ function ensureDay(dateKey) {
   }
   day.theme = day.theme ?? "";
   day.stay = day.stay || null;
-  if (!day.travel || typeof day.travel !== 'object') {
+  if (!day.travel || typeof day.travel !== "object") {
     day.travel = null;
   }
   return day;
@@ -530,10 +540,15 @@ function ensureDay(dateKey) {
 
 function getCoordinateValue(coordRef) {
   if (!coordRef) return null;
-  if (Array.isArray(coordRef) && coordRef.length === 2 && Number.isFinite(coordRef[0]) && Number.isFinite(coordRef[1])) {
+  if (
+    Array.isArray(coordRef) &&
+    coordRef.length === 2 &&
+    Number.isFinite(coordRef[0]) &&
+    Number.isFinite(coordRef[1])
+  ) {
     return [Number(coordRef[0]), Number(coordRef[1])];
   }
-  if (typeof coordRef === 'string') {
+  if (typeof coordRef === "string") {
     const lookup = planState.config.mapCoordinates?.[coordRef];
     if (Array.isArray(lookup) && lookup.length === 2) {
       return [Number(lookup[0]), Number(lookup[1])];
@@ -558,12 +573,19 @@ function getStayInfo(day) {
 function buildItineraryForDay(day) {
   const stay = getStayInfo(day);
   if (!stay) {
-    return { status: 'missing-stay', stay: null, activities: [], skipped: [], routePoints: [], signature: '' };
+    return {
+      status: "missing-stay",
+      stay: null,
+      activities: [],
+      skipped: [],
+      routePoints: [],
+      signature: "",
+    };
   }
 
   const activities = [];
   const skipped = [];
-  ['morning', 'afternoon', 'evening'].forEach((slot) => {
+  ["morning", "afternoon", "evening"].forEach((slot) => {
     (day.slots?.[slot] || []).forEach((itemId) => {
       const activity = ACTIVITY_MAP.get(itemId);
       if (!activity) return;
@@ -582,7 +604,7 @@ function buildItineraryForDay(day) {
   });
   routePoints.push(stay.coords);
 
-  const status = activities.length > 0 ? 'ok' : 'no-activities';
+  const status = activities.length > 0 ? "ok" : "no-activities";
   const signature = buildRouteSignature(routePoints);
 
   return { status, stay, activities, skipped, routePoints, signature };
@@ -590,30 +612,30 @@ function buildItineraryForDay(day) {
 
 function buildRouteSignature(points) {
   if (!Array.isArray(points) || !points.length) {
-    return '';
+    return "";
   }
   return points
     .map((coord) => {
-      if (!Array.isArray(coord) || coord.length !== 2) return 'na';
+      if (!Array.isArray(coord) || coord.length !== 2) return "na";
       const [lat, lon] = coord;
       return `${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}`;
     })
-    .join('|');
+    .join("|");
 }
 
 function formatDuration(totalSeconds) {
-  if (!Number.isFinite(totalSeconds)) return '';
+  if (!Number.isFinite(totalSeconds)) return "";
   const totalMinutes = Math.round(totalSeconds / 60);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = Math.max(0, totalMinutes - hours * 60);
   const parts = [];
   if (hours > 0) parts.push(`${hours}h`);
   if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
-  return parts.join(' ');
+  return parts.join(" ");
 }
 
 function formatDistance(meters) {
-  if (!Number.isFinite(meters)) return '';
+  if (!Number.isFinite(meters)) return "";
   if (meters >= 1000) {
     const km = meters / 1000;
     const precision = km >= 10 ? 0 : 1;
@@ -625,19 +647,29 @@ function formatDistance(meters) {
 function buildTravelDisplay(plan) {
   const travel = plan.travel;
   if (!plan.stay) {
-    return { text: 'Travel: add stay', state: 'warning', title: 'Pick a stay with map coordinates to calculate travel time.' };
+    return {
+      text: "Travel: add stay",
+      state: "warning",
+      title: "Pick a stay with map coordinates to calculate travel time.",
+    };
   }
   if (!travel) {
-    return { text: 'Travel: calculating…', state: 'pending', title: 'Travel time will be calculated soon.' };
+    return {
+      text: "Travel: calculating…",
+      state: "pending",
+      title: "Travel time will be calculated soon.",
+    };
   }
 
-  const skippedCount = Array.isArray(travel.skipped) ? travel.skipped.length : 0;
+  const skippedCount = Array.isArray(travel.skipped)
+    ? travel.skipped.length
+    : 0;
   const skippedTitle = skippedCount
-    ? `${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing map pins`
-    : '';
+    ? `${skippedCount} stop${skippedCount === 1 ? "" : "s"} missing map pins`
+    : "";
 
   switch (travel.status) {
-    case 'ready': {
+    case "ready": {
       const durationText = formatDuration(Number(travel.durationSeconds));
       const distanceText = formatDistance(Number(travel.distanceMeters));
       const parts = [];
@@ -645,45 +677,49 @@ function buildTravelDisplay(plan) {
       if (distanceText) parts.push(`Distance ${distanceText}`);
       if (skippedTitle) parts.push(skippedTitle);
       return {
-        text: `Travel: ${durationText || '—'}`,
-        state: skippedCount ? 'warning' : 'ready',
-        title: parts.join(' · '),
+        text: `Travel: ${durationText || "—"}`,
+        state: skippedCount ? "warning" : "ready",
+        title: parts.join(" · "),
       };
     }
-    case 'pending':
-      return { text: 'Travel: calculating…', state: 'pending', title: 'Travel time is being calculated.' };
-    case 'missing-key':
+    case "pending":
       return {
-        text: 'Travel: add API key',
-        state: 'warning',
-        title: 'Add your OpenRouteService API key to calculate travel time.',
+        text: "Travel: calculating…",
+        state: "pending",
+        title: "Travel time is being calculated.",
       };
-    case 'missing-stay':
+    case "missing-key":
       return {
-        text: 'Travel: add stay',
-        state: 'warning',
-        title: 'Pick a stay with map coordinates to calculate travel time.',
+        text: "Travel: add API key",
+        state: "warning",
+        title: "Add your OpenRouteService API key to calculate travel time.",
       };
-    case 'no-activities':
+    case "missing-stay":
       return {
-        text: 'Travel: 0m',
-        state: skippedCount ? 'warning' : 'ready',
-        title: skippedTitle || 'No mapped stops scheduled for this day.',
+        text: "Travel: add stay",
+        state: "warning",
+        title: "Pick a stay with map coordinates to calculate travel time.",
       };
-    case 'insufficient-data':
+    case "no-activities":
       return {
-        text: 'Travel: add map pins',
-        state: 'warning',
-        title: 'Add coordinates for all stops to calculate travel time.',
+        text: "Travel: 0m",
+        state: skippedCount ? "warning" : "ready",
+        title: skippedTitle || "No mapped stops scheduled for this day.",
       };
-    case 'error':
+    case "insufficient-data":
       return {
-        text: 'Travel: unavailable',
-        state: 'error',
-        title: travel.error || 'Routing request failed.',
+        text: "Travel: add map pins",
+        state: "warning",
+        title: "Add coordinates for all stops to calculate travel time.",
+      };
+    case "error":
+      return {
+        text: "Travel: unavailable",
+        state: "error",
+        title: travel.error || "Routing request failed.",
       };
     default:
-      return { text: 'Travel: —', state: 'pending', title: '' };
+      return { text: "Travel: —", state: "pending", title: "" };
   }
 }
 
@@ -698,7 +734,7 @@ function applyTravelChipState(chip, plan) {
   if (display.title) {
     chip.title = display.title;
   } else {
-    chip.removeAttribute('title');
+    chip.removeAttribute("title");
   }
 }
 
@@ -706,7 +742,7 @@ function refreshTravelChip(dateKey) {
   if (!calendarEl) return false;
   const card = calendarEl.querySelector(`.day-card[data-date="${dateKey}"]`);
   if (!card) return false;
-  const chip = card.querySelector('.theme-chip--travel');
+  const chip = card.querySelector(".theme-chip--travel");
   if (!chip) return false;
   const day = ensureDay(dateKey);
   applyTravelChipState(chip, day);
@@ -715,18 +751,24 @@ function refreshTravelChip(dateKey) {
 
 function scheduleTravelChipRefresh(dateKey) {
   const updated = refreshTravelChip(dateKey);
-  const schedule = typeof queueMicrotask === 'function'
-    ? queueMicrotask
-    : (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
-        ? (fn) => window.requestAnimationFrame(fn)
-        : (fn) => setTimeout(fn, 0));
+  const schedule =
+    typeof queueMicrotask === "function"
+      ? queueMicrotask
+      : typeof window !== "undefined" &&
+        typeof window.requestAnimationFrame === "function"
+      ? (fn) => window.requestAnimationFrame(fn)
+      : (fn) => setTimeout(fn, 0);
   schedule(() => {
     refreshTravelChip(dateKey);
   });
   return updated;
 }
 
-function setDayTravel(dateKey, travel, { persist = true, updateCard = true } = {}) {
+function setDayTravel(
+  dateKey,
+  travel,
+  { persist = true, updateCard = true } = {}
+) {
   const day = ensureDay(dateKey);
   day.travel = travel;
   if (persist) {
@@ -760,32 +802,36 @@ function scheduleTravelCalculation(dateKey, { interactive = false } = {}) {
 }
 
 async function computeTravelForDay(dateKey, { interactive = false } = {}) {
-  const provider = 'openrouteservice';
-  const profile = 'driving-car';
+  const provider = "openrouteservice";
+  const profile = "driving-car";
   const day = ensureDay(dateKey);
   const itinerary = buildItineraryForDay(day);
 
   const skipped = Array.isArray(itinerary.skipped) ? itinerary.skipped : [];
-  const signatureBase = itinerary.signature || '';
+  const signatureBase = itinerary.signature || "";
   const signature = `${provider}:${profile}:${signatureBase}`;
 
-  if (itinerary.status === 'missing-stay') {
+  if (itinerary.status === "missing-stay") {
     setDayTravel(
       dateKey,
-      { status: 'missing-stay', provider, profile, signature, skipped },
+      { status: "missing-stay", provider, profile, signature, skipped },
       { persist: false }
     );
     return null;
   }
 
   const existing = day.travel;
-  if (existing && existing.signature === signature && existing.status === 'ready') {
+  if (
+    existing &&
+    existing.signature === signature &&
+    existing.status === "ready"
+  ) {
     return existing;
   }
 
-  if (itinerary.status === 'no-activities') {
+  if (itinerary.status === "no-activities") {
     const travelData = {
-      status: 'ready',
+      status: "ready",
       provider,
       profile,
       signature,
@@ -799,10 +845,13 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     return travelData;
   }
 
-  if (!Array.isArray(itinerary.routePoints) || itinerary.routePoints.length < 2) {
+  if (
+    !Array.isArray(itinerary.routePoints) ||
+    itinerary.routePoints.length < 2
+  ) {
     setDayTravel(
       dateKey,
-      { status: 'insufficient-data', provider, profile, signature, skipped },
+      { status: "insufficient-data", provider, profile, signature, skipped },
       { persist: false }
     );
     return null;
@@ -812,7 +861,7 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   if (!apiKey) {
     setDayTravel(
       dateKey,
-      { status: 'missing-key', provider, profile, signature, skipped },
+      { status: "missing-key", provider, profile, signature, skipped },
       { persist: false }
     );
     return null;
@@ -820,14 +869,25 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
 
   setDayTravel(
     dateKey,
-    { status: 'pending', provider, profile, signature, requestedAt: Date.now(), skipped },
+    {
+      status: "pending",
+      provider,
+      profile,
+      signature,
+      requestedAt: Date.now(),
+      skipped,
+    },
     { persist: false }
   );
 
   try {
-    const route = await requestOpenRouteRoute(itinerary.routePoints, apiKey, profile);
+    const route = await requestOpenRouteRoute(
+      itinerary.routePoints,
+      apiKey,
+      profile
+    );
     const travelData = {
-      status: 'ready',
+      status: "ready",
       provider,
       profile,
       signature,
@@ -840,15 +900,15 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     setDayTravel(dateKey, travelData);
     return travelData;
   } catch (error) {
-    console.error('Routing request failed', error);
+    console.error("Routing request failed", error);
     setDayTravel(
       dateKey,
       {
-        status: 'error',
+        status: "error",
         provider,
         profile,
         signature,
-        error: error?.message || 'Routing request failed',
+        error: error?.message || "Routing request failed",
         fetchedAt: Date.now(),
         skipped,
       },
@@ -860,7 +920,7 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
 
 function getRoutingApiKey({ interactive = false } = {}) {
   const current = planState.config.routing?.openRouteApiKey;
-  if (current && typeof current === 'string' && current.trim()) {
+  if (current && typeof current === "string" && current.trim()) {
     return current.trim();
   }
   if (!interactive || routingKeyPromptActive) {
@@ -869,7 +929,9 @@ function getRoutingApiKey({ interactive = false } = {}) {
 
   routingKeyPromptActive = true;
   try {
-    const input = window.prompt('Enter your OpenRouteService API key to enable travel time calculations');
+    const input = window.prompt(
+      "Enter your OpenRouteService API key to enable travel time calculations"
+    );
     if (!input) {
       return null;
     }
@@ -877,7 +939,10 @@ function getRoutingApiKey({ interactive = false } = {}) {
     if (!normalized) {
       return null;
     }
-    const nextRouting = { ...(planState.config.routing || {}), openRouteApiKey: normalized };
+    const nextRouting = {
+      ...(planState.config.routing || {}),
+      openRouteApiKey: normalized,
+    };
     planState.config.routing = nextRouting;
     persistState();
     return normalized;
@@ -886,23 +951,26 @@ function getRoutingApiKey({ interactive = false } = {}) {
   }
 }
 
-async function requestOpenRouteRoute(points, apiKey, profile = 'driving-car') {
+async function requestOpenRouteRoute(points, apiKey, profile = "driving-car") {
   const coordinates = points.map((coord) => {
     if (!Array.isArray(coord) || coord.length !== 2) {
-      throw new Error('Invalid coordinate provided to routing request.');
+      throw new Error("Invalid coordinate provided to routing request.");
     }
     const [lat, lon] = coord;
     return [Number(lon), Number(lat)];
   });
 
-  const response = await fetch(`https://api.openrouteservice.org/v2/directions/${profile}/geojson`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: apiKey,
-    },
-    body: JSON.stringify({ coordinates }),
-  });
+  const response = await fetch(
+    `https://api.openrouteservice.org/v2/directions/${profile}/geojson`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: apiKey,
+      },
+      body: JSON.stringify({ coordinates }),
+    }
+  );
 
   if (!response.ok) {
     let message = `${response.status} ${response.statusText}`;
@@ -917,13 +985,13 @@ async function requestOpenRouteRoute(points, apiKey, profile = 'driving-car') {
         message = text.slice(0, 200);
       }
     }
-    throw new Error(message || 'Routing request failed.');
+    throw new Error(message || "Routing request failed.");
   }
 
   const data = await response.json();
   const feature = data?.features?.[0];
   if (!feature) {
-    throw new Error('No route found for the selected stops.');
+    throw new Error("No route found for the selected stops.");
   }
   return {
     geometry: feature.geometry,
@@ -935,39 +1003,43 @@ function updateMapSummary(dateKey) {
   if (!mapSummaryEl) return;
   const day = ensureDay(dateKey);
   const travel = day.travel;
-  const skippedCount = Array.isArray(travel?.skipped) ? travel.skipped.length : 0;
+  const skippedCount = Array.isArray(travel?.skipped)
+    ? travel.skipped.length
+    : 0;
 
-  let message = '';
+  let message = "";
   if (!day.stay) {
-    message = 'Pick a stay with map coordinates to calculate travel time.';
+    message = "Pick a stay with map coordinates to calculate travel time.";
   } else if (!travel) {
-    message = 'Travel time will be calculated shortly.';
-  } else if (travel.status === 'pending') {
-    message = 'Calculating travel time…';
-  } else if (travel.status === 'ready') {
+    message = "Travel time will be calculated shortly.";
+  } else if (travel.status === "pending") {
+    message = "Calculating travel time…";
+  } else if (travel.status === "ready") {
     const durationText = formatDuration(Number(travel.durationSeconds));
     const distanceText = formatDistance(Number(travel.distanceMeters));
     const parts = [];
     if (durationText) parts.push(`Total travel time: ${durationText}`);
     if (distanceText) parts.push(`Distance: ${distanceText}`);
     if (skippedCount) {
-      parts.push(`${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing map pins`);
+      parts.push(
+        `${skippedCount} stop${skippedCount === 1 ? "" : "s"} missing map pins`
+      );
     }
-    message = parts.join(' · ') || 'Route ready.';
-  } else if (travel.status === 'missing-key') {
-    message = 'Add your OpenRouteService API key to calculate travel time.';
-  } else if (travel.status === 'missing-stay') {
-    message = 'Pick a stay with map coordinates to calculate travel time.';
-  } else if (travel.status === 'no-activities') {
+    message = parts.join(" · ") || "Route ready.";
+  } else if (travel.status === "missing-key") {
+    message = "Add your OpenRouteService API key to calculate travel time.";
+  } else if (travel.status === "missing-stay") {
+    message = "Pick a stay with map coordinates to calculate travel time.";
+  } else if (travel.status === "no-activities") {
     message = skippedCount
-      ? `${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing map pins.`
-      : 'No mapped stops scheduled for this day.';
-  } else if (travel.status === 'insufficient-data') {
-    message = 'Add coordinates for all stops to calculate travel time.';
-  } else if (travel.status === 'error') {
-    message = `Unable to calculate travel time. ${travel.error || ''}`.trim();
+      ? `${skippedCount} stop${skippedCount === 1 ? "" : "s"} missing map pins.`
+      : "No mapped stops scheduled for this day.";
+  } else if (travel.status === "insufficient-data") {
+    message = "Add coordinates for all stops to calculate travel time.";
+  } else if (travel.status === "error") {
+    message = `Unable to calculate travel time. ${travel.error || ""}`.trim();
   } else {
-    message = 'Travel time is not available for this day.';
+    message = "Travel time is not available for this day.";
   }
 
   mapSummaryEl.textContent = message;
@@ -985,8 +1057,8 @@ function renderMapMarkers(dateKey) {
   if (itinerary.stay) {
     const stayMarker = window.L.circleMarker(itinerary.stay.coords, {
       radius: 8,
-      color: '#2563eb',
-      fillColor: '#2563eb',
+      color: "#2563eb",
+      fillColor: "#2563eb",
       fillOpacity: 0.9,
       weight: 2,
     }).addTo(mapMarkersLayer);
@@ -995,7 +1067,9 @@ function renderMapMarkers(dateKey) {
   }
 
   itinerary.activities.forEach((activity, index) => {
-    const marker = window.L.marker(activity.coords, { riseOnHover: true }).addTo(mapMarkersLayer);
+    const marker = window.L.marker(activity.coords, {
+      riseOnHover: true,
+    }).addTo(mapMarkersLayer);
     marker.bindPopup(`${index + 1}. ${activity.label}`);
     bounds.extend(activity.coords);
   });
@@ -1003,7 +1077,10 @@ function renderMapMarkers(dateKey) {
   if (bounds.isValid()) {
     mapInstance.fitBounds(bounds, { padding: [32, 32] });
   } else if (planState.config.mapDefaults?.center) {
-    mapInstance.setView(planState.config.mapDefaults.center, planState.config.mapDefaults.zoom || 5);
+    mapInstance.setView(
+      planState.config.mapDefaults.center,
+      planState.config.mapDefaults.zoom || 5
+    );
   } else {
     mapInstance.setView([20, 0], 2);
   }
@@ -1016,11 +1093,11 @@ function renderMapRoute(dateKey) {
   clearMapRoute();
   const day = ensureDay(dateKey);
   const travel = day.travel;
-  if (!travel || travel.status !== 'ready' || !travel.geometry) {
+  if (!travel || travel.status !== "ready" || !travel.geometry) {
     return;
   }
   mapRouteLayer = window.L.geoJSON(travel.geometry, {
-    style: { color: '#2563eb', weight: 4, opacity: 0.85 },
+    style: { color: "#2563eb", weight: 4, opacity: 0.85 },
   }).addTo(mapInstance);
   try {
     const bounds = mapRouteLayer.getBounds();
@@ -1028,7 +1105,7 @@ function renderMapRoute(dateKey) {
       mapInstance.fitBounds(bounds, { padding: [48, 48] });
     }
   } catch (error) {
-    console.warn('Unable to fit map to route', error);
+    console.warn("Unable to fit map to route", error);
   }
 }
 
@@ -1050,8 +1127,8 @@ function renderCalendar() {
 }
 
 function renderTravelChip(dateKey, plan) {
-  const chip = document.createElement('span');
-  chip.className = 'theme-chip theme-chip--travel';
+  const chip = document.createElement("span");
+  chip.className = "theme-chip theme-chip--travel";
   chip.dataset.travelDate = dateKey;
   applyTravelChipState(chip, plan);
   return chip;
@@ -2033,11 +2110,13 @@ function formatLongDate(dateKey) {
 function openMap(dateKey) {
   const plan = ensureDay(dateKey);
   activeMapDate = dateKey;
-  mapOverlay.classList.add('is-open');
-  mapOverlay.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('map-open');
-  const mapTitle = document.getElementById('mapTitle');
-  mapTitle.textContent = `${formatLongDate(dateKey)} — ${plan.theme || getDefaultTheme(plan.loc) || ''}`;
+  mapOverlay.classList.add("is-open");
+  mapOverlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("map-open");
+  const mapTitle = document.getElementById("mapTitle");
+  mapTitle.textContent = `${formatLongDate(dateKey)} — ${
+    plan.theme || getDefaultTheme(plan.loc) || ""
+  }`;
   updateMapSummary(dateKey);
 
   setTimeout(() => {
@@ -2063,16 +2142,16 @@ function openMap(dateKey) {
 }
 
 function closeMap() {
-  mapOverlay.classList.remove('is-open');
-  mapOverlay.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('map-open');
+  mapOverlay.classList.remove("is-open");
+  mapOverlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("map-open");
   activeMapDate = null;
   clearMapRoute();
   if (mapMarkersLayer) {
     mapMarkersLayer.clearLayers();
   }
   if (mapSummaryEl) {
-    mapSummaryEl.textContent = '';
+    mapSummaryEl.textContent = "";
   }
 }
 
@@ -3250,10 +3329,10 @@ function buildConfigFromWizardData(data) {
     friendColors,
     locations,
     locationOrder,
-  defaultThemes,
-  mapDefaults: buildMapDefaultsObject(data.mapDefaults),
-  mapCoordinates,
-  mapCoordinateLabels,
+    defaultThemes,
+    mapDefaults: buildMapDefaultsObject(data.mapDefaults),
+    mapCoordinates,
+    mapCoordinateLabels,
     catalog,
   };
 }
