@@ -1280,6 +1280,8 @@ function renderDayCard(dateKey) {
 
   scheduleTravelCalculation(dateKey, { interactive: false });
 
+  scheduleTravelCalculation(dateKey, { interactive: false });
+
   return card;
 }
 
