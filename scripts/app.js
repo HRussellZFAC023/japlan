@@ -11,22 +11,22 @@ const settingsBtn = document.querySelector('[data-action="trip-settings"]');
 const newTripBtn = document.querySelector('[data-action="new-trip"]');
 const icsBtn = document.querySelector('[data-action="export-ics"]');
 const allFilterBtn = document.querySelector('[data-filter="all"]');
-const sheetEl = document.getElementById('sheet');
-const sheetBackdrop = document.getElementById('sheetBackdrop');
-const sheetTitle = document.getElementById('sheetTitle');
-const sheetSubtitle = document.getElementById('sheetSubtitle');
-const sheetBody = document.getElementById('sheetBody');
-const itemOverlay = document.getElementById('itemOverlay');
-const itemDetailTitle = document.getElementById('itemDetailTitle');
-const itemDetailSubtitle = document.getElementById('itemDetailSubtitle');
-const itemDetailDescription = document.getElementById('itemDetailDescription');
-const itemDetailMedia = document.getElementById('itemDetailMedia');
-const itemDetailImage = document.getElementById('itemDetailImage');
-const itemDetailMeta = document.getElementById('itemDetailMeta');
-const itemDetailLinks = document.getElementById('itemDetailLinks');
-const mapOverlay = document.getElementById('mapOverlay');
-const mapSummaryEl = document.getElementById('mapSummary');
-const mapDirectionsEl = document.getElementById('mapDirections');
+const sheetEl = document.getElementById("sheet");
+const sheetBackdrop = document.getElementById("sheetBackdrop");
+const sheetTitle = document.getElementById("sheetTitle");
+const sheetSubtitle = document.getElementById("sheetSubtitle");
+const sheetBody = document.getElementById("sheetBody");
+const itemOverlay = document.getElementById("itemOverlay");
+const itemDetailTitle = document.getElementById("itemDetailTitle");
+const itemDetailSubtitle = document.getElementById("itemDetailSubtitle");
+const itemDetailDescription = document.getElementById("itemDetailDescription");
+const itemDetailMedia = document.getElementById("itemDetailMedia");
+const itemDetailImage = document.getElementById("itemDetailImage");
+const itemDetailMeta = document.getElementById("itemDetailMeta");
+const itemDetailLinks = document.getElementById("itemDetailLinks");
+const mapOverlay = document.getElementById("mapOverlay");
+const mapSummaryEl = document.getElementById("mapSummary");
+const mapDirectionsEl = document.getElementById("mapDirections");
 const closeSheetBtn = sheetEl.querySelector('[data-action="close-sheet"]');
 const closeItemBtn = itemOverlay?.querySelector('[data-action="close-item"]');
 const closeMapBtn = mapOverlay.querySelector('[data-action="close-map"]');
@@ -35,9 +35,14 @@ const configContent = document.getElementById("configContent");
 const configTitle = document.getElementById("configTitle");
 const configSubtitle = document.getElementById("configSubtitle");
 const closeConfigBtn = document.querySelector('[data-action="close-config"]');
-const mapModeControls = mapOverlay ? mapOverlay.querySelector('.overlay__controls') : null;
-const mapModeToggle = mapModeControls?.querySelector('[data-role="mode-toggle"]') || null;
-const mapModeButtons = mapModeToggle ? Array.from(mapModeToggle.querySelectorAll('[data-map-mode]')) : [];
+const mapModeControls = mapOverlay
+  ? mapOverlay.querySelector(".overlay__controls")
+  : null;
+const mapModeToggle =
+  mapModeControls?.querySelector('[data-role="mode-toggle"]') || null;
+const mapModeButtons = mapModeToggle
+  ? Array.from(mapModeToggle.querySelectorAll("[data-map-mode]"))
+  : [];
 
 let storageBucket = loadStorageBucket();
 let activeTripId = storageBucket.activeTripId || null;
@@ -59,7 +64,7 @@ let mapInstance = null;
 let mapMarkersLayer = null;
 let mapRouteLayer = null;
 let mapStepHighlightLayer = null;
-let mapOverlayMode = 'transit';
+let mapOverlayMode = "transit";
 let overlayMode = null;
 let activeMapDate = null;
 let activeItemDetail = null;
@@ -74,56 +79,59 @@ let tripLibraryConfirm = null;
 let uniqueIdCounter = 0;
 
 const MODE_TO_PROFILE = {
-  transit: 'public-transport',
-  walking: 'foot-walking',
-  driving: 'driving-car',
+  transit: "public-transport",
+  walking: "foot-walking",
+  driving: "driving-car",
 };
 
-const PROFILE_TO_MODE = Object.entries(MODE_TO_PROFILE).reduce((acc, [mode, profile]) => {
-  acc[profile] = mode;
-  return acc;
-}, {});
+const PROFILE_TO_MODE = Object.entries(MODE_TO_PROFILE).reduce(
+  (acc, [mode, profile]) => {
+    acc[profile] = mode;
+    return acc;
+  },
+  {}
+);
 
 const MODE_COLORS = {
-  transit: '#2563eb',
-  walking: '#0f766e',
-  driving: '#f97316',
+  transit: "#2563eb",
+  walking: "#0f766e",
+  driving: "#f97316",
 };
 
 const VALID_ROUTING_PROFILES = new Set(Object.values(MODE_TO_PROFILE));
 
 const RAIL_FALLBACKS = {
-  'act-transfer-kix-hirakata': {
+  "act-transfer-kix-hirakata": {
     summary: {
-      route: 'Kansai Airport → Hirakata',
-      services: 'JR Haruka Limited Express → JR Katamachi Line',
-      keyStops: 'Kansai Airport · Tennoji · Shin-Osaka · Hirakatashi',
-      duration: '85 min',
+      route: "Kansai Airport → Hirakata",
+      services: "JR Haruka Limited Express → JR Katamachi Line",
+      keyStops: "Kansai Airport · Tennoji · Shin-Osaka · Hirakatashi",
+      duration: "85 min",
       durationMinutes: 85,
       cost: 2200,
-      pass: 'JR Pass fully covered',
+      pass: "JR Pass fully covered",
     },
     legs: [
       {
-        kind: 'transit',
-        line: 'JR Haruka Limited Express',
-        info: 'Kansai Airport → Tennoji → Shin-Osaka',
+        kind: "transit",
+        line: "JR Haruka Limited Express",
+        info: "Kansai Airport → Tennoji → Shin-Osaka",
         durationMinutes: 50,
-        color: '#2563eb',
+        color: "#2563eb",
       },
       {
-        kind: 'transit',
-        line: 'JR Katamachi Line',
-        info: 'Shin-Osaka → Hirakatashi',
+        kind: "transit",
+        line: "JR Katamachi Line",
+        info: "Shin-Osaka → Hirakatashi",
         durationMinutes: 35,
-        color: '#16a34a',
+        color: "#16a34a",
       },
       {
-        kind: 'walk',
-        line: 'Walk',
-        info: 'Hirakatashi Station → Candeo Hotels Hirakata',
+        kind: "walk",
+        line: "Walk",
+        info: "Hirakatashi Station → Candeo Hotels Hirakata",
         durationMinutes: 5,
-        color: '#0f766e',
+        color: "#0f766e",
       },
     ],
   },
@@ -131,75 +139,75 @@ const RAIL_FALLBACKS = {
 
 const JAPAN_RAIL_REFERENCE = [
   {
-    route: 'Kansai Airport → Shin-Osaka',
-    services: 'JR Haruka Limited Express',
-    keyStops: 'Tennoji, Osaka',
-    duration: '50 min',
-    cost: '1,800 JPY',
-    pass: 'Fully covered',
+    route: "Kansai Airport → Shin-Osaka",
+    services: "JR Haruka Limited Express",
+    keyStops: "Tennoji, Osaka",
+    duration: "50 min",
+    cost: "1,800 JPY",
+    pass: "Fully covered",
   },
   {
-    route: 'Kansai Airport → Kyoto',
-    services: 'JR Haruka Limited Express',
-    keyStops: 'Tennoji, Osaka, Shin-Osaka',
-    duration: '80 min',
-    cost: '2,200 JPY',
-    pass: 'Fully covered',
+    route: "Kansai Airport → Kyoto",
+    services: "JR Haruka Limited Express",
+    keyStops: "Tennoji, Osaka, Shin-Osaka",
+    duration: "80 min",
+    cost: "2,200 JPY",
+    pass: "Fully covered",
   },
   {
-    route: 'Shin-Osaka → Kyoto',
-    services: 'JR Special Rapid / Shinkansen',
-    keyStops: 'Direct',
-    duration: '25 min / 15 min',
-    cost: '580 JPY / 1,450 JPY',
-    pass: 'Fully covered',
+    route: "Shin-Osaka → Kyoto",
+    services: "JR Special Rapid / Shinkansen",
+    keyStops: "Direct",
+    duration: "25 min / 15 min",
+    cost: "580 JPY / 1,450 JPY",
+    pass: "Fully covered",
   },
   {
-    route: 'Osaka → Nara',
-    services: 'JR Yamatoji Rapid Service',
-    keyStops: 'Tennoji',
-    duration: '50 min',
-    cost: '810 JPY',
-    pass: 'Fully covered',
+    route: "Osaka → Nara",
+    services: "JR Yamatoji Rapid Service",
+    keyStops: "Tennoji",
+    duration: "50 min",
+    cost: "810 JPY",
+    pass: "Fully covered",
   },
   {
-    route: 'Osaka → Himeji',
-    services: 'JR Special Rapid / Shinkansen',
-    keyStops: 'Kobe, Akashi',
-    duration: '65 min / 30 min',
-    cost: '1,520 JPY / 3,280 JPY',
-    pass: 'Fully covered',
+    route: "Osaka → Himeji",
+    services: "JR Special Rapid / Shinkansen",
+    keyStops: "Kobe, Akashi",
+    duration: "65 min / 30 min",
+    cost: "1,520 JPY / 3,280 JPY",
+    pass: "Fully covered",
   },
   {
-    route: 'Osaka → Kobe (Sannomiya)',
-    services: 'JR Special Rapid Service',
-    keyStops: 'Amagasaki, Ashiya',
-    duration: '25 min',
-    cost: '420 JPY',
-    pass: 'Fully covered',
+    route: "Osaka → Kobe (Sannomiya)",
+    services: "JR Special Rapid Service",
+    keyStops: "Amagasaki, Ashiya",
+    duration: "25 min",
+    cost: "420 JPY",
+    pass: "Fully covered",
   },
 ];
 
 function getModeLabel(mode) {
   switch (mode) {
-    case 'transit':
-      return 'Transit';
-    case 'walking':
-      return 'Walking';
-    case 'driving':
-      return 'Driving';
+    case "transit":
+      return "Transit";
+    case "walking":
+      return "Walking";
+    case "driving":
+      return "Driving";
     default:
-      return 'Travel';
+      return "Travel";
   }
 }
 
 function isModeReady(details) {
-  return details && details.status === 'ready';
+  return details && details.status === "ready";
 }
 
 function getActiveTravelMode(travel) {
   if (!travel) return null;
-  if (typeof travel.mode === 'string' && travel.mode) {
+  if (typeof travel.mode === "string" && travel.mode) {
     return travel.mode;
   }
   return PROFILE_TO_MODE[travel.profile] || null;
@@ -211,11 +219,11 @@ function getModeDetails(travel, mode) {
     return travel.modes[mode];
   }
   switch (mode) {
-    case 'transit':
+    case "transit":
       return travel.transit || null;
-    case 'walking':
+    case "walking":
       return travel.walking || null;
-    case 'driving':
+    case "driving":
       return travel.driving || null;
     default:
       return null;
@@ -223,17 +231,17 @@ function getModeDetails(travel, mode) {
 }
 
 function getDefaultMapMode(travel) {
-  if (!travel || travel.status !== 'ready') {
-    return 'transit';
+  if (!travel || travel.status !== "ready") {
+    return "transit";
   }
-  if (isModeReady(getModeDetails(travel, 'transit'))) return 'transit';
-  if (isModeReady(getModeDetails(travel, 'walking'))) return 'walking';
-  if (isModeReady(getModeDetails(travel, 'driving'))) return 'driving';
-  return getActiveTravelMode(travel) || 'transit';
+  if (isModeReady(getModeDetails(travel, "transit"))) return "transit";
+  if (isModeReady(getModeDetails(travel, "walking"))) return "walking";
+  if (isModeReady(getModeDetails(travel, "driving"))) return "driving";
+  return getActiveTravelMode(travel) || "transit";
 }
 
 function getMapModeForDate(dateKey) {
-  if (!dateKey) return 'transit';
+  if (!dateKey) return "transit";
   if (mapModeState.has(dateKey)) {
     return mapModeState.get(dateKey);
   }
@@ -253,33 +261,33 @@ function updateMapModeUI(dateKey) {
   if (!mapModeControls) return;
   const day = ensureDay(dateKey);
   const travel = day.travel;
-  if (!travel || travel.status !== 'ready') {
-    mapModeControls.style.display = 'none';
+  if (!travel || travel.status !== "ready") {
+    mapModeControls.style.display = "none";
     mapModeButtons.forEach((btn) => {
-      btn.classList.remove('mode-toggle__btn--active');
-      btn.setAttribute('aria-pressed', 'false');
+      btn.classList.remove("mode-toggle__btn--active");
+      btn.setAttribute("aria-pressed", "false");
       btn.disabled = true;
     });
     return;
   }
 
-  mapModeControls.style.display = '';
+  mapModeControls.style.display = "";
   const currentMode = getMapModeForDate(dateKey);
   mapModeButtons.forEach((btn) => {
     const mode = btn.dataset.mapMode;
     const details = getModeDetails(travel, mode);
     const ready = isModeReady(details);
-    const color = MODE_COLORS[mode] || '#64748b';
-    btn.style.setProperty('--mode-color', color);
+    const color = MODE_COLORS[mode] || "#64748b";
+    btn.style.setProperty("--mode-color", color);
     btn.classList.add(`mode-toggle__btn--${mode}`);
     btn.disabled = !ready;
     const isActive = mode === currentMode;
     if (isActive) {
-      btn.classList.add('mode-toggle__btn--active');
+      btn.classList.add("mode-toggle__btn--active");
     } else {
-      btn.classList.remove('mode-toggle__btn--active');
+      btn.classList.remove("mode-toggle__btn--active");
     }
-    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+    btn.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
 }
 
@@ -289,14 +297,14 @@ updateFilterChips();
 attachToolbarEvents();
 attachGlobalShortcuts();
 if (mapDirectionsEl) {
-  mapDirectionsEl.addEventListener('click', handleDirectionsInteraction);
-  mapDirectionsEl.addEventListener('keydown', handleDirectionsKeydown);
+  mapDirectionsEl.addEventListener("click", handleDirectionsInteraction);
+  mapDirectionsEl.addEventListener("keydown", handleDirectionsKeydown);
 }
 if (mapModeToggle) {
-  mapModeToggle.addEventListener('click', handleMapModeClick);
+  mapModeToggle.addEventListener("click", handleMapModeClick);
 }
 if (mapModeControls) {
-  mapModeControls.style.display = 'none';
+  mapModeControls.style.display = "none";
 }
 
 function buildDateSequence(start, end) {
@@ -599,8 +607,8 @@ function createConfigFromTemplate(template) {
     mapDefaults: template.mapDefaults ? { ...template.mapDefaults } : null,
     mapCoordinates: deepClone(template.mapCoordinates || {}),
     routing: {
-      provider: template.routing?.provider || 'openrouteservice',
-      openRouteApiKey: template.routing?.openRouteApiKey || '',
+      provider: template.routing?.provider || "openrouteservice",
+      openRouteApiKey: template.routing?.openRouteApiKey || "",
     },
     catalog: {
       activity: Array.isArray(template.catalog?.activity)
@@ -664,11 +672,19 @@ function normalizeConfig(rawConfig) {
     locations,
     locationOrder,
     defaultThemes: { ...(rawConfig.defaultThemes || {}) },
-    mapDefaults: rawConfig.mapDefaults ? { ...rawConfig.mapDefaults } : template.mapDefaults || null,
+    mapDefaults: rawConfig.mapDefaults
+      ? { ...rawConfig.mapDefaults }
+      : template.mapDefaults || null,
     mapCoordinates: deepClone(mergedCoordinates),
     routing: {
-      provider: rawConfig.routing?.provider || template.routing?.provider || 'openrouteservice',
-      openRouteApiKey: rawConfig.routing?.openRouteApiKey || template.routing?.openRouteApiKey || '',
+      provider:
+        rawConfig.routing?.provider ||
+        template.routing?.provider ||
+        "openrouteservice",
+      openRouteApiKey:
+        rawConfig.routing?.openRouteApiKey ||
+        template.routing?.openRouteApiKey ||
+        "",
     },
     catalog: {
       activity: Array.isArray(rawConfig.catalog?.activity)
@@ -771,14 +787,14 @@ function ensureDay(dateKey) {
   if (!planState.config.locations[day.loc]) {
     day.loc = getDefaultLocationId(planState.config);
   }
-  day.theme = day.theme ?? '';
-  if (typeof day.stay === 'string') {
+  day.theme = day.theme ?? "";
+  if (typeof day.stay === "string") {
     const trimmedStay = day.stay.trim();
     day.stay = trimmedStay || null;
   } else {
     day.stay = day.stay || null;
   }
-  if (!day.travel || typeof day.travel !== 'object') {
+  if (!day.travel || typeof day.travel !== "object") {
     day.travel = null;
   }
   return day;
@@ -786,10 +802,15 @@ function ensureDay(dateKey) {
 
 function getCoordinateValue(coordRef) {
   if (!coordRef) return null;
-  if (Array.isArray(coordRef) && coordRef.length === 2 && Number.isFinite(coordRef[0]) && Number.isFinite(coordRef[1])) {
+  if (
+    Array.isArray(coordRef) &&
+    coordRef.length === 2 &&
+    Number.isFinite(coordRef[0]) &&
+    Number.isFinite(coordRef[1])
+  ) {
     return [Number(coordRef[0]), Number(coordRef[1])];
   }
-  if (typeof coordRef === 'string') {
+  if (typeof coordRef === "string") {
     const lookup = planState.config.mapCoordinates?.[coordRef];
     if (Array.isArray(lookup) && lookup.length === 2) {
       return [Number(lookup[0]), Number(lookup[1])];
@@ -803,24 +824,36 @@ function getStayInfo(day) {
   if (!stayRef) return null;
 
   let stayId = null;
-  let label = '';
+  let label = "";
   let coordRef = null;
 
-  if (typeof stayRef === 'string') {
+  if (typeof stayRef === "string") {
     stayId = stayRef.trim();
-  } else if (typeof stayRef === 'object') {
-    if (typeof stayRef.id === 'string' && stayRef.id.trim()) {
+  } else if (typeof stayRef === "object") {
+    if (typeof stayRef.id === "string" && stayRef.id.trim()) {
       stayId = stayRef.id.trim();
     }
-    if (!label && typeof stayRef.label === 'string' && stayRef.label.trim()) {
+    if (!label && typeof stayRef.label === "string" && stayRef.label.trim()) {
       label = stayRef.label.trim();
-    } else if (!label && typeof stayRef.name === 'string' && stayRef.name.trim()) {
+    } else if (
+      !label &&
+      typeof stayRef.name === "string" &&
+      stayRef.name.trim()
+    ) {
       label = stayRef.name.trim();
     }
     coordRef = stayRef.coord || stayRef.coords || stayRef.location || null;
-    if (!coordRef && Number.isFinite(stayRef.lat) && Number.isFinite(stayRef.lng)) {
+    if (
+      !coordRef &&
+      Number.isFinite(stayRef.lat) &&
+      Number.isFinite(stayRef.lng)
+    ) {
       coordRef = [Number(stayRef.lat), Number(stayRef.lng)];
-    } else if (!coordRef && Number.isFinite(stayRef.latitude) && Number.isFinite(stayRef.longitude)) {
+    } else if (
+      !coordRef &&
+      Number.isFinite(stayRef.latitude) &&
+      Number.isFinite(stayRef.longitude)
+    ) {
       coordRef = [Number(stayRef.latitude), Number(stayRef.longitude)];
     }
   }
@@ -843,7 +876,7 @@ function getStayInfo(day) {
 
   return {
     id: stayId || null,
-    label: label || stayId || 'Stay',
+    label: label || stayId || "Stay",
     coords: coords || null,
   };
 }
@@ -851,18 +884,27 @@ function getStayInfo(day) {
 function buildItineraryForDay(day, dateKey) {
   const stay = getStayInfo(day);
   if (!stay) {
-    return { status: 'missing-stay', stay: null, activities: [], skipped: [], routePoints: [], signature: '' };
+    return {
+      status: "missing-stay",
+      stay: null,
+      activities: [],
+      skipped: [],
+      routePoints: [],
+      signature: "",
+    };
   }
 
   const activities = [];
   const skipped = [];
   const previousDateKey = dateKey ? getAdjacentDateKey(dateKey, -1) : null;
-  const previousDay = previousDateKey ? planState.days?.[previousDateKey] : null;
+  const previousDay = previousDateKey
+    ? planState.days?.[previousDateKey]
+    : null;
   const previousStay = previousDay ? getStayInfo(previousDay) : null;
   const originFromPrevious = previousStay?.coords ? previousStay : null;
   let originActivityId = null;
 
-  ['morning', 'afternoon', 'evening'].forEach((slot) => {
+  ["morning", "afternoon", "evening"].forEach((slot) => {
     (day.slots?.[slot] || []).forEach((itemId) => {
       const activity = ACTIVITY_MAP.get(itemId);
       if (!activity) return;
@@ -877,26 +919,28 @@ function buildItineraryForDay(day, dateKey) {
   });
 
   if (!stay.coords) {
-    skipped.unshift(stay.label || 'Stay location');
+    skipped.unshift(stay.label || "Stay location");
     return {
-      status: 'insufficient-data',
+      status: "insufficient-data",
       stay,
       originStay: previousStay || stay,
       activities,
       skipped,
       routePoints: [],
-      signature: '',
+      signature: "",
     };
   }
 
   let originStay = originFromPrevious || null;
   if (!originStay && activities.length) {
-    const firstDistinct = activities.find((activity) => !coordsEqual(activity.coords, stay.coords));
+    const firstDistinct = activities.find(
+      (activity) => !coordsEqual(activity.coords, stay.coords)
+    );
     if (firstDistinct) {
       originActivityId = firstDistinct.id || null;
       originStay = {
         id: originActivityId ? `activity-origin-${originActivityId}` : null,
-        label: firstDistinct.label || 'Start location',
+        label: firstDistinct.label || "Start location",
         coords: firstDistinct.coords,
       };
     }
@@ -906,7 +950,7 @@ function buildItineraryForDay(day, dateKey) {
   }
 
   if (previousStay && !previousStay.coords) {
-    skipped.unshift(previousStay.label || 'Previous stay');
+    skipped.unshift(previousStay.label || "Previous stay");
   }
 
   const routePoints = [originStay.coords];
@@ -927,7 +971,7 @@ function buildItineraryForDay(day, dateKey) {
   }
 
   const normalizedRoutePoints = normalizeRoutePoints(routePoints);
-  const status = normalizedRoutePoints.length > 1 ? 'ok' : 'no-activities';
+  const status = normalizedRoutePoints.length > 1 ? "ok" : "no-activities";
   const signature = buildRouteSignature(normalizedRoutePoints);
 
   return {
@@ -943,15 +987,15 @@ function buildItineraryForDay(day, dateKey) {
 
 function buildRouteSignature(points) {
   if (!Array.isArray(points) || !points.length) {
-    return '';
+    return "";
   }
   return points
     .map((coord) => {
-      if (!Array.isArray(coord) || coord.length !== 2) return 'na';
+      if (!Array.isArray(coord) || coord.length !== 2) return "na";
       const [lat, lon] = coord;
       return `${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}`;
     })
-    .join('|');
+    .join("|");
 }
 
 function normalizeRoutePoints(points) {
@@ -991,7 +1035,10 @@ function normalizeRoutePoints(points) {
 function coordsEqual(a, b) {
   if (!Array.isArray(a) || !Array.isArray(b)) return false;
   if (a.length !== 2 || b.length !== 2) return false;
-  return Number(a[0]).toFixed(6) === Number(b[0]).toFixed(6) && Number(a[1]).toFixed(6) === Number(b[1]).toFixed(6);
+  return (
+    Number(a[0]).toFixed(6) === Number(b[0]).toFixed(6) &&
+    Number(a[1]).toFixed(6) === Number(b[1]).toFixed(6)
+  );
 }
 
 function serializeCoords(coords) {
@@ -1011,12 +1058,12 @@ function toLatLng(point) {
 }
 
 function geometryToLatLngs(geometry) {
-  if (!geometry || typeof geometry !== 'object') return [];
+  if (!geometry || typeof geometry !== "object") return [];
   const { type, coordinates } = geometry;
-  if (type === 'LineString' && Array.isArray(coordinates)) {
+  if (type === "LineString" && Array.isArray(coordinates)) {
     return coordinates.map(toLatLng).filter(Boolean);
   }
-  if (type === 'MultiLineString' && Array.isArray(coordinates)) {
+  if (type === "MultiLineString" && Array.isArray(coordinates)) {
     const flattened = [];
     coordinates.forEach((segment) => {
       if (!Array.isArray(segment)) return;
@@ -1031,19 +1078,21 @@ function geometryToLatLngs(geometry) {
 }
 
 function extractLegPath(geometry, wayPoints) {
-  if (!geometry || typeof geometry !== 'object') return null;
+  if (!geometry || typeof geometry !== "object") return null;
   if (!Array.isArray(wayPoints) || wayPoints.length !== 2) return null;
   const [startRaw, endRaw] = wayPoints;
   if (!Number.isInteger(startRaw) || !Number.isInteger(endRaw)) return null;
 
   let coordinates = null;
-  if (geometry.type === 'MultiLineString') {
+  if (geometry.type === "MultiLineString") {
     const flat = Array.isArray(geometry.coordinates)
       ? geometry.coordinates.flat().filter(Array.isArray)
       : null;
     coordinates = Array.isArray(flat) ? flat : null;
-  } else if (geometry.type === 'LineString') {
-    coordinates = Array.isArray(geometry.coordinates) ? geometry.coordinates : null;
+  } else if (geometry.type === "LineString") {
+    coordinates = Array.isArray(geometry.coordinates)
+      ? geometry.coordinates
+      : null;
   }
   if (!coordinates || coordinates.length < 2) return null;
 
@@ -1073,7 +1122,12 @@ function computeBoundsFromPath(path) {
     if (lon < minLon) minLon = lon;
     if (lon > maxLon) maxLon = lon;
   });
-  if (!Number.isFinite(minLat) || !Number.isFinite(maxLat) || !Number.isFinite(minLon) || !Number.isFinite(maxLon)) {
+  if (
+    !Number.isFinite(minLat) ||
+    !Number.isFinite(maxLat) ||
+    !Number.isFinite(minLon) ||
+    !Number.isFinite(maxLon)
+  ) {
     return null;
   }
   return [
@@ -1085,11 +1139,15 @@ function computeBoundsFromPath(path) {
 function buildLineStringFromPoints(points) {
   if (!Array.isArray(points) || points.length < 2) return null;
   const coords = points
-    .map((coord) => (Array.isArray(coord) && coord.length === 2 ? [Number(coord[1]), Number(coord[0])] : null))
+    .map((coord) =>
+      Array.isArray(coord) && coord.length === 2
+        ? [Number(coord[1]), Number(coord[0])]
+        : null
+    )
     .filter(Boolean);
   if (coords.length < 2) return null;
   return {
-    type: 'LineString',
+    type: "LineString",
     coordinates: coords,
   };
 }
@@ -1104,7 +1162,9 @@ function haversineDistance(a, b) {
   const dLon = toRad(lon2 - lon1);
   const sLat1 = toRad(lat1);
   const sLat2 = toRad(lat2);
-  const h = Math.sin(dLat / 2) ** 2 + Math.cos(sLat1) * Math.cos(sLat2) * Math.sin(dLon / 2) ** 2;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(sLat1) * Math.cos(sLat2) * Math.sin(dLon / 2) ** 2;
   return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
@@ -1121,7 +1181,7 @@ function serializeStay(stay) {
   if (!stay) return null;
   return {
     id: stay.id || null,
-    label: stay.label || '',
+    label: stay.label || "",
     coords: serializeCoords(stay.coords) || null,
   };
 }
@@ -1130,7 +1190,7 @@ function serializeActivities(list) {
   if (!Array.isArray(list)) return [];
   return list.map((activity) => ({
     id: activity.id || null,
-    label: activity.label || '',
+    label: activity.label || "",
     coords: serializeCoords(activity.coords) || null,
   }));
 }
@@ -1144,22 +1204,22 @@ function staysMatch(a, b) {
   if (Array.isArray(a.coords) && Array.isArray(b.coords)) {
     return coordsEqual(a.coords, b.coords);
   }
-  return (a.label || '').trim() === (b.label || '').trim();
+  return (a.label || "").trim() === (b.label || "").trim();
 }
 
 function formatDuration(totalSeconds) {
-  if (!Number.isFinite(totalSeconds)) return '';
+  if (!Number.isFinite(totalSeconds)) return "";
   const totalMinutes = Math.round(totalSeconds / 60);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = Math.max(0, totalMinutes - hours * 60);
   const parts = [];
   if (hours > 0) parts.push(`${hours}h`);
   if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
-  return parts.join(' ');
+  return parts.join(" ");
 }
 
 function formatDistance(meters) {
-  if (!Number.isFinite(meters)) return '';
+  if (!Number.isFinite(meters)) return "";
   if (meters >= 1000) {
     const km = meters / 1000;
     const precision = km >= 10 ? 0 : 1;
@@ -1170,18 +1230,23 @@ function formatDistance(meters) {
 
 function formatTimeLabel(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-    return '';
+    return "";
   }
-  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
 function parseLabelTimeMinutes(label) {
-  if (typeof label !== 'string') return null;
+  if (typeof label !== "string") return null;
   const match = label.trim().match(/^(\d{1,2}):(\d{2})/);
   if (!match) return null;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
-  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes > 59 || hours > 47) {
+  if (
+    !Number.isFinite(hours) ||
+    !Number.isFinite(minutes) ||
+    minutes > 59 ||
+    hours > 47
+  ) {
     return null;
   }
   return hours * 60 + minutes;
@@ -1190,7 +1255,7 @@ function parseLabelTimeMinutes(label) {
 function getPreferredDepartureMinutes(day) {
   if (!day) return DEFAULT_DEPARTURE_MINUTES;
   const minutes = [];
-  ['morning', 'afternoon', 'evening'].forEach((slot) => {
+  ["morning", "afternoon", "evening"].forEach((slot) => {
     (day.slots?.[slot] || []).forEach((itemId) => {
       const label = getActivityLabel(itemId);
       const value = parseLabelTimeMinutes(label);
@@ -1208,29 +1273,48 @@ function getPreferredDepartureMinutes(day) {
 function buildTravelDisplay(plan) {
   const travel = plan.travel;
   if (!plan.stay) {
-    return { text: 'Travel: add stay', state: 'warning', title: 'Pick a stay with map coordinates to calculate travel time.' };
+    return {
+      text: "Travel: add stay",
+      state: "warning",
+      title: "Pick a stay with map coordinates to calculate travel time.",
+    };
   }
   if (!travel) {
-    return { text: 'Travel: calculating…', state: 'pending', title: 'Travel time will be calculated soon.' };
+    return {
+      text: "Travel: calculating…",
+      state: "pending",
+      title: "Travel time will be calculated soon.",
+    };
   }
 
-  const skippedCount = Array.isArray(travel.skipped) ? travel.skipped.length : 0;
+  const skippedCount = Array.isArray(travel.skipped)
+    ? travel.skipped.length
+    : 0;
   const skippedTitle = skippedCount
-    ? `${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing map pins`
-    : '';
-  const originLabel = typeof travel.originStay?.label === 'string' ? travel.originStay.label.trim() : '';
-  const destinationLabel = typeof travel.destinationStay?.label === 'string'
-    ? travel.destinationStay.label.trim()
-    : (plan.stay ? getStayLabel(plan.stay) : '');
-  const routeLabel = originLabel && destinationLabel ? `${originLabel} → ${destinationLabel}` : '';
-  const activeMode = getActiveTravelMode(travel) || 'driving';
+    ? `${skippedCount} stop${skippedCount === 1 ? "" : "s"} missing map pins`
+    : "";
+  const originLabel =
+    typeof travel.originStay?.label === "string"
+      ? travel.originStay.label.trim()
+      : "";
+  const destinationLabel =
+    typeof travel.destinationStay?.label === "string"
+      ? travel.destinationStay.label.trim()
+      : plan.stay
+      ? getStayLabel(plan.stay)
+      : "";
+  const routeLabel =
+    originLabel && destinationLabel
+      ? `${originLabel} → ${destinationLabel}`
+      : "";
+  const activeMode = getActiveTravelMode(travel) || "driving";
   const primaryLabel = getModeLabel(activeMode);
-  const transitInfo = getModeDetails(travel, 'transit');
-  const walkingInfo = getModeDetails(travel, 'walking');
-  const drivingInfo = getModeDetails(travel, 'driving');
+  const transitInfo = getModeDetails(travel, "transit");
+  const walkingInfo = getModeDetails(travel, "walking");
+  const drivingInfo = getModeDetails(travel, "driving");
 
   switch (travel.status) {
-    case 'ready': {
+    case "ready": {
       const durationText = formatDuration(Number(travel.durationSeconds));
       const distanceText = formatDistance(Number(travel.distanceMeters));
       const parts = [];
@@ -1238,89 +1322,112 @@ function buildTravelDisplay(plan) {
       if (durationText) parts.push(`Time ${durationText}`);
       if (distanceText) parts.push(`Distance ${distanceText}`);
       parts.push(`Mode ${primaryLabel}`);
-      const transitSummary = formatTransitSummary(transitInfo || null, { includeLines: true });
-      if (transitSummary && activeMode !== 'transit') {
+      const transitSummary = formatTransitSummary(transitInfo || null, {
+        includeLines: true,
+      });
+      if (transitSummary && activeMode !== "transit") {
         parts.push(transitSummary);
       } else if (transitSummary) {
         parts.push(transitSummary);
       }
-      if (isModeReady(walkingInfo) && activeMode !== 'walking') {
-        const walkDuration = formatDuration(Number(walkingInfo.durationSeconds));
+      if (isModeReady(walkingInfo) && activeMode !== "walking") {
+        const walkDuration = formatDuration(
+          Number(walkingInfo.durationSeconds)
+        );
         const walkDistance = formatDistance(Number(walkingInfo.distanceMeters));
-        parts.push(['Walking', walkDuration, walkDistance].filter(Boolean).join(' '));
+        parts.push(
+          ["Walking", walkDuration, walkDistance].filter(Boolean).join(" ")
+        );
       }
-      if (isModeReady(drivingInfo) && activeMode !== 'driving') {
-        const driveDuration = formatDuration(Number(drivingInfo.durationSeconds));
-        const driveDistance = formatDistance(Number(drivingInfo.distanceMeters));
-        parts.push(['Driving', driveDuration, driveDistance].filter(Boolean).join(' '));
+      if (isModeReady(drivingInfo) && activeMode !== "driving") {
+        const driveDuration = formatDuration(
+          Number(drivingInfo.durationSeconds)
+        );
+        const driveDistance = formatDistance(
+          Number(drivingInfo.distanceMeters)
+        );
+        parts.push(
+          ["Driving", driveDuration, driveDistance].filter(Boolean).join(" ")
+        );
       }
       if (skippedTitle) parts.push(skippedTitle);
       return {
-        text: `${primaryLabel}: ${durationText || '—'}`,
-        state: skippedCount ? 'warning' : 'ready',
-        title: parts.join(' · '),
+        text: `${primaryLabel}: ${durationText || "—"}`,
+        state: skippedCount ? "warning" : "ready",
+        title: parts.join(" · "),
       };
     }
-    case 'pending':
+    case "pending":
       return {
-        text: 'Travel: calculating…',
-        state: 'pending',
-        title: routeLabel ? `Calculating travel time for ${routeLabel}.` : 'Travel time is being calculated.',
+        text: "Travel: calculating…",
+        state: "pending",
+        title: routeLabel
+          ? `Calculating travel time for ${routeLabel}.`
+          : "Travel time is being calculated.",
       };
-    case 'missing-key':
+    case "missing-key":
       return {
-        text: 'Travel: add API key',
-        state: 'warning',
+        text: "Travel: add API key",
+        state: "warning",
         title: routeLabel
           ? `Add your OpenRouteService API key to calculate travel time for ${routeLabel}.`
-          : 'Add your OpenRouteService API key to calculate travel time.',
+          : "Add your OpenRouteService API key to calculate travel time.",
       };
-    case 'missing-stay':
+    case "missing-stay":
       return {
-        text: 'Travel: add stay',
-        state: 'warning',
-        title: 'Pick a stay with map coordinates to calculate travel time.',
+        text: "Travel: add stay",
+        state: "warning",
+        title: "Pick a stay with map coordinates to calculate travel time.",
       };
-    case 'no-activities':
+    case "no-activities":
       return {
-        text: 'Travel: 0m',
-        state: skippedCount ? 'warning' : 'ready',
-        title: [routeLabel ? `Route ${routeLabel}` : '', skippedTitle || 'No mapped stops scheduled for this day.']
+        text: "Travel: 0m",
+        state: skippedCount ? "warning" : "ready",
+        title: [
+          routeLabel ? `Route ${routeLabel}` : "",
+          skippedTitle || "No mapped stops scheduled for this day.",
+        ]
           .filter(Boolean)
-          .join(' · '),
+          .join(" · "),
       };
-    case 'insufficient-data':
+    case "insufficient-data":
       return {
-        text: 'Travel: add map pins',
-        state: 'warning',
-        title: [routeLabel ? `Route ${routeLabel}` : '', buildMissingPinsTitle(travel.skipped)]
+        text: "Travel: add map pins",
+        state: "warning",
+        title: [
+          routeLabel ? `Route ${routeLabel}` : "",
+          buildMissingPinsTitle(travel.skipped),
+        ]
           .filter(Boolean)
-          .join(' · '),
+          .join(" · "),
       };
-    case 'error':
+    case "error":
       return {
-        text: 'Travel: unavailable',
-        state: 'error',
-        title: [routeLabel ? `Route ${routeLabel}` : '', travel.error || 'Routing request failed.']
+        text: "Travel: unavailable",
+        state: "error",
+        title: [
+          routeLabel ? `Route ${routeLabel}` : "",
+          travel.error || "Routing request failed.",
+        ]
           .filter(Boolean)
-          .join(' · '),
+          .join(" · "),
       };
     default:
-      return { text: 'Travel: —', state: 'pending', title: '' };
+      return { text: "Travel: —", state: "pending", title: "" };
   }
 }
 
 function buildMissingPinsTitle(skipped) {
   const names = Array.isArray(skipped)
     ? skipped
-        .map((name) => (typeof name === 'string' ? name.trim() : ''))
+        .map((name) => (typeof name === "string" ? name.trim() : ""))
         .filter(Boolean)
     : [];
   if (!names.length) {
-    return 'Add coordinates for all stops to calculate travel time.';
+    return "Add coordinates for all stops to calculate travel time.";
   }
-  const preview = names.slice(0, 3).join(', ');
-  const extra = names.length > 3 ? `, +${names.length - 3} more` : '';
+  const preview = names.slice(0, 3).join(", ");
+  const extra = names.length > 3 ? `, +${names.length - 3} more` : "";
   return `Missing pins: ${preview}${extra}. Add coordinates for all stops to calculate travel time.`;
 }
 
@@ -1335,24 +1442,27 @@ function applyTravelChipState(chip, plan) {
   if (display.title) {
     chip.title = display.title;
   } else {
-    chip.removeAttribute('title');
+    chip.removeAttribute("title");
   }
 }
 
 function getFallbackRailTravel(itinerary, context) {
   if (!itinerary || !Array.isArray(itinerary.activities)) return null;
-  const match = itinerary.activities.find((activity) => RAIL_FALLBACKS[activity.id]);
+  const match = itinerary.activities.find(
+    (activity) => RAIL_FALLBACKS[activity.id]
+  );
   if (!match) return null;
   const fallback = RAIL_FALLBACKS[match.id];
   if (!fallback) return null;
 
-  const coords = itinerary.routePoints && itinerary.routePoints.length
-    ? itinerary.routePoints
-    : (context?.points || []);
+  const coords =
+    itinerary.routePoints && itinerary.routePoints.length
+      ? itinerary.routePoints
+      : context?.points || [];
   const geometry = buildLineStringFromPoints(coords);
   const durationSeconds = (fallback.summary.durationMinutes || 0) * 60;
   const transitLegs = fallback.legs.map((leg) => ({
-    kind: leg.kind || 'transit',
+    kind: leg.kind || "transit",
     mode: leg.line,
     line: leg.line,
     info: leg.info,
@@ -1361,12 +1471,15 @@ function getFallbackRailTravel(itinerary, context) {
     color: leg.color || MODE_COLORS.transit,
   }));
   const transitDetails = {
-    status: 'ready',
+    status: "ready",
     durationSeconds,
     distanceMeters: 0,
     legs: transitLegs,
     lines: transitLegs.map((leg) => leg.line).filter(Boolean),
-    transfers: Math.max(0, transitLegs.filter((leg) => leg.kind === 'transit').length - 1),
+    transfers: Math.max(
+      0,
+      transitLegs.filter((leg) => leg.kind === "transit").length - 1
+    ),
     metadata: {
       cost: fallback.summary.cost,
       pass: fallback.summary.pass,
@@ -1377,11 +1490,11 @@ function getFallbackRailTravel(itinerary, context) {
   };
 
   return {
-    status: 'ready',
-    provider: 'japan-rail-guide',
+    status: "ready",
+    provider: "japan-rail-guide",
     profile: MODE_TO_PROFILE.transit,
-    mode: 'transit',
-    signature: 'rail-fallback',
+    mode: "transit",
+    signature: "rail-fallback",
     durationSeconds,
     distanceMeters: 0,
     fetchedAt: Date.now(),
@@ -1392,12 +1505,12 @@ function getFallbackRailTravel(itinerary, context) {
     stops: context.stopSnapshots || [],
     modes: {
       transit: transitDetails,
-      walking: { status: 'unavailable' },
-      driving: { status: 'unavailable' },
+      walking: { status: "unavailable" },
+      driving: { status: "unavailable" },
     },
     transit: transitDetails,
-    walking: { status: 'unavailable' },
-    driving: { status: 'unavailable' },
+    walking: { status: "unavailable" },
+    driving: { status: "unavailable" },
     meta: fallback.summary,
   };
 }
@@ -1406,7 +1519,7 @@ function refreshTravelChip(dateKey) {
   if (!calendarEl) return false;
   const card = calendarEl.querySelector(`.day-card[data-date="${dateKey}"]`);
   if (!card) return false;
-  const chip = card.querySelector('.theme-chip--travel');
+  const chip = card.querySelector(".theme-chip--travel");
   if (!chip) return false;
   const day = ensureDay(dateKey);
   applyTravelChipState(chip, day);
@@ -1419,11 +1532,13 @@ function scheduleTravelChipRefresh(dateKey) {
   if (activeMapDate === dateKey) {
     updateMapDirections(dateKey);
   }
-  const schedule = typeof queueMicrotask === 'function'
-    ? queueMicrotask
-    : (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
-        ? (fn) => window.requestAnimationFrame(fn)
-        : (fn) => setTimeout(fn, 0));
+  const schedule =
+    typeof queueMicrotask === "function"
+      ? queueMicrotask
+      : typeof window !== "undefined" &&
+        typeof window.requestAnimationFrame === "function"
+      ? (fn) => window.requestAnimationFrame(fn)
+      : (fn) => setTimeout(fn, 0);
   schedule(() => {
     refreshTravelChip(dateKey);
     refreshTravelSummary(dateKey);
@@ -1436,61 +1551,72 @@ function scheduleTravelChipRefresh(dateKey) {
 
 function applyTravelSummary(summaryEl, plan, dateKey) {
   if (!summaryEl) return;
-  summaryEl.innerHTML = '';
+  summaryEl.innerHTML = "";
   const itinerary = buildItineraryForDay(plan, dateKey);
   const travel = plan.travel;
   const expanded = travelExpansionState.get(dateKey) ?? false;
-  summaryEl.dataset.expanded = expanded ? 'true' : 'false';
+  summaryEl.dataset.expanded = expanded ? "true" : "false";
 
-  const originLabel = typeof travel?.originStay?.label === 'string'
-    ? travel.originStay.label.trim()
-    : (itinerary.originStay?.label || '').trim();
-  const destinationLabel = typeof travel?.destinationStay?.label === 'string'
-    ? travel.destinationStay.label.trim()
-    : (itinerary.stay?.label || '').trim();
-  const routeLabel = originLabel && destinationLabel ? `${originLabel} → ${destinationLabel}` : '';
+  const originLabel =
+    typeof travel?.originStay?.label === "string"
+      ? travel.originStay.label.trim()
+      : (itinerary.originStay?.label || "").trim();
+  const destinationLabel =
+    typeof travel?.destinationStay?.label === "string"
+      ? travel.destinationStay.label.trim()
+      : (itinerary.stay?.label || "").trim();
+  const routeLabel =
+    originLabel && destinationLabel
+      ? `${originLabel} → ${destinationLabel}`
+      : "";
 
-  const skippedCount = Array.isArray(travel?.skipped) ? travel.skipped.length : 0;
-  const skippedTitle = skippedCount ? buildMissingPinsTitle(travel.skipped) : '';
-  const activeMode = getActiveTravelMode(travel) || 'driving';
+  const skippedCount = Array.isArray(travel?.skipped)
+    ? travel.skipped.length
+    : 0;
+  const skippedTitle = skippedCount
+    ? buildMissingPinsTitle(travel.skipped)
+    : "";
+  const activeMode = getActiveTravelMode(travel) || "driving";
   const modeLabel = getModeLabel(activeMode);
-  const transitInfo = getModeDetails(travel, 'transit');
-  const walkingInfo = getModeDetails(travel, 'walking');
-  const drivingInfo = getModeDetails(travel, 'driving');
-  const transitSummary = formatTransitSummary(transitInfo || null, { includeLines: true });
+  const transitInfo = getModeDetails(travel, "transit");
+  const walkingInfo = getModeDetails(travel, "walking");
+  const drivingInfo = getModeDetails(travel, "driving");
+  const transitSummary = formatTransitSummary(transitInfo || null, {
+    includeLines: true,
+  });
 
-  let state = 'pending';
-  let headerTime = '—';
-  let caption = '';
-  let detailMessage = '';
+  let state = "pending";
+  let headerTime = "—";
+  let caption = "";
+  let detailMessage = "";
 
   function appendRouteRow(target) {
     if (!routeLabel || !target) return;
-    const routeRow = document.createElement('div');
-    routeRow.className = 'travel-summary__route';
+    const routeRow = document.createElement("div");
+    routeRow.className = "travel-summary__route";
 
-    const startBlock = document.createElement('div');
-    startBlock.className = 'travel-summary__point';
-    const startLabelEl = document.createElement('span');
-    startLabelEl.className = 'travel-summary__point-label';
-    startLabelEl.textContent = 'Start';
-    const startNameEl = document.createElement('span');
-    startNameEl.className = 'travel-summary__point-name';
-    startNameEl.textContent = originLabel || '—';
+    const startBlock = document.createElement("div");
+    startBlock.className = "travel-summary__point";
+    const startLabelEl = document.createElement("span");
+    startLabelEl.className = "travel-summary__point-label";
+    startLabelEl.textContent = "Start";
+    const startNameEl = document.createElement("span");
+    startNameEl.className = "travel-summary__point-name";
+    startNameEl.textContent = originLabel || "—";
     startBlock.append(startLabelEl, startNameEl);
 
-    const arrowEl = document.createElement('span');
-    arrowEl.className = 'travel-summary__arrow';
-    arrowEl.textContent = '→';
+    const arrowEl = document.createElement("span");
+    arrowEl.className = "travel-summary__arrow";
+    arrowEl.textContent = "→";
 
-    const endBlock = document.createElement('div');
-    endBlock.className = 'travel-summary__point';
-    const endLabelEl = document.createElement('span');
-    endLabelEl.className = 'travel-summary__point-label';
-    endLabelEl.textContent = 'Finish';
-    const endNameEl = document.createElement('span');
-    endNameEl.className = 'travel-summary__point-name';
-    endNameEl.textContent = destinationLabel || '—';
+    const endBlock = document.createElement("div");
+    endBlock.className = "travel-summary__point";
+    const endLabelEl = document.createElement("span");
+    endLabelEl.className = "travel-summary__point-label";
+    endLabelEl.textContent = "Finish";
+    const endNameEl = document.createElement("span");
+    endNameEl.className = "travel-summary__point-name";
+    endNameEl.textContent = destinationLabel || "—";
     endBlock.append(endLabelEl, endNameEl);
 
     routeRow.append(startBlock, arrowEl, endBlock);
@@ -1498,91 +1624,100 @@ function applyTravelSummary(summaryEl, plan, dateKey) {
   }
 
   if (!plan.stay) {
-    state = 'warning';
-    caption = 'Add a stay to calculate travel time.';
+    state = "warning";
+    caption = "Add a stay to calculate travel time.";
     detailMessage = caption;
   } else if (!travel) {
-    state = 'pending';
-    caption = routeLabel ? `Calculating travel time for ${routeLabel}…` : 'Travel time will be calculated soon.';
+    state = "pending";
+    caption = routeLabel
+      ? `Calculating travel time for ${routeLabel}…`
+      : "Travel time will be calculated soon.";
     detailMessage = caption;
-  } else if (travel.status !== 'ready') {
+  } else if (travel.status !== "ready") {
     switch (travel.status) {
-      case 'pending':
-        state = 'pending';
-        caption = routeLabel ? `Calculating travel time for ${routeLabel}…` : 'Calculating travel time…';
+      case "pending":
+        state = "pending";
+        caption = routeLabel
+          ? `Calculating travel time for ${routeLabel}…`
+          : "Calculating travel time…";
         break;
-      case 'missing-key':
-        state = 'warning';
-        caption = 'Add your OpenRouteService API key to calculate travel time.';
+      case "missing-key":
+        state = "warning";
+        caption = "Add your OpenRouteService API key to calculate travel time.";
         break;
-      case 'missing-stay':
-        state = 'warning';
-        caption = 'Select a stay with coordinates to calculate travel time.';
+      case "missing-stay":
+        state = "warning";
+        caption = "Select a stay with coordinates to calculate travel time.";
         break;
-      case 'insufficient-data':
-        state = 'warning';
-        caption = skippedTitle || 'Add coordinates for all stops to calculate travel time.';
+      case "insufficient-data":
+        state = "warning";
+        caption =
+          skippedTitle ||
+          "Add coordinates for all stops to calculate travel time.";
         break;
-      case 'error':
-        state = 'error';
-        caption = travel.error || 'Unable to calculate travel time.';
+      case "error":
+        state = "error";
+        caption = travel.error || "Unable to calculate travel time.";
         break;
       default:
-        state = 'pending';
-        caption = 'Travel time is not available for this day.';
+        state = "pending";
+        caption = "Travel time is not available for this day.";
         break;
     }
-    detailMessage = caption || 'Travel time is not available for this day.';
+    detailMessage = caption || "Travel time is not available for this day.";
   } else {
-    state = skippedCount ? 'warning' : 'ready';
-    headerTime = formatDuration(Number(travel.durationSeconds)) || '—';
+    state = skippedCount ? "warning" : "ready";
+    headerTime = formatDuration(Number(travel.durationSeconds)) || "—";
     const distanceText = formatDistance(Number(travel.distanceMeters));
-    const captionParts = [routeLabel || '', distanceText || '', modeLabel];
+    const captionParts = [routeLabel || "", distanceText || "", modeLabel];
     if (skippedCount) {
-      captionParts.push(`${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing pins`);
+      captionParts.push(
+        `${skippedCount} stop${skippedCount === 1 ? "" : "s"} missing pins`
+      );
     }
-    caption = captionParts.filter(Boolean).join(' · ') || 'Travel details ready.';
+    caption =
+      captionParts.filter(Boolean).join(" · ") || "Travel details ready.";
   }
 
   summaryEl.dataset.state = state;
 
-  const toggle = document.createElement('button');
-  toggle.type = 'button';
-  toggle.className = 'travel-summary__toggle';
-  toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-  toggle.addEventListener('click', () => {
+  const toggle = document.createElement("button");
+  toggle.type = "button";
+  toggle.className = "travel-summary__toggle";
+  toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
+  toggle.addEventListener("click", () => {
     travelExpansionState.set(dateKey, !expanded);
     applyTravelSummary(summaryEl, plan, dateKey);
   });
 
-  const meta = document.createElement('div');
-  meta.className = 'travel-summary__meta';
+  const meta = document.createElement("div");
+  meta.className = "travel-summary__meta";
 
-  const titleEl = document.createElement('span');
-  titleEl.className = 'travel-summary__title';
-  titleEl.textContent = 'Travel time';
+  const titleEl = document.createElement("span");
+  titleEl.className = "travel-summary__title";
+  titleEl.textContent = "Travel time";
   meta.appendChild(titleEl);
 
-  const timeEl = document.createElement('span');
-  timeEl.className = 'travel-summary__time';
-  timeEl.textContent = headerTime || '—';
+  const timeEl = document.createElement("span");
+  timeEl.className = "travel-summary__time";
+  timeEl.textContent = headerTime || "—";
   meta.appendChild(timeEl);
 
-  const captionEl = document.createElement('span');
-  captionEl.className = 'travel-summary__caption';
-  captionEl.textContent = caption || 'Expand for route details.';
+  const captionEl = document.createElement("span");
+  captionEl.className = "travel-summary__caption";
+  captionEl.textContent = caption || "Expand for route details.";
   meta.appendChild(captionEl);
 
-  const chevron = document.createElement('span');
-  chevron.className = 'travel-summary__chevron';
-  chevron.setAttribute('aria-hidden', 'true');
-  chevron.textContent = '▾';
+  const chevron = document.createElement("span");
+  chevron.className = "travel-summary__chevron";
+  chevron.setAttribute("aria-hidden", "true");
+  chevron.textContent = "▾";
 
   toggle.append(meta, chevron);
   summaryEl.appendChild(toggle);
 
-  const body = document.createElement('div');
-  body.className = 'travel-summary__body';
+  const body = document.createElement("div");
+  body.className = "travel-summary__body";
   summaryEl.appendChild(body);
 
   if (!expanded) {
@@ -1590,33 +1725,34 @@ function applyTravelSummary(summaryEl, plan, dateKey) {
   }
 
   if (!plan.stay) {
-    const notice = document.createElement('div');
-    notice.className = 'travel-summary__notice';
+    const notice = document.createElement("div");
+    notice.className = "travel-summary__notice";
     notice.textContent = detailMessage;
     body.appendChild(notice);
     return;
   }
 
-  if (!travel || travel.status !== 'ready') {
-    const notice = document.createElement('div');
-    notice.className = 'travel-summary__notice';
-    notice.textContent = detailMessage || 'Travel time is not available for this day.';
+  if (!travel || travel.status !== "ready") {
+    const notice = document.createElement("div");
+    notice.className = "travel-summary__notice";
+    notice.textContent =
+      detailMessage || "Travel time is not available for this day.";
     body.appendChild(notice);
     appendRouteRow(body);
     return;
   }
 
   const distanceText = formatDistance(Number(travel.distanceMeters));
-  const metrics = document.createElement('div');
-  metrics.className = 'travel-summary__headline';
+  const metrics = document.createElement("div");
+  metrics.className = "travel-summary__headline";
   if (distanceText) {
-    const distanceEl = document.createElement('span');
-    distanceEl.className = 'travel-summary__metric';
+    const distanceEl = document.createElement("span");
+    distanceEl.className = "travel-summary__metric";
     distanceEl.textContent = distanceText;
     metrics.appendChild(distanceEl);
   }
-  const modeEl = document.createElement('span');
-  modeEl.className = 'travel-summary__mode';
+  const modeEl = document.createElement("span");
+  modeEl.className = "travel-summary__mode";
   modeEl.textContent = modeLabel;
   metrics.appendChild(modeEl);
   body.appendChild(metrics);
@@ -1625,52 +1761,57 @@ function applyTravelSummary(summaryEl, plan, dateKey) {
 
   const stops = Array.isArray(travel.stops) ? travel.stops : [];
   if (stops.length) {
-    const stopsList = document.createElement('ol');
-    stopsList.className = 'travel-summary__stops';
+    const stopsList = document.createElement("ol");
+    stopsList.className = "travel-summary__stops";
     stops.slice(0, 6).forEach((stop, index) => {
-      const item = document.createElement('li');
+      const item = document.createElement("li");
       item.textContent = stop.label || `Stop ${index + 1}`;
       stopsList.appendChild(item);
     });
     if (stops.length > 6) {
-      const moreItem = document.createElement('li');
-      moreItem.className = 'travel-summary__more';
+      const moreItem = document.createElement("li");
+      moreItem.className = "travel-summary__more";
       moreItem.textContent = `+${stops.length - 6} more stops`;
       stopsList.appendChild(moreItem);
     }
     body.appendChild(stopsList);
   } else {
-    const noStops = document.createElement('div');
-    noStops.className = 'travel-summary__note';
-    noStops.textContent = Number(travel.durationSeconds) > 0
-      ? 'Travel between stays with no mapped stops.'
-      : 'No mapped stops scheduled for this day.';
+    const noStops = document.createElement("div");
+    noStops.className = "travel-summary__note";
+    noStops.textContent =
+      Number(travel.durationSeconds) > 0
+        ? "Travel between stays with no mapped stops."
+        : "No mapped stops scheduled for this day.";
     body.appendChild(noStops);
   }
 
   if (transitSummary) {
-    const transitRow = document.createElement('div');
-    transitRow.className = 'travel-summary__transit';
+    const transitRow = document.createElement("div");
+    transitRow.className = "travel-summary__transit";
     transitRow.textContent = transitSummary;
     body.appendChild(transitRow);
 
     const legs = Array.isArray(transitInfo?.legs)
-      ? transitInfo.legs.filter((leg) => leg && (leg.kind === 'transit' || leg.kind === 'walk'))
+      ? transitInfo.legs.filter(
+          (leg) => leg && (leg.kind === "transit" || leg.kind === "walk")
+        )
       : [];
     if (legs.length) {
-      const legList = document.createElement('ol');
-      legList.className = 'travel-summary__legs';
+      const legList = document.createElement("ol");
+      legList.className = "travel-summary__legs";
       legs.slice(0, 5).forEach((leg) => {
-        const legItem = document.createElement('li');
+        const legItem = document.createElement("li");
         legItem.className = `travel-summary__leg travel-summary__leg--${leg.kind}`;
         const legDuration = formatDuration(Number(leg.durationSeconds));
         const details = [
-          leg.kind === 'transit' ? (leg.line || leg.mode || 'Transit') : (leg.info || 'Walk'),
-          leg.kind === 'transit' ? leg.info || '' : '',
-          legDuration ? `(${legDuration})` : '',
+          leg.kind === "transit"
+            ? leg.line || leg.mode || "Transit"
+            : leg.info || "Walk",
+          leg.kind === "transit" ? leg.info || "" : "",
+          legDuration ? `(${legDuration})` : "",
         ]
           .filter(Boolean)
-          .join(' ');
+          .join(" ");
         legItem.textContent = details;
         legList.appendChild(legItem);
       });
@@ -1679,26 +1820,34 @@ function applyTravelSummary(summaryEl, plan, dateKey) {
   }
 
   if (isModeReady(walkingInfo)) {
-    const walkingRow = document.createElement('div');
-    walkingRow.className = 'travel-summary__transit';
+    const walkingRow = document.createElement("div");
+    walkingRow.className = "travel-summary__transit";
     const walkDuration = formatDuration(Number(walkingInfo.durationSeconds));
     const walkDistance = formatDistance(Number(walkingInfo.distanceMeters));
-    walkingRow.textContent = ['Walking route', walkDuration, walkDistance].filter(Boolean).join(' · ');
+    walkingRow.textContent = ["Walking route", walkDuration, walkDistance]
+      .filter(Boolean)
+      .join(" · ");
     body.appendChild(walkingRow);
   }
 
-  if (isModeReady(drivingInfo) && activeMode === 'transit') {
-    const drivingRow = document.createElement('div');
-    drivingRow.className = 'travel-summary__transit';
+  if (isModeReady(drivingInfo) && activeMode === "transit") {
+    const drivingRow = document.createElement("div");
+    drivingRow.className = "travel-summary__transit";
     const drivingDuration = formatDuration(Number(drivingInfo.durationSeconds));
     const drivingDistance = formatDistance(Number(drivingInfo.distanceMeters));
-    drivingRow.textContent = ['Driving alternative', drivingDuration, drivingDistance].filter(Boolean).join(' · ');
+    drivingRow.textContent = [
+      "Driving alternative",
+      drivingDuration,
+      drivingDistance,
+    ]
+      .filter(Boolean)
+      .join(" · ");
     body.appendChild(drivingRow);
   }
 
   if (skippedTitle) {
-    const notice = document.createElement('div');
-    notice.className = 'travel-summary__notice';
+    const notice = document.createElement("div");
+    notice.className = "travel-summary__notice";
     notice.textContent = skippedTitle;
     body.appendChild(notice);
   }
@@ -1706,17 +1855,23 @@ function applyTravelSummary(summaryEl, plan, dateKey) {
 
 function refreshTravelSummary(dateKey) {
   if (!calendarEl) return false;
-  const summaryEl = calendarEl.querySelector(`.travel-summary[data-travel-summary="${dateKey}"]`);
+  const summaryEl = calendarEl.querySelector(
+    `.travel-summary[data-travel-summary="${dateKey}"]`
+  );
   if (!summaryEl) return false;
   const day = ensureDay(dateKey);
   applyTravelSummary(summaryEl, day, dateKey);
   return true;
 }
 
-function setDayTravel(dateKey, travel, { persist = true, updateCard = true } = {}) {
+function setDayTravel(
+  dateKey,
+  travel,
+  { persist = true, updateCard = true } = {}
+) {
   const day = ensureDay(dateKey);
   day.travel = travel;
-  if (travel && travel.status === 'ready') {
+  if (travel && travel.status === "ready") {
     const currentMode = getMapModeForDate(dateKey);
     const currentDetails = getModeDetails(travel, currentMode);
     if (!isModeReady(currentDetails)) {
@@ -1760,7 +1915,7 @@ function scheduleTravelCalculation(dateKey, { interactive = false } = {}) {
 }
 
 async function computeTravelForDay(dateKey, { interactive = false } = {}) {
-  const provider = 'openrouteservice';
+  const provider = "openrouteservice";
   const drivingProfile = MODE_TO_PROFILE.driving;
   const transitProfile = MODE_TO_PROFILE.transit;
   const walkingProfile = MODE_TO_PROFILE.walking;
@@ -1768,18 +1923,18 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   const itinerary = buildItineraryForDay(day, dateKey);
 
   const skipped = Array.isArray(itinerary.skipped) ? itinerary.skipped : [];
-  const signatureBase = itinerary.signature || '';
+  const signatureBase = itinerary.signature || "";
   const signature = `${provider}:${drivingProfile}:${signatureBase}`;
   const originSnapshot = serializeStay(itinerary.originStay);
   const destinationSnapshot = serializeStay(itinerary.stay);
   const stopSnapshots = serializeActivities(itinerary.activities);
-  const defaultMode = PROFILE_TO_MODE[drivingProfile] || 'driving';
+  const defaultMode = PROFILE_TO_MODE[drivingProfile] || "driving";
 
   const composeTravel = (status, extra = {}) => ({
     status,
     provider,
     profile: transitProfile,
-    mode: 'transit',
+    mode: "transit",
     signature,
     skipped,
     originStay: originSnapshot,
@@ -1788,8 +1943,8 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     ...extra,
   });
 
-  if (itinerary.status === 'missing-stay') {
-    setDayTravel(dateKey, composeTravel('missing-stay'), { persist: false });
+  if (itinerary.status === "missing-stay") {
+    setDayTravel(dateKey, composeTravel("missing-stay"), { persist: false });
     return null;
   }
 
@@ -1797,64 +1952,69 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   if (
     existing &&
     existing.signature === signature &&
-    existing.status === 'ready' &&
+    existing.status === "ready" &&
     staysMatch(existing.originStay, originSnapshot) &&
     staysMatch(existing.destinationStay, destinationSnapshot)
   ) {
     return existing;
   }
 
-  if (itinerary.status === 'no-activities') {
-    const travelData = composeTravel('ready', {
+  if (itinerary.status === "no-activities") {
+    const travelData = composeTravel("ready", {
       durationSeconds: 0,
       distanceMeters: 0,
       fetchedAt: Date.now(),
       geometry: null,
       modes: {
         driving: {
-          status: 'ready',
+          status: "ready",
           profile: drivingProfile,
-          mode: 'driving',
+          mode: "driving",
           durationSeconds: 0,
           distanceMeters: 0,
           geometry: null,
           legs: [],
           path: [],
         },
-        walking: { status: 'unavailable' },
-        transit: { status: 'unavailable' },
+        walking: { status: "unavailable" },
+        transit: { status: "unavailable" },
       },
       driving: {
-        status: 'ready',
+        status: "ready",
         profile: drivingProfile,
-        mode: 'driving',
+        mode: "driving",
         durationSeconds: 0,
         distanceMeters: 0,
         geometry: null,
         legs: [],
         path: [],
       },
-      walking: { status: 'unavailable' },
-      transit: { status: 'unavailable' },
+      walking: { status: "unavailable" },
+      transit: { status: "unavailable" },
     });
     setDayTravel(dateKey, travelData);
     return travelData;
   }
 
-  if (!Array.isArray(itinerary.routePoints) || itinerary.routePoints.length < 2) {
-    setDayTravel(dateKey, composeTravel('insufficient-data'), { persist: false });
+  if (
+    !Array.isArray(itinerary.routePoints) ||
+    itinerary.routePoints.length < 2
+  ) {
+    setDayTravel(dateKey, composeTravel("insufficient-data"), {
+      persist: false,
+    });
     return null;
   }
 
   const apiKey = getRoutingApiKey({ interactive });
   if (!apiKey) {
-    setDayTravel(dateKey, composeTravel('missing-key'), { persist: false });
+    setDayTravel(dateKey, composeTravel("missing-key"), { persist: false });
     return null;
   }
 
   setDayTravel(
     dateKey,
-    composeTravel('pending', {
+    composeTravel("pending", {
       requestedAt: Date.now(),
     }),
     { persist: false }
@@ -1867,8 +2027,15 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
 
     const routeDistanceEstimate = estimateRouteDistance(itinerary.routePoints);
     let walkingOutcome = null;
-    if (VALID_ROUTING_PROFILES.has(walkingProfile) && routeDistanceEstimate <= 30000) {
-      walkingOutcome = await requestOpenRouteRoute(itinerary.routePoints, apiKey, walkingProfile).then(
+    if (
+      VALID_ROUTING_PROFILES.has(walkingProfile) &&
+      routeDistanceEstimate <= 30000
+    ) {
+      walkingOutcome = await requestOpenRouteRoute(
+        itinerary.routePoints,
+        apiKey,
+        walkingProfile
+      ).then(
         (route) => route,
         (error) => ({ error })
       );
@@ -1880,24 +2047,33 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     let walkingError = null;
     if (walkingOutcome && walkingOutcome.error) {
       walkingError = walkingOutcome.error;
-      console.warn('Walking routing unavailable', walkingError);
+      console.warn("Walking routing unavailable", walkingError);
     } else if (walkingOutcome && !walkingOutcome.error) {
       walkingRoute = walkingOutcome;
     }
 
     let transitDetails = null;
     try {
-      const transitRoute = await requestOpenRouteRoute(itinerary.routePoints, apiKey, transitProfile);
+      const transitRoute = await requestOpenRouteRoute(
+        itinerary.routePoints,
+        apiKey,
+        transitProfile
+      );
       transitDetails = buildTransitDetails(transitRoute);
     } catch (transitError) {
-      console.warn('Transit routing unavailable', transitError);
-      transitDetails = { status: 'error', error: transitError?.message || 'Transit route unavailable.' };
+      console.warn("Transit routing unavailable", transitError);
+      transitDetails = {
+        status: "error",
+        error: transitError?.message || "Transit route unavailable.",
+      };
     }
 
-    const drivingDetails = buildRouteDetails(drivingRoute, drivingProfile, { defaultKind: 'drive' }) || {
-      status: 'ready',
+    const drivingDetails = buildRouteDetails(drivingRoute, drivingProfile, {
+      defaultKind: "drive",
+    }) || {
+      status: "ready",
       profile: drivingProfile,
-      mode: 'driving',
+      mode: "driving",
       durationSeconds: Number(drivingRoute.summary?.duration ?? 0) || 0,
       distanceMeters: Number(drivingRoute.summary?.distance ?? 0) || 0,
       geometry: drivingRoute.geometry || null,
@@ -1907,10 +2083,12 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
 
     let walkingDetails = null;
     if (walkingRoute) {
-      walkingDetails = buildRouteDetails(walkingRoute, walkingProfile, { defaultKind: 'walk' }) || {
-        status: 'ready',
+      walkingDetails = buildRouteDetails(walkingRoute, walkingProfile, {
+        defaultKind: "walk",
+      }) || {
+        status: "ready",
         profile: walkingProfile,
-        mode: 'walking',
+        mode: "walking",
         durationSeconds: Number(walkingRoute.summary?.duration ?? 0) || 0,
         distanceMeters: Number(walkingRoute.summary?.distance ?? 0) || 0,
         geometry: walkingRoute.geometry || null,
@@ -1918,33 +2096,46 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
         path: geometryToLatLngs(walkingRoute.geometry),
       };
     } else if (walkingError) {
-      walkingDetails = { status: 'error', error: walkingError?.message || 'Walking route unavailable.' };
+      walkingDetails = {
+        status: "error",
+        error: walkingError?.message || "Walking route unavailable.",
+      };
     }
 
     const transitReady = isModeReady(transitDetails);
     const walkingReady = isModeReady(walkingDetails);
     const drivingReady = isModeReady(drivingDetails);
 
-    let primaryMode = transitReady ? 'transit' : walkingReady ? 'walking' : drivingReady ? 'driving' : defaultMode;
+    let primaryMode = transitReady
+      ? "transit"
+      : walkingReady
+      ? "walking"
+      : drivingReady
+      ? "driving"
+      : defaultMode;
     const primaryProfile = MODE_TO_PROFILE[primaryMode] || transitProfile;
     const primaryDetails =
-      primaryMode === 'transit'
+      primaryMode === "transit"
         ? transitDetails
-        : primaryMode === 'walking'
-          ? walkingDetails
-          : drivingDetails;
+        : primaryMode === "walking"
+        ? walkingDetails
+        : drivingDetails;
 
     const primaryDuration = Number(primaryDetails?.durationSeconds) || 0;
     const primaryDistance = Number(primaryDetails?.distanceMeters) || 0;
-    const geometry = primaryDetails?.geometry || drivingDetails?.geometry || transitDetails?.geometry || null;
+    const geometry =
+      primaryDetails?.geometry ||
+      drivingDetails?.geometry ||
+      transitDetails?.geometry ||
+      null;
 
     const modes = {
-      driving: drivingDetails || { status: 'unavailable' },
-      walking: walkingDetails || { status: 'unavailable' },
-      transit: transitDetails || { status: 'unavailable' },
+      driving: drivingDetails || { status: "unavailable" },
+      walking: walkingDetails || { status: "unavailable" },
+      transit: transitDetails || { status: "unavailable" },
     };
 
-    if (primaryMode === 'driving') {
+    if (primaryMode === "driving") {
       const fallback = getFallbackRailTravel(itinerary, {
         originSnapshot,
         destinationSnapshot,
@@ -1957,7 +2148,7 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
       }
     }
 
-    const travelData = composeTravel('ready', {
+    const travelData = composeTravel("ready", {
       profile: primaryProfile,
       mode: primaryMode,
       durationSeconds: primaryDuration,
@@ -1972,7 +2163,7 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     setDayTravel(dateKey, travelData);
     return travelData;
   } catch (error) {
-    console.error('Routing request failed', error);
+    console.error("Routing request failed", error);
     const fallback = getFallbackRailTravel(itinerary, {
       originSnapshot,
       destinationSnapshot,
@@ -1985,8 +2176,8 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     }
     setDayTravel(
       dateKey,
-      composeTravel('error', {
-        error: error?.message || 'Routing request failed',
+      composeTravel("error", {
+        error: error?.message || "Routing request failed",
         fetchedAt: Date.now(),
       }),
       { persist: false }
@@ -1997,7 +2188,7 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
 
 function getRoutingApiKey({ interactive = false } = {}) {
   const current = planState.config.routing?.openRouteApiKey;
-  if (current && typeof current === 'string' && current.trim()) {
+  if (current && typeof current === "string" && current.trim()) {
     return current.trim();
   }
   if (!interactive || routingKeyPromptActive) {
@@ -2006,7 +2197,9 @@ function getRoutingApiKey({ interactive = false } = {}) {
 
   routingKeyPromptActive = true;
   try {
-    const input = window.prompt('Enter your OpenRouteService API key to enable travel time calculations');
+    const input = window.prompt(
+      "Enter your OpenRouteService API key to enable travel time calculations"
+    );
     if (!input) {
       return null;
     }
@@ -2014,7 +2207,10 @@ function getRoutingApiKey({ interactive = false } = {}) {
     if (!normalized) {
       return null;
     }
-    const nextRouting = { ...(planState.config.routing || {}), openRouteApiKey: normalized };
+    const nextRouting = {
+      ...(planState.config.routing || {}),
+      openRouteApiKey: normalized,
+    };
     planState.config.routing = nextRouting;
     persistState();
     return normalized;
@@ -2023,26 +2219,35 @@ function getRoutingApiKey({ interactive = false } = {}) {
   }
 }
 
-async function requestOpenRouteRoute(points, apiKey, profile = 'driving-car', options = {}) {
+async function requestOpenRouteRoute(
+  points,
+  apiKey,
+  profile = "driving-car",
+  options = {}
+) {
   const coordinates = points.map((coord) => {
     if (!Array.isArray(coord) || coord.length !== 2) {
-      throw new Error('Invalid coordinate provided to routing request.');
+      throw new Error("Invalid coordinate provided to routing request.");
     }
     const [lat, lon] = coord;
     return [Number(lon), Number(lat)];
   });
 
-  const extraBody = options?.body && typeof options.body === 'object' ? options.body : null;
+  const extraBody =
+    options?.body && typeof options.body === "object" ? options.body : null;
   const payload = extraBody ? { coordinates, ...extraBody } : { coordinates };
 
-  const response = await fetch(`https://api.openrouteservice.org/v2/directions/${profile}/geojson`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: apiKey,
-    },
-    body: JSON.stringify(payload),
-  });
+  const response = await fetch(
+    `https://api.openrouteservice.org/v2/directions/${profile}/geojson`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: apiKey,
+      },
+      body: JSON.stringify(payload),
+    }
+  );
 
   if (!response.ok) {
     let message = `${response.status} ${response.statusText}`;
@@ -2057,20 +2262,22 @@ async function requestOpenRouteRoute(points, apiKey, profile = 'driving-car', op
         message = text.slice(0, 200);
       }
     }
-    throw new Error(message || 'Routing request failed.');
+    throw new Error(message || "Routing request failed.");
   }
 
   const data = await response.json();
   const feature = data?.features?.[0];
   if (!feature) {
-    throw new Error('No route found for the selected stops.');
+    throw new Error("No route found for the selected stops.");
   }
   const properties = feature.properties || {};
   return {
     geometry: feature.geometry,
     summary: properties.summary || {},
     segments: Array.isArray(properties.segments) ? properties.segments : [],
-    wayPoints: Array.isArray(properties.way_points) ? properties.way_points : [],
+    wayPoints: Array.isArray(properties.way_points)
+      ? properties.way_points
+      : [],
     bbox: Array.isArray(feature.bbox) ? [...feature.bbox] : null,
     metadata: {
       transfers: properties.transfers,
@@ -2084,7 +2291,7 @@ function uniqueOrdered(values) {
   const seen = new Set();
   const result = [];
   values.forEach((value) => {
-    const key = typeof value === 'string' ? value.trim() : value;
+    const key = typeof value === "string" ? value.trim() : value;
     if (!key || seen.has(key)) return;
     seen.add(key);
     result.push(key);
@@ -2092,27 +2299,41 @@ function uniqueOrdered(values) {
   return result;
 }
 
-function buildRouteDetails(route, profile = 'driving-car', { defaultKind = 'drive' } = {}) {
+function buildRouteDetails(
+  route,
+  profile = "driving-car",
+  { defaultKind = "drive" } = {}
+) {
   if (!route) return null;
   const segments = Array.isArray(route.segments) ? route.segments : [];
   const legs = [];
   segments.forEach((segment) => {
     const steps = Array.isArray(segment.steps) ? segment.steps : [];
     steps.forEach((step) => {
-      if (typeof step.instruction !== 'string' || !step.instruction.trim()) {
+      if (typeof step.instruction !== "string" || !step.instruction.trim()) {
         return;
       }
-      const rawMode = typeof step.mode === 'string' ? step.mode : '';
+      const rawMode = typeof step.mode === "string" ? step.mode : "";
       const modeLower = rawMode.toLowerCase();
       let kind = defaultKind;
-      if (modeLower.includes('foot') || modeLower.includes('walk') || modeLower.includes('pedestrian')) {
-        kind = 'walk';
-      } else if (modeLower.includes('bike') || modeLower.includes('bicycle')) {
-        kind = 'cycle';
-      } else if (modeLower.includes('bus') || modeLower.includes('train') || modeLower.includes('metro')) {
-        kind = 'transit';
+      if (
+        modeLower.includes("foot") ||
+        modeLower.includes("walk") ||
+        modeLower.includes("pedestrian")
+      ) {
+        kind = "walk";
+      } else if (modeLower.includes("bike") || modeLower.includes("bicycle")) {
+        kind = "cycle";
+      } else if (
+        modeLower.includes("bus") ||
+        modeLower.includes("train") ||
+        modeLower.includes("metro")
+      ) {
+        kind = "transit";
       }
-      const modeLabel = rawMode || (kind === 'walk' ? 'Walk' : kind === 'drive' ? 'Drive' : 'Move');
+      const modeLabel =
+        rawMode ||
+        (kind === "walk" ? "Walk" : kind === "drive" ? "Drive" : "Move");
       const path = extractLegPath(route.geometry, step.way_points);
       legs.push({
         kind,
@@ -2127,7 +2348,7 @@ function buildRouteDetails(route, profile = 'driving-car', { defaultKind = 'driv
   });
 
   return {
-    status: 'ready',
+    status: "ready",
     profile,
     mode: PROFILE_TO_MODE[profile] || null,
     durationSeconds: Number(route.summary?.duration ?? 0) || 0,
@@ -2155,35 +2376,58 @@ function buildTransitDetails(route) {
           transit.name,
           transit.line,
           transit.code,
-        ].find((value) => typeof value === 'string' && value.trim());
-        const mode = transit.mode || transit.type || transit.vehicle_type || 'Transit';
-        const from = transit.from?.name || transit.departure_stop?.name || step.departure?.name || '';
-        const to = transit.to?.name || transit.arrival_stop?.name || step.arrival?.name || '';
-        const headsign = transit.headsign || transit.direction || '';
-        const agency = transit.agency || transit.agency_name || '';
-        const infoParts = [lineName, headsign ? `to ${headsign}` : '', agency ? `(${agency})` : ''].filter(Boolean);
-        const path = extractLegPath(route.geometry, step.way_points || segment.way_points);
+        ].find((value) => typeof value === "string" && value.trim());
+        const mode =
+          transit.mode || transit.type || transit.vehicle_type || "Transit";
+        const from =
+          transit.from?.name ||
+          transit.departure_stop?.name ||
+          step.departure?.name ||
+          "";
+        const to =
+          transit.to?.name ||
+          transit.arrival_stop?.name ||
+          step.arrival?.name ||
+          "";
+        const headsign = transit.headsign || transit.direction || "";
+        const agency = transit.agency || transit.agency_name || "";
+        const infoParts = [
+          lineName,
+          headsign ? `to ${headsign}` : "",
+          agency ? `(${agency})` : "",
+        ].filter(Boolean);
+        const path = extractLegPath(
+          route.geometry,
+          step.way_points || segment.way_points
+        );
         legs.push({
-          kind: 'transit',
+          kind: "transit",
           mode,
           line: lineName || mode,
           from: from || null,
           to: to || null,
-          info: infoParts.join(' '),
+          info: infoParts.join(" "),
           durationSeconds: Number(step.duration ?? segment.duration ?? 0) || 0,
           distanceMeters: Number(step.distance ?? segment.distance ?? 0) || 0,
           path,
           wayPoints: Array.isArray(step.way_points)
             ? [...step.way_points]
             : Array.isArray(segment.way_points)
-              ? [...segment.way_points]
-              : null,
+            ? [...segment.way_points]
+            : null,
         });
-      } else if (step && typeof step.instruction === 'string' && step.instruction.trim()) {
-        const moveType = step.mode || (step.type === 11 ? 'Walk' : 'Move');
-        const path = extractLegPath(route.geometry, step.way_points || segment.way_points);
+      } else if (
+        step &&
+        typeof step.instruction === "string" &&
+        step.instruction.trim()
+      ) {
+        const moveType = step.mode || (step.type === 11 ? "Walk" : "Move");
+        const path = extractLegPath(
+          route.geometry,
+          step.way_points || segment.way_points
+        );
         legs.push({
-          kind: 'walk',
+          kind: "walk",
           mode: moveType,
           info: step.instruction.trim(),
           durationSeconds: Number(step.duration ?? 0) || 0,
@@ -2192,8 +2436,8 @@ function buildTransitDetails(route) {
           wayPoints: Array.isArray(step.way_points)
             ? [...step.way_points]
             : Array.isArray(segment.way_points)
-              ? [...segment.way_points]
-              : null,
+            ? [...segment.way_points]
+            : null,
         });
       }
     });
@@ -2203,13 +2447,15 @@ function buildTransitDetails(route) {
     return null;
   }
 
-  const transitLegs = legs.filter((leg) => leg.kind === 'transit');
+  const transitLegs = legs.filter((leg) => leg.kind === "transit");
   const transfers = Math.max(0, transitLegs.length - 1);
-  const lines = uniqueOrdered(transitLegs.map((leg) => leg.line || leg.mode).filter(Boolean));
+  const lines = uniqueOrdered(
+    transitLegs.map((leg) => leg.line || leg.mode).filter(Boolean)
+  );
 
   return {
-    status: 'ready',
-    mode: 'transit',
+    status: "ready",
+    mode: "transit",
     durationSeconds: Number(route.summary?.duration ?? 0) || 0,
     distanceMeters: Number(route.summary?.distance ?? 0) || 0,
     transfers,
@@ -2222,29 +2468,45 @@ function buildTransitDetails(route) {
 }
 
 function formatTransitSummary(transit, { includeLines = true } = {}) {
-  if (!transit) return '';
-  if (transit.status === 'ready') {
+  if (!transit) return "";
+  if (transit.status === "ready") {
     const durationText = formatDuration(Number(transit.durationSeconds));
-    let transferText = '';
+    let transferText = "";
     if (Number.isInteger(transit.transfers) && transit.transfers >= 0) {
-      transferText = transit.transfers === 0 ? 'Direct' : `${transit.transfers} transfer${transit.transfers === 1 ? '' : 's'}`;
+      transferText =
+        transit.transfers === 0
+          ? "Direct"
+          : `${transit.transfers} transfer${
+              transit.transfers === 1 ? "" : "s"
+            }`;
     }
-    const linesText = includeLines && Array.isArray(transit.lines) && transit.lines.length
-      ? transit.lines.slice(0, 3).join(' → ')
-      : '';
-    return ['Transit', durationText, transferText, linesText].filter(Boolean).join(' · ');
+    const linesText =
+      includeLines && Array.isArray(transit.lines) && transit.lines.length
+        ? transit.lines.slice(0, 3).join(" → ")
+        : "";
+    return ["Transit", durationText, transferText, linesText]
+      .filter(Boolean)
+      .join(" · ");
   }
-  if (transit.status === 'error') {
-    return transit.error ? `Transit unavailable: ${transit.error}` : 'Transit unavailable';
+  if (transit.status === "error") {
+    return transit.error
+      ? `Transit unavailable: ${transit.error}`
+      : "Transit unavailable";
   }
-  if (transit.status === 'unavailable') {
-    return '';
+  if (transit.status === "unavailable") {
+    return "";
   }
-  return '';
+  return "";
 }
 
-function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '', modeKey = null } = {}) {
-  if (!travel || travel.status !== 'ready') {
+function buildDirectionSteps(
+  dateKey,
+  day,
+  itinerary,
+  travel,
+  { routeLabel = "", modeKey = null } = {}
+) {
+  if (!travel || travel.status !== "ready") {
     return [];
   }
 
@@ -2254,23 +2516,30 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '',
   const startTimestamp = baseDate.getTime() + departureMinutes * 60000;
   let cursor = startTimestamp;
 
-  const requestedMode = modeKey || getActiveTravelMode(travel) || 'driving';
-  const fallbackOrder = ['transit', 'walking', 'driving'];
-  const candidateModes = [requestedMode, ...fallbackOrder.filter((mode) => mode !== requestedMode)];
-  let activeMode = candidateModes.find((mode) => isModeReady(getModeDetails(travel, mode))) || requestedMode;
+  const requestedMode = modeKey || getActiveTravelMode(travel) || "driving";
+  const fallbackOrder = ["transit", "walking", "driving"];
+  const candidateModes = [
+    requestedMode,
+    ...fallbackOrder.filter((mode) => mode !== requestedMode),
+  ];
+  let activeMode =
+    candidateModes.find((mode) => isModeReady(getModeDetails(travel, mode))) ||
+    requestedMode;
   let activeDetails = getModeDetails(travel, activeMode);
   if (!isModeReady(activeDetails)) {
     activeDetails = null;
   }
 
-  const transit = getModeDetails(travel, 'transit');
-  const driving = getModeDetails(travel, 'driving');
+  const transit = getModeDetails(travel, "transit");
+  const driving = getModeDetails(travel, "driving");
 
   const startStep = {
-    kind: 'milestone',
-    role: 'start',
-    title: itinerary.originStay?.label ? `Depart ${itinerary.originStay.label}` : 'Depart stay',
-    detail: itinerary.originStay?.label || '',
+    kind: "milestone",
+    role: "start",
+    title: itinerary.originStay?.label
+      ? `Depart ${itinerary.originStay.label}`
+      : "Depart stay",
+    detail: itinerary.originStay?.label || "",
     start: new Date(startTimestamp),
     end: new Date(startTimestamp),
     durationSeconds: 0,
@@ -2278,7 +2547,9 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '',
   };
   steps.push(startStep);
 
-  const legSource = Array.isArray(activeDetails?.legs) ? activeDetails.legs : [];
+  const legSource = Array.isArray(activeDetails?.legs)
+    ? activeDetails.legs
+    : [];
 
   if (legSource.length) {
     legSource.forEach((leg, legIndex) => {
@@ -2286,36 +2557,43 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '',
       const legStart = new Date(cursor);
       cursor += legDuration * 1000;
       const legEnd = new Date(cursor);
-      const kind = leg.kind === 'walk'
-        ? 'walk'
-        : activeMode === 'transit'
-          ? 'transit'
-          : leg.kind === 'transit'
-            ? 'transit'
-            : 'drive';
-      const lineName = leg.line || leg.mode || (kind === 'drive' ? 'Drive' : kind === 'walk' ? 'Walk' : 'Transit');
-      const title = kind === 'transit'
-        ? `Take ${lineName}`
-        : kind === 'walk'
-          ? (leg.info || 'Walk')
-          : (leg.info && leg.info.length < 120 ? leg.info : 'Drive');
+      const kind =
+        leg.kind === "walk"
+          ? "walk"
+          : activeMode === "transit"
+          ? "transit"
+          : leg.kind === "transit"
+          ? "transit"
+          : "drive";
+      const lineName =
+        leg.line ||
+        leg.mode ||
+        (kind === "drive" ? "Drive" : kind === "walk" ? "Walk" : "Transit");
+      const title =
+        kind === "transit"
+          ? `Take ${lineName}`
+          : kind === "walk"
+          ? leg.info || "Walk"
+          : leg.info && leg.info.length < 120
+          ? leg.info
+          : "Drive";
       const detailParts = [];
       if (leg.from || leg.to) {
-        detailParts.push(`${leg.from || 'Start'} → ${leg.to || 'Destination'}`);
+        detailParts.push(`${leg.from || "Start"} → ${leg.to || "Destination"}`);
       }
-      if (kind === 'transit' && leg.info) {
+      if (kind === "transit" && leg.info) {
         detailParts.push(leg.info);
       }
       steps.push({
         kind,
         role: null,
         mode: leg.mode || lineName,
-        line: leg.line || '',
-        from: leg.from || '',
-        to: leg.to || '',
-        info: leg.info || '',
+        line: leg.line || "",
+        from: leg.from || "",
+        to: leg.to || "",
+        info: leg.info || "",
         title,
-        detail: detailParts.filter(Boolean).join(' · '),
+        detail: detailParts.filter(Boolean).join(" · "),
         start: legStart,
         end: legEnd,
         durationSeconds: legDuration,
@@ -2330,27 +2608,35 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '',
     const segmentStart = new Date(cursor);
     cursor += durationSeconds * 1000;
     const segmentEnd = new Date(cursor);
-    const fallbackTitle = activeMode === 'transit'
-      ? 'Use public transport between stops'
-      : activeMode === 'walking'
-        ? 'Walk between stops'
-        : 'Drive between stops';
+    const fallbackTitle =
+      activeMode === "transit"
+        ? "Use public transport between stops"
+        : activeMode === "walking"
+        ? "Walk between stops"
+        : "Drive between stops";
     const detailParts = [];
     if (itinerary.activities.length) {
-      detailParts.push(itinerary.activities.map((activity) => activity.label).join(' → '));
+      detailParts.push(
+        itinerary.activities.map((activity) => activity.label).join(" → ")
+      );
     } else if (routeLabel) {
       detailParts.push(routeLabel);
     }
     steps.push({
-      kind: activeMode === 'transit' ? 'transit' : activeMode === 'walking' ? 'walk' : 'drive',
+      kind:
+        activeMode === "transit"
+          ? "transit"
+          : activeMode === "walking"
+          ? "walk"
+          : "drive",
       role: null,
       mode: getModeLabel(activeMode),
-      line: '',
-      from: '',
-      to: '',
+      line: "",
+      from: "",
+      to: "",
       info: routeLabel,
       title: fallbackTitle,
-      detail: detailParts.filter(Boolean).join(' · '),
+      detail: detailParts.filter(Boolean).join(" · "),
       start: segmentStart,
       end: segmentEnd,
       durationSeconds,
@@ -2365,10 +2651,12 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '',
   }
 
   const arrivalStep = {
-    kind: 'milestone',
-    role: 'arrive',
-    title: itinerary.stay?.label ? `Arrive at ${itinerary.stay.label}` : 'Arrive at stay',
-    detail: itinerary.stay?.label || '',
+    kind: "milestone",
+    role: "arrive",
+    title: itinerary.stay?.label
+      ? `Arrive at ${itinerary.stay.label}`
+      : "Arrive at stay",
+    detail: itinerary.stay?.label || "",
     start: new Date(cursor),
     end: new Date(cursor),
     durationSeconds: 0,
@@ -2383,77 +2671,101 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '',
 }
 
 function getDirectionIcon(step) {
-  if (!step) return '•';
-  if (step.kind === 'milestone') {
-    return step.role === 'arrive' ? '🏁' : '🚩';
+  if (!step) return "•";
+  if (step.kind === "milestone") {
+    return step.role === "arrive" ? "🏁" : "🚩";
   }
-  if (step.kind === 'walk') return '🚶';
-  if (step.kind === 'drive') return '🚗';
-  if (step.kind === 'transit') {
-    const mode = (step.mode || '').toLowerCase();
-    if (mode.includes('bus')) return '🚌';
-    if (mode.includes('ferry') || mode.includes('boat') || mode.includes('ship')) return '⛴️';
-    if (mode.includes('subway') || mode.includes('metro')) return '🚇';
-    if (mode.includes('tram')) return '🚊';
-    if (mode.includes('air') || mode.includes('flight') || mode.includes('plane')) return '✈️';
-    if (mode.includes('shinkansen') || mode.includes('bullet')) return '🚄';
-    return '🚆';
+  if (step.kind === "walk") return "🚶";
+  if (step.kind === "drive") return "🚗";
+  if (step.kind === "transit") {
+    const mode = (step.mode || "").toLowerCase();
+    if (mode.includes("bus")) return "🚌";
+    if (
+      mode.includes("ferry") ||
+      mode.includes("boat") ||
+      mode.includes("ship")
+    )
+      return "⛴️";
+    if (mode.includes("subway") || mode.includes("metro")) return "🚇";
+    if (mode.includes("tram")) return "🚊";
+    if (
+      mode.includes("air") ||
+      mode.includes("flight") ||
+      mode.includes("plane")
+    )
+      return "✈️";
+    if (mode.includes("shinkansen") || mode.includes("bullet")) return "🚄";
+    return "🚆";
   }
-  return '➡️';
+  return "➡️";
 }
 
-function updateMapDirections(dateKey, { mode: modeOverride, focus = false } = {}) {
+function updateMapDirections(
+  dateKey,
+  { mode: modeOverride, focus = false } = {}
+) {
   if (!mapDirectionsEl) return;
-  mapDirectionsEl.innerHTML = '';
-  mapDirectionsEl.dataset.mode = '';
+  mapDirectionsEl.innerHTML = "";
+  mapDirectionsEl.dataset.mode = "";
   clearStepHighlight();
 
   const day = ensureDay(dateKey);
   const itinerary = buildItineraryForDay(day, dateKey);
   const travel = day.travel;
-  const originLabel = itinerary.originStay?.label || '';
-  const destinationLabel = itinerary.stay?.label || '';
-  const routeLabel = originLabel && destinationLabel ? `${originLabel} → ${destinationLabel}` : '';
-  const skippedTitle = Array.isArray(travel?.skipped) && travel.skipped.length ? buildMissingPinsTitle(travel.skipped) : '';
+  const originLabel = itinerary.originStay?.label || "";
+  const destinationLabel = itinerary.stay?.label || "";
+  const routeLabel =
+    originLabel && destinationLabel
+      ? `${originLabel} → ${destinationLabel}`
+      : "";
+  const skippedTitle =
+    Array.isArray(travel?.skipped) && travel.skipped.length
+      ? buildMissingPinsTitle(travel.skipped)
+      : "";
 
   if (!day.stay) {
-    mapDirectionsEl.dataset.state = 'empty';
-    mapDirectionsEl.textContent = 'Add a stay with map coordinates to see travel instructions.';
+    mapDirectionsEl.dataset.state = "empty";
+    mapDirectionsEl.textContent =
+      "Add a stay with map coordinates to see travel instructions.";
     mapDirectionsData = null;
     return;
   }
 
   if (!travel) {
-    mapDirectionsEl.dataset.state = 'pending';
+    mapDirectionsEl.dataset.state = "pending";
     mapDirectionsEl.textContent = routeLabel
       ? `Calculating travel time for ${routeLabel}…`
-      : 'Travel time will be calculated soon.';
+      : "Travel time will be calculated soon.";
     mapDirectionsData = null;
     return;
   }
 
-  if (travel.status !== 'ready') {
-    let message = '';
-    let state = 'pending';
+  if (travel.status !== "ready") {
+    let message = "";
+    let state = "pending";
     switch (travel.status) {
-      case 'pending':
-        message = routeLabel ? `Calculating travel time for ${routeLabel}…` : 'Calculating travel time…';
+      case "pending":
+        message = routeLabel
+          ? `Calculating travel time for ${routeLabel}…`
+          : "Calculating travel time…";
         break;
-      case 'missing-key':
-        message = 'Add your OpenRouteService API key to calculate travel time.';
+      case "missing-key":
+        message = "Add your OpenRouteService API key to calculate travel time.";
         break;
-      case 'missing-stay':
-        message = 'Select a stay with coordinates to calculate travel time.';
+      case "missing-stay":
+        message = "Select a stay with coordinates to calculate travel time.";
         break;
-      case 'insufficient-data':
-        message = skippedTitle || 'Add coordinates for all stops to calculate travel time.';
+      case "insufficient-data":
+        message =
+          skippedTitle ||
+          "Add coordinates for all stops to calculate travel time.";
         break;
-      case 'error':
-        message = travel.error || 'Unable to calculate travel time.';
-        state = 'error';
+      case "error":
+        message = travel.error || "Unable to calculate travel time.";
+        state = "error";
         break;
       default:
-        message = 'Travel time is not available for this day.';
+        message = "Travel time is not available for this day.";
         break;
     }
     mapDirectionsEl.dataset.state = state;
@@ -2463,71 +2775,82 @@ function updateMapDirections(dateKey, { mode: modeOverride, focus = false } = {}
   }
 
   const mode = modeOverride || getMapModeForDate(dateKey);
-  const steps = buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel, modeKey: mode });
+  const steps = buildDirectionSteps(dateKey, day, itinerary, travel, {
+    routeLabel,
+    modeKey: mode,
+  });
   if (!steps.length) {
-    mapDirectionsEl.dataset.state = 'pending';
-    mapDirectionsEl.textContent = 'Travel directions are not available for this route yet.';
+    mapDirectionsEl.dataset.state = "pending";
+    mapDirectionsEl.textContent =
+      "Travel directions are not available for this route yet.";
     mapDirectionsData = null;
     return;
   }
 
-  mapDirectionsEl.dataset.state = 'ready';
+  mapDirectionsEl.dataset.state = "ready";
   mapDirectionsEl.dataset.mode = mode;
-  const list = document.createElement('ol');
-  list.className = 'directions__list';
+  const list = document.createElement("ol");
+  list.className = "directions__list";
 
   steps.forEach((step, index) => {
-    const item = document.createElement('li');
-    item.className = 'directions__item';
-    if (step.kind === 'milestone') {
-      item.classList.add('directions__item--milestone');
+    const item = document.createElement("li");
+    item.className = "directions__item";
+    if (step.kind === "milestone") {
+      item.classList.add("directions__item--milestone");
     } else {
       item.classList.add(`directions__item--${step.kind}`);
     }
     item.dataset.stepIndex = String(index);
-    const interactive = step.kind !== 'milestone';
+    const interactive = step.kind !== "milestone";
     item.tabIndex = interactive ? 0 : -1;
-    const stepColor = step.color || (step.modeKey ? MODE_COLORS[step.modeKey] : null);
+    const stepColor =
+      step.color || (step.modeKey ? MODE_COLORS[step.modeKey] : null);
     if (stepColor) {
-      item.style.setProperty('--direction-color', stepColor);
+      item.style.setProperty("--direction-color", stepColor);
     }
 
-    const timeColumn = document.createElement('div');
-    timeColumn.className = 'directions__time';
+    const timeColumn = document.createElement("div");
+    timeColumn.className = "directions__time";
     const startLabel = formatTimeLabel(step.start);
     if (startLabel) {
-      const startEl = document.createElement('span');
+      const startEl = document.createElement("span");
       startEl.textContent = startLabel;
       timeColumn.appendChild(startEl);
     }
     const endLabel = formatTimeLabel(step.end);
     if (endLabel && step.end && step.end.getTime() !== step.start?.getTime()) {
-      const endEl = document.createElement('span');
+      const endEl = document.createElement("span");
       endEl.textContent = endLabel;
       timeColumn.appendChild(endEl);
     }
     item.appendChild(timeColumn);
 
-    const content = document.createElement('div');
-    content.className = 'directions__content';
+    const content = document.createElement("div");
+    content.className = "directions__content";
 
-    const titleRow = document.createElement('div');
-    titleRow.className = 'directions__title';
-    const iconEl = document.createElement('span');
-    iconEl.className = 'directions__icon';
+    const titleRow = document.createElement("div");
+    titleRow.className = "directions__title";
+    const iconEl = document.createElement("span");
+    iconEl.className = "directions__icon";
     iconEl.textContent = getDirectionIcon(step);
     titleRow.appendChild(iconEl);
-    const titleText = document.createElement('span');
-    titleText.textContent = step.title || (step.kind === 'milestone' ? 'Route milestone' : 'Route step');
+    const titleText = document.createElement("span");
+    titleText.textContent =
+      step.title ||
+      (step.kind === "milestone" ? "Route milestone" : "Route step");
     titleRow.appendChild(titleText);
     content.appendChild(titleRow);
 
-    if (step.kind !== 'milestone') {
+    if (step.kind !== "milestone") {
       const metaParts = [];
       if (startLabel) {
         metaParts.push(`Dep ${startLabel}`);
       }
-      if (endLabel && step.end && step.end.getTime() !== step.start?.getTime()) {
+      if (
+        endLabel &&
+        step.end &&
+        step.end.getTime() !== step.start?.getTime()
+      ) {
         metaParts.push(`Arr ${endLabel}`);
       }
       if (Number(step.durationSeconds) > 0) {
@@ -2537,23 +2860,23 @@ function updateMapDirections(dateKey, { mode: modeOverride, focus = false } = {}
         metaParts.push(formatDistance(Number(step.distanceMeters)));
       }
       if (metaParts.length) {
-        const meta = document.createElement('div');
-        meta.className = 'directions__meta';
-        meta.textContent = metaParts.join(' · ');
+        const meta = document.createElement("div");
+        meta.className = "directions__meta";
+        meta.textContent = metaParts.join(" · ");
         content.appendChild(meta);
       }
     }
 
-    const detailText = step.detail || '';
+    const detailText = step.detail || "";
     if (detailText) {
-      const detailEl = document.createElement('div');
-      detailEl.className = 'directions__detail';
+      const detailEl = document.createElement("div");
+      detailEl.className = "directions__detail";
       detailEl.textContent = detailText;
       content.appendChild(detailEl);
     }
-    if (stepColor && step.kind !== 'milestone') {
-      const indicator = document.createElement('span');
-      indicator.className = 'directions__line';
+    if (stepColor && step.kind !== "milestone") {
+      const indicator = document.createElement("span");
+      indicator.className = "directions__line";
       indicator.style.background = stepColor;
       content.appendChild(indicator);
     }
@@ -2565,35 +2888,35 @@ function updateMapDirections(dateKey, { mode: modeOverride, focus = false } = {}
   mapDirectionsEl.appendChild(list);
 
   if (skippedTitle) {
-    const note = document.createElement('div');
-    note.className = 'directions__note';
+    const note = document.createElement("div");
+    note.className = "directions__note";
     note.textContent = skippedTitle;
     mapDirectionsEl.appendChild(note);
   }
 
   if (travel.meta) {
-    const summary = document.createElement('div');
-    summary.className = 'rail-summary';
-    const title = document.createElement('h4');
-    title.textContent = travel.meta.route || 'Transit summary';
+    const summary = document.createElement("div");
+    summary.className = "rail-summary";
+    const title = document.createElement("h4");
+    title.textContent = travel.meta.route || "Transit summary";
     summary.appendChild(title);
-    const listEl = document.createElement('dl');
-    listEl.className = 'rail-summary__grid';
+    const listEl = document.createElement("dl");
+    listEl.className = "rail-summary__grid";
 
     const addRow = (label, value) => {
       if (!value) return;
-      const term = document.createElement('dt');
+      const term = document.createElement("dt");
       term.textContent = label;
-      const desc = document.createElement('dd');
+      const desc = document.createElement("dd");
       desc.textContent = value;
       listEl.append(term, desc);
     };
 
-    addRow('Services', travel.meta.services);
-    addRow('Key stops', travel.meta.keyStops);
-    addRow('Approx. travel time', travel.meta.duration);
-    addRow('Cost', travel.meta.cost);
-    addRow('Pass coverage', travel.meta.pass);
+    addRow("Services", travel.meta.services);
+    addRow("Key stops", travel.meta.keyStops);
+    addRow("Approx. travel time", travel.meta.duration);
+    addRow("Cost", travel.meta.cost);
+    addRow("Pass coverage", travel.meta.pass);
 
     summary.appendChild(listEl);
     mapDirectionsEl.appendChild(summary);
@@ -2614,7 +2937,9 @@ function updateMapDirections(dateKey, { mode: modeOverride, focus = false } = {}
   };
 
   if (focus) {
-    const firstInteractive = steps.findIndex((step) => step.kind !== 'milestone');
+    const firstInteractive = steps.findIndex(
+      (step) => step.kind !== "milestone"
+    );
     if (firstInteractive >= 0) {
       activateDirectionStep(firstInteractive, { flyTo: true });
     }
@@ -2625,29 +2950,36 @@ function renderRailReference() {
   if (!Array.isArray(JAPAN_RAIL_REFERENCE) || !JAPAN_RAIL_REFERENCE.length) {
     return null;
   }
-  const wrapper = document.createElement('section');
-  wrapper.className = 'rail-guide';
-  const title = document.createElement('h4');
-  title.className = 'rail-guide__title';
-  title.textContent = 'JR Kansai express cheat-sheet';
+  const wrapper = document.createElement("section");
+  wrapper.className = "rail-guide";
+  const title = document.createElement("h4");
+  title.className = "rail-guide__title";
+  title.textContent = "JR Kansai express cheat-sheet";
   wrapper.appendChild(title);
-  const table = document.createElement('table');
-  table.className = 'rail-guide__table';
-  const thead = document.createElement('thead');
-  const headRow = document.createElement('tr');
-  ['Route', 'Train service(s)', 'Key stops', 'Approx. travel time', 'Cost', 'JR Pass coverage'].forEach((label) => {
-    const th = document.createElement('th');
+  const table = document.createElement("table");
+  table.className = "rail-guide__table";
+  const thead = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  [
+    "Route",
+    "Train service(s)",
+    "Key stops",
+    "Approx. travel time",
+    "Cost",
+    "JR Pass coverage",
+  ].forEach((label) => {
+    const th = document.createElement("th");
     th.textContent = label;
     headRow.appendChild(th);
   });
   thead.appendChild(headRow);
   table.appendChild(thead);
-  const tbody = document.createElement('tbody');
+  const tbody = document.createElement("tbody");
   JAPAN_RAIL_REFERENCE.forEach((entry) => {
-    const row = document.createElement('tr');
+    const row = document.createElement("tr");
     const addCell = (value) => {
-      const td = document.createElement('td');
-      td.textContent = value || '—';
+      const td = document.createElement("td");
+      td.textContent = value || "—";
       row.appendChild(td);
     };
     addCell(entry.route);
@@ -2668,27 +3000,38 @@ function updateMapSummary(dateKey) {
   const day = ensureDay(dateKey);
   const travel = day.travel;
   const itinerary = buildItineraryForDay(day, dateKey);
-  const skippedCount = Array.isArray(travel?.skipped) ? travel.skipped.length : 0;
-  const originLabel = typeof travel?.originStay?.label === 'string'
-    ? travel.originStay.label.trim()
-    : (itinerary.originStay?.label || '').trim();
-  const destinationLabel = typeof travel?.destinationStay?.label === 'string'
-    ? travel.destinationStay.label.trim()
-    : (itinerary.stay?.label || '').trim();
-  const routeLabel = originLabel && destinationLabel ? `${originLabel} → ${destinationLabel}` : '';
-  const activeMode = getActiveTravelMode(travel) || 'driving';
-  const transitInfo = getModeDetails(travel, 'transit');
-  const walkingInfo = getModeDetails(travel, 'walking');
-  const drivingInfo = getModeDetails(travel, 'driving');
+  const skippedCount = Array.isArray(travel?.skipped)
+    ? travel.skipped.length
+    : 0;
+  const originLabel =
+    typeof travel?.originStay?.label === "string"
+      ? travel.originStay.label.trim()
+      : (itinerary.originStay?.label || "").trim();
+  const destinationLabel =
+    typeof travel?.destinationStay?.label === "string"
+      ? travel.destinationStay.label.trim()
+      : (itinerary.stay?.label || "").trim();
+  const routeLabel =
+    originLabel && destinationLabel
+      ? `${originLabel} → ${destinationLabel}`
+      : "";
+  const activeMode = getActiveTravelMode(travel) || "driving";
+  const transitInfo = getModeDetails(travel, "transit");
+  const walkingInfo = getModeDetails(travel, "walking");
+  const drivingInfo = getModeDetails(travel, "driving");
 
-  let message = '';
+  let message = "";
   if (!day.stay) {
-    message = 'Pick a stay with map coordinates to calculate travel time.';
+    message = "Pick a stay with map coordinates to calculate travel time.";
   } else if (!travel) {
-    message = routeLabel ? `Calculating travel time for ${routeLabel}…` : 'Travel time will be calculated shortly.';
-  } else if (travel.status === 'pending') {
-    message = routeLabel ? `Calculating travel time for ${routeLabel}…` : 'Calculating travel time…';
-  } else if (travel.status === 'ready') {
+    message = routeLabel
+      ? `Calculating travel time for ${routeLabel}…`
+      : "Travel time will be calculated shortly.";
+  } else if (travel.status === "pending") {
+    message = routeLabel
+      ? `Calculating travel time for ${routeLabel}…`
+      : "Calculating travel time…";
+  } else if (travel.status === "ready") {
     const durationText = formatDuration(Number(travel.durationSeconds));
     const distanceText = formatDistance(Number(travel.distanceMeters));
     const parts = [];
@@ -2696,44 +3039,50 @@ function updateMapSummary(dateKey) {
     if (durationText) parts.push(`Total ${durationText}`);
     if (distanceText) parts.push(distanceText);
     parts.push(`Mode ${getModeLabel(activeMode)}`);
-    const transitSummary = formatTransitSummary(transitInfo || null, { includeLines: true });
-    if (transitSummary && activeMode !== 'transit') {
+    const transitSummary = formatTransitSummary(transitInfo || null, {
+      includeLines: true,
+    });
+    if (transitSummary && activeMode !== "transit") {
       parts.push(transitSummary);
     } else if (transitSummary) {
       parts.push(transitSummary);
     }
-    if (isModeReady(walkingInfo) && activeMode !== 'walking') {
+    if (isModeReady(walkingInfo) && activeMode !== "walking") {
       const walkDur = formatDuration(Number(walkingInfo.durationSeconds));
       const walkDist = formatDistance(Number(walkingInfo.distanceMeters));
-      parts.push(['Walking', walkDur, walkDist].filter(Boolean).join(' '));
+      parts.push(["Walking", walkDur, walkDist].filter(Boolean).join(" "));
     }
-    if (isModeReady(drivingInfo) && activeMode !== 'driving') {
+    if (isModeReady(drivingInfo) && activeMode !== "driving") {
       const driveDur = formatDuration(Number(drivingInfo.durationSeconds));
       const driveDist = formatDistance(Number(drivingInfo.distanceMeters));
-      parts.push(['Driving', driveDur, driveDist].filter(Boolean).join(' '));
+      parts.push(["Driving", driveDur, driveDist].filter(Boolean).join(" "));
     }
     if (skippedCount) {
-      parts.push(`${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing map pins`);
+      parts.push(
+        `${skippedCount} stop${skippedCount === 1 ? "" : "s"} missing map pins`
+      );
     }
-    message = parts.join(' · ') || 'Route ready.';
-  } else if (travel.status === 'missing-key') {
-    message = 'Add your OpenRouteService API key to calculate travel time.';
-  } else if (travel.status === 'missing-stay') {
-    message = 'Pick a stay with map coordinates to calculate travel time.';
-  } else if (travel.status === 'no-activities') {
-    const base = routeLabel ? `Route: ${routeLabel}` : '';
+    message = parts.join(" · ") || "Route ready.";
+  } else if (travel.status === "missing-key") {
+    message = "Add your OpenRouteService API key to calculate travel time.";
+  } else if (travel.status === "missing-stay") {
+    message = "Pick a stay with map coordinates to calculate travel time.";
+  } else if (travel.status === "no-activities") {
+    const base = routeLabel ? `Route: ${routeLabel}` : "";
     const detail = skippedCount
-      ? `${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing map pins.`
-      : 'No mapped stops scheduled for this day.';
-    message = [base, detail].filter(Boolean).join(' · ');
-  } else if (travel.status === 'insufficient-data') {
-    const base = routeLabel ? `Route: ${routeLabel}` : '';
-    message = [base, buildMissingPinsTitle(travel.skipped)].filter(Boolean).join(' · ');
-  } else if (travel.status === 'error') {
-    const errorText = travel.error || 'Unable to calculate travel time.';
+      ? `${skippedCount} stop${skippedCount === 1 ? "" : "s"} missing map pins.`
+      : "No mapped stops scheduled for this day.";
+    message = [base, detail].filter(Boolean).join(" · ");
+  } else if (travel.status === "insufficient-data") {
+    const base = routeLabel ? `Route: ${routeLabel}` : "";
+    message = [base, buildMissingPinsTitle(travel.skipped)]
+      .filter(Boolean)
+      .join(" · ");
+  } else if (travel.status === "error") {
+    const errorText = travel.error || "Unable to calculate travel time.";
     message = routeLabel ? `${routeLabel} · ${errorText}` : errorText;
   } else {
-    message = 'Travel time is not available for this day.';
+    message = "Travel time is not available for this day.";
   }
 
   mapSummaryEl.textContent = message;
@@ -2748,24 +3097,30 @@ function renderMapMarkers(dateKey) {
   const itinerary = buildItineraryForDay(day, dateKey);
   const bounds = window.L.latLngBounds([]);
 
-  if (itinerary.originStay?.coords && (!itinerary.stay?.coords || !coordsEqual(itinerary.originStay.coords, itinerary.stay.coords))) {
+  if (
+    itinerary.originStay?.coords &&
+    (!itinerary.stay?.coords ||
+      !coordsEqual(itinerary.originStay.coords, itinerary.stay.coords))
+  ) {
     const startMarker = window.L.circleMarker(itinerary.originStay.coords, {
       radius: 7,
-      color: '#10b981',
-      fillColor: '#10b981',
+      color: "#10b981",
+      fillColor: "#10b981",
       fillOpacity: 0.85,
       weight: 2,
       opacity: 0.9,
     }).addTo(mapMarkersLayer);
-    startMarker.bindPopup(`Start: ${itinerary.originStay.label || 'Previous stay'}`);
+    startMarker.bindPopup(
+      `Start: ${itinerary.originStay.label || "Previous stay"}`
+    );
     bounds.extend(itinerary.originStay.coords);
   }
 
   if (itinerary.stay?.coords) {
     const stayMarker = window.L.circleMarker(itinerary.stay.coords, {
       radius: 8,
-      color: '#2563eb',
-      fillColor: '#2563eb',
+      color: "#2563eb",
+      fillColor: "#2563eb",
       fillOpacity: 0.9,
       weight: 2,
     }).addTo(mapMarkersLayer);
@@ -2774,7 +3129,9 @@ function renderMapMarkers(dateKey) {
   }
 
   itinerary.activities.forEach((activity, index) => {
-    const marker = window.L.marker(activity.coords, { riseOnHover: true }).addTo(mapMarkersLayer);
+    const marker = window.L.marker(activity.coords, {
+      riseOnHover: true,
+    }).addTo(mapMarkersLayer);
     marker.bindPopup(`${index + 1}. ${activity.label}`);
     bounds.extend(activity.coords);
   });
@@ -2782,7 +3139,10 @@ function renderMapMarkers(dateKey) {
   if (bounds.isValid()) {
     mapInstance.fitBounds(bounds, { padding: [32, 32] });
   } else if (planState.config.mapDefaults?.center) {
-    mapInstance.setView(planState.config.mapDefaults.center, planState.config.mapDefaults.zoom || 5);
+    mapInstance.setView(
+      planState.config.mapDefaults.center,
+      planState.config.mapDefaults.zoom || 5
+    );
   } else {
     mapInstance.setView([20, 0], 2);
   }
@@ -2795,7 +3155,7 @@ function renderMapRoute(dateKey, { mode: modeOverride, fit = true } = {}) {
   clearMapRoute();
   const day = ensureDay(dateKey);
   const travel = day.travel;
-  if (!travel || travel.status !== 'ready') {
+  if (!travel || travel.status !== "ready") {
     return;
   }
   const mode = modeOverride || getMapModeForDate(dateKey);
@@ -2804,10 +3164,11 @@ function renderMapRoute(dateKey, { mode: modeOverride, fit = true } = {}) {
   if (!geometry) {
     return;
   }
-  const color = MODE_COLORS[mode] || '#2563eb';
-  const style = mode === 'walking'
-    ? { color, weight: 4, opacity: 0.85, dashArray: '6 6' }
-    : { color, weight: 4, opacity: 0.85 };
+  const color = MODE_COLORS[mode] || "#2563eb";
+  const style =
+    mode === "walking"
+      ? { color, weight: 4, opacity: 0.85, dashArray: "6 6" }
+      : { color, weight: 4, opacity: 0.85 };
   mapRouteLayer = window.L.geoJSON(geometry, { style }).addTo(mapInstance);
   if (fit) {
     try {
@@ -2816,7 +3177,7 @@ function renderMapRoute(dateKey, { mode: modeOverride, fit = true } = {}) {
         mapInstance.fitBounds(bounds, { padding: [48, 48] });
       }
     } catch (error) {
-      console.warn('Unable to fit map to route', error);
+      console.warn("Unable to fit map to route", error);
     }
   }
 }
@@ -2835,9 +3196,11 @@ function clearStepHighlight() {
   }
   mapStepHighlightLayer = null;
   if (mapDirectionsEl) {
-    mapDirectionsEl.querySelectorAll('.directions__item--active').forEach((item) => {
-      item.classList.remove('directions__item--active');
-    });
+    mapDirectionsEl
+      .querySelectorAll(".directions__item--active")
+      .forEach((item) => {
+        item.classList.remove("directions__item--active");
+      });
   }
   if (mapDirectionsData) {
     mapDirectionsData.activeIndex = null;
@@ -2856,24 +3219,27 @@ function activateDirectionStep(stepIndex, { flyTo = true } = {}) {
 
   clearStepHighlight();
 
-  const item = mapDirectionsEl?.querySelector(`.directions__item[data-step-index="${index}"]`);
+  const item = mapDirectionsEl?.querySelector(
+    `.directions__item[data-step-index="${index}"]`
+  );
   if (item) {
-    item.classList.add('directions__item--active');
+    item.classList.add("directions__item--active");
     mapDirectionsData.activeIndex = index;
-    if (typeof item.scrollIntoView === 'function') {
-      item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (typeof item.scrollIntoView === "function") {
+      item.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
   }
 
   const path = Array.isArray(step.path) && step.path.length ? step.path : null;
   if (mapInstance && path) {
-    const highlightColor = step.color || (step.modeKey ? MODE_COLORS[step.modeKey] : '#f97316');
+    const highlightColor =
+      step.color || (step.modeKey ? MODE_COLORS[step.modeKey] : "#f97316");
     mapStepHighlightLayer = window.L.polyline(path, {
       color: highlightColor,
       weight: 6,
       opacity: 0.9,
-      lineCap: 'round',
-      lineJoin: 'round',
+      lineCap: "round",
+      lineJoin: "round",
     }).addTo(mapInstance);
     if (flyTo) {
       const bounds = computeBoundsFromPath(path);
@@ -2888,7 +3254,7 @@ function activateDirectionStep(stepIndex, { flyTo = true } = {}) {
         mapInstance.fitBounds(bounds, { padding: [48, 48] });
       }
     } catch (error) {
-      console.warn('Unable to focus map on step', error);
+      console.warn("Unable to focus map on step", error);
     }
   }
 }
@@ -2904,7 +3270,7 @@ function renderCalendar() {
 }
 
 function handleDirectionsInteraction(event) {
-  const item = event.target.closest('.directions__item');
+  const item = event.target.closest(".directions__item");
   if (!item || item.tabIndex < 0) return;
   const index = Number(item.dataset.stepIndex);
   if (Number.isInteger(index)) {
@@ -2913,8 +3279,8 @@ function handleDirectionsInteraction(event) {
 }
 
 function handleDirectionsKeydown(event) {
-  if (event.key !== 'Enter' && event.key !== ' ') return;
-  const item = event.target.closest('.directions__item');
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const item = event.target.closest(".directions__item");
   if (!item || item.tabIndex < 0) return;
   event.preventDefault();
   const index = Number(item.dataset.stepIndex);
@@ -2924,13 +3290,13 @@ function handleDirectionsKeydown(event) {
 }
 
 function handleMapModeClick(event) {
-  const button = event.target.closest('[data-map-mode]');
+  const button = event.target.closest("[data-map-mode]");
   if (!button || button.disabled) return;
   const mode = button.dataset.mapMode;
   if (!mode || !activeMapDate) return;
   const day = ensureDay(activeMapDate);
   const travel = day.travel;
-  if (!travel || travel.status !== 'ready') return;
+  if (!travel || travel.status !== "ready") return;
   const details = getModeDetails(travel, mode);
   if (!isModeReady(details)) return;
   mapOverlayMode = mode;
@@ -2942,8 +3308,8 @@ function handleMapModeClick(event) {
 }
 
 function renderTravelChip(dateKey, plan) {
-  const chip = document.createElement('span');
-  chip.className = 'theme-chip theme-chip--travel';
+  const chip = document.createElement("span");
+  chip.className = "theme-chip theme-chip--travel";
   chip.dataset.travelDate = dateKey;
   applyTravelChipState(chip, plan);
   return chip;
@@ -3072,8 +3438,8 @@ function renderDayCard(dateKey) {
   header.appendChild(badges);
   card.appendChild(header);
 
-  const travelSummary = document.createElement('div');
-  travelSummary.className = 'travel-summary';
+  const travelSummary = document.createElement("div");
+  travelSummary.className = "travel-summary";
   travelSummary.dataset.travelSummary = dateKey;
   if (!travelExpansionState.has(dateKey)) {
     travelExpansionState.set(dateKey, false);
@@ -3081,11 +3447,11 @@ function renderDayCard(dateKey) {
   applyTravelSummary(travelSummary, plan, dateKey);
   card.appendChild(travelSummary);
 
-  const slotsWrap = document.createElement('div');
-  slotsWrap.className = 'slots';
-  ['morning', 'afternoon', 'evening'].forEach((slotName) => {
-    const slotSection = document.createElement('section');
-    slotSection.className = 'slot';
+  const slotsWrap = document.createElement("div");
+  slotsWrap.className = "slots";
+  ["morning", "afternoon", "evening"].forEach((slotName) => {
+    const slotSection = document.createElement("section");
+    slotSection.className = "slot";
     slotSection.dataset.slot = slotName;
     slotSection.dataset.date = dateKey;
 
@@ -3465,7 +3831,7 @@ function setStay(dateKey, stayId) {
     scheduleTravelChipRefresh(nextDate);
     scheduleTravelCalculation(nextDate, { interactive: false });
   }
-  if (sheetState.open && sheetState.tab === 'stay') {
+  if (sheetState.open && sheetState.tab === "stay") {
     renderSheet();
   }
 }
@@ -3806,7 +4172,9 @@ function formatCoordinatePair(pair) {
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
   const latHem = lat >= 0 ? "N" : "S";
   const lngHem = lng >= 0 ? "E" : "W";
-  return `${Math.abs(lat).toFixed(4)}° ${latHem}, ${Math.abs(lng).toFixed(4)}° ${lngHem}`;
+  return `${Math.abs(lat).toFixed(4)}° ${latHem}, ${Math.abs(lng).toFixed(
+    4
+  )}° ${lngHem}`;
 }
 
 function getBookingLinks(ids) {
@@ -4203,19 +4571,19 @@ function getActivityLabel(id) {
 }
 
 function getStayLabel(ref) {
-  if (!ref) return '';
-  if (typeof ref === 'string') {
+  if (!ref) return "";
+  if (typeof ref === "string") {
     const trimmed = ref.trim();
     return STAY_MAP.get(trimmed)?.label || trimmed;
   }
-  if (typeof ref === 'object') {
-    if (typeof ref.label === 'string' && ref.label.trim()) {
+  if (typeof ref === "object") {
+    if (typeof ref.label === "string" && ref.label.trim()) {
       return ref.label.trim();
     }
-    if (typeof ref.name === 'string' && ref.name.trim()) {
+    if (typeof ref.name === "string" && ref.name.trim()) {
       return ref.name.trim();
     }
-    if (typeof ref.id === 'string' && ref.id.trim()) {
+    if (typeof ref.id === "string" && ref.id.trim()) {
       return getStayLabel(ref.id);
     }
   }
@@ -4370,11 +4738,13 @@ function openMap(dateKey) {
   const plan = ensureDay(dateKey);
   activeMapDate = dateKey;
   mapOverlayMode = getMapModeForDate(dateKey);
-  mapOverlay.classList.add('is-open');
-  mapOverlay.setAttribute('aria-hidden', 'false');
-  document.body.classList.add('map-open');
-  const mapTitle = document.getElementById('mapTitle');
-  mapTitle.textContent = `${formatLongDate(dateKey)} — ${plan.theme || getDefaultTheme(plan.loc) || ''}`;
+  mapOverlay.classList.add("is-open");
+  mapOverlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("map-open");
+  const mapTitle = document.getElementById("mapTitle");
+  mapTitle.textContent = `${formatLongDate(dateKey)} — ${
+    plan.theme || getDefaultTheme(plan.loc) || ""
+  }`;
   updateMapSummary(dateKey);
   updateMapModeUI(dateKey);
   updateMapDirections(dateKey, { mode: mapOverlayMode });
@@ -4404,23 +4774,23 @@ function openMap(dateKey) {
 }
 
 function closeMap() {
-  mapOverlay.classList.remove('is-open');
-  mapOverlay.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('map-open');
+  mapOverlay.classList.remove("is-open");
+  mapOverlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("map-open");
   activeMapDate = null;
   clearMapRoute();
   if (mapMarkersLayer) {
     mapMarkersLayer.clearLayers();
   }
   if (mapSummaryEl) {
-    mapSummaryEl.textContent = '';
+    mapSummaryEl.textContent = "";
   }
   if (mapDirectionsEl) {
-    mapDirectionsEl.innerHTML = '';
-    mapDirectionsEl.removeAttribute('data-state');
+    mapDirectionsEl.innerHTML = "";
+    mapDirectionsEl.removeAttribute("data-state");
   }
   if (mapModeControls) {
-    mapModeControls.style.display = 'none';
+    mapModeControls.style.display = "none";
   }
   clearStepHighlight();
 }
@@ -5604,7 +5974,7 @@ function buildConfigFromWizardData(data) {
     mapCoordinates: resetDays ? {} : previousConfig?.mapCoordinates || {},
     routing: previousConfig?.routing
       ? { ...previousConfig.routing }
-      : { provider: 'openrouteservice', openRouteApiKey: '' },
+      : { provider: "openrouteservice", openRouteApiKey: "" },
     catalog,
   };
 }
