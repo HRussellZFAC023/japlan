@@ -18,6 +18,7 @@ const sheetSubtitle = document.getElementById('sheetSubtitle');
 const sheetBody = document.getElementById('sheetBody');
 const mapOverlay = document.getElementById('mapOverlay');
 const mapSummaryEl = document.getElementById('mapSummary');
+const mapDirectionsEl = document.getElementById('mapDirections');
 const closeSheetBtn = sheetEl.querySelector('[data-action="close-sheet"]');
 const closeMapBtn = mapOverlay.querySelector('[data-action="close-map"]');
 const configOverlay = document.getElementById("configOverlay");
@@ -46,6 +47,8 @@ let mapMarkersLayer = null;
 let mapRouteLayer = null;
 let activeMapDate = null;
 const travelRequests = new Map();
+const travelExpansionState = new Map();
+const DEFAULT_DEPARTURE_MINUTES = 9 * 60;
 let routingKeyPromptActive = false;
 
 renderChrome();
@@ -63,6 +66,18 @@ function buildDateSequence(start, end) {
     results.push(iso);
   }
   return results;
+}
+
+function getDateIndex(dateKey) {
+  if (!dateKey) return -1;
+  return dateSequence.indexOf(dateKey);
+}
+
+function getAdjacentDateKey(dateKey, offset) {
+  if (!Number.isInteger(offset) || !offset) return null;
+  const index = getDateIndex(dateKey);
+  if (index < 0) return null;
+  return dateSequence[index + offset] || null;
 }
 
 function renderChrome() {
@@ -394,6 +409,11 @@ function normalizeConfig(rawConfig) {
   const friends = Array.isArray(rawConfig.friends)
     ? rawConfig.friends.filter(Boolean)
     : [];
+  const mergedCoordinates = {
+    ...(template.mapCoordinates || {}),
+    ...(rawConfig.mapCoordinates || {}),
+  };
+
   const config = {
     tripName: rawConfig.tripName || template.tripName || "Trip Planner",
     range: { start: fallbackStart, end: fallbackEnd },
@@ -403,7 +423,7 @@ function normalizeConfig(rawConfig) {
     locationOrder,
     defaultThemes: { ...(rawConfig.defaultThemes || {}) },
     mapDefaults: rawConfig.mapDefaults ? { ...rawConfig.mapDefaults } : template.mapDefaults || null,
-    mapCoordinates: deepClone(rawConfig.mapCoordinates || template.mapCoordinates || {}),
+    mapCoordinates: deepClone(mergedCoordinates),
     routing: {
       provider: rawConfig.routing?.provider || template.routing?.provider || 'openrouteservice',
       openRouteApiKey: rawConfig.routing?.openRouteApiKey || template.routing?.openRouteApiKey || '',
@@ -583,7 +603,7 @@ function getStayInfo(day) {
   };
 }
 
-function buildItineraryForDay(day) {
+function buildItineraryForDay(day, dateKey) {
   const stay = getStayInfo(day);
   if (!stay) {
     return { status: 'missing-stay', stay: null, activities: [], skipped: [], routePoints: [], signature: '' };
@@ -591,6 +611,10 @@ function buildItineraryForDay(day) {
 
   const activities = [];
   const skipped = [];
+  const previousDateKey = dateKey ? getAdjacentDateKey(dateKey, -1) : null;
+  const previousDay = previousDateKey ? planState.days?.[previousDateKey] : null;
+  const previousStay = previousDay ? getStayInfo(previousDay) : null;
+
   ['morning', 'afternoon', 'evening'].forEach((slot) => {
     (day.slots?.[slot] || []).forEach((itemId) => {
       const activity = ACTIVITY_MAP.get(itemId);
@@ -606,19 +630,44 @@ function buildItineraryForDay(day) {
 
   if (!stay.coords) {
     skipped.unshift(stay.label || 'Stay location');
-    return { status: 'insufficient-data', stay, activities, skipped, routePoints: [], signature: '' };
+    return {
+      status: 'insufficient-data',
+      stay,
+      originStay: previousStay || stay,
+      activities,
+      skipped,
+      routePoints: [],
+      signature: '',
+    };
   }
 
-  const routePoints = [stay.coords];
+  const originStay = previousStay?.coords ? previousStay : stay;
+  if (previousStay && !previousStay.coords) {
+    skipped.unshift(previousStay.label || 'Previous stay');
+  }
+
+  const routePoints = [originStay.coords];
+  if (!coordsEqual(originStay.coords, stay.coords)) {
+    routePoints.push(stay.coords);
+  }
   activities.forEach((activity) => {
     routePoints.push(activity.coords);
   });
   routePoints.push(stay.coords);
 
-  const status = activities.length > 0 ? 'ok' : 'no-activities';
-  const signature = buildRouteSignature(routePoints);
+  const normalizedRoutePoints = normalizeRoutePoints(routePoints);
+  const status = normalizedRoutePoints.length > 1 ? 'ok' : 'no-activities';
+  const signature = buildRouteSignature(normalizedRoutePoints);
 
-  return { status, stay, activities, skipped, routePoints, signature };
+  return {
+    status,
+    stay,
+    originStay,
+    activities,
+    skipped,
+    routePoints: normalizedRoutePoints,
+    signature,
+  };
 }
 
 function buildRouteSignature(points) {
@@ -632,6 +681,84 @@ function buildRouteSignature(points) {
       return `${Number(lat).toFixed(5)},${Number(lon).toFixed(5)}`;
     })
     .join('|');
+}
+
+function normalizeRoutePoints(points) {
+  if (!Array.isArray(points)) {
+    return [];
+  }
+  const normalized = [];
+  let previousKey = null;
+
+  points.forEach((coord, index) => {
+    if (!Array.isArray(coord) || coord.length !== 2) {
+      return;
+    }
+    const lat = Number(coord[0]);
+    const lon = Number(coord[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+      return;
+    }
+    const key = `${lat.toFixed(6)},${lon.toFixed(6)}`;
+    const isLast = index === points.length - 1;
+
+    if (!normalized.length || key !== previousKey) {
+      normalized.push([lat, lon]);
+      previousKey = key;
+      return;
+    }
+
+    if (isLast) {
+      normalized.push([lat, lon]);
+      previousKey = key;
+    }
+  });
+
+  return normalized;
+}
+
+function coordsEqual(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b)) return false;
+  if (a.length !== 2 || b.length !== 2) return false;
+  return Number(a[0]).toFixed(6) === Number(b[0]).toFixed(6) && Number(a[1]).toFixed(6) === Number(b[1]).toFixed(6);
+}
+
+function serializeCoords(coords) {
+  if (!Array.isArray(coords) || coords.length !== 2) return null;
+  const lat = Number(coords[0]);
+  const lon = Number(coords[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return [lat, lon];
+}
+
+function serializeStay(stay) {
+  if (!stay) return null;
+  return {
+    id: stay.id || null,
+    label: stay.label || '',
+    coords: serializeCoords(stay.coords) || null,
+  };
+}
+
+function serializeActivities(list) {
+  if (!Array.isArray(list)) return [];
+  return list.map((activity) => ({
+    id: activity.id || null,
+    label: activity.label || '',
+    coords: serializeCoords(activity.coords) || null,
+  }));
+}
+
+function staysMatch(a, b) {
+  if (!a && !b) return true;
+  if (!a || !b) return false;
+  if (a.id && b.id) {
+    return a.id === b.id;
+  }
+  if (Array.isArray(a.coords) && Array.isArray(b.coords)) {
+    return coordsEqual(a.coords, b.coords);
+  }
+  return (a.label || '').trim() === (b.label || '').trim();
 }
 
 function formatDuration(totalSeconds) {
@@ -655,6 +782,43 @@ function formatDistance(meters) {
   return `${Math.round(meters)} m`;
 }
 
+function formatTimeLabel(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+    return '';
+  }
+  return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function parseLabelTimeMinutes(label) {
+  if (typeof label !== 'string') return null;
+  const match = label.trim().match(/^(\d{1,2}):(\d{2})/);
+  if (!match) return null;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes) || minutes > 59 || hours > 47) {
+    return null;
+  }
+  return hours * 60 + minutes;
+}
+
+function getPreferredDepartureMinutes(day) {
+  if (!day) return DEFAULT_DEPARTURE_MINUTES;
+  const minutes = [];
+  ['morning', 'afternoon', 'evening'].forEach((slot) => {
+    (day.slots?.[slot] || []).forEach((itemId) => {
+      const label = getActivityLabel(itemId);
+      const value = parseLabelTimeMinutes(label);
+      if (value !== null) {
+        minutes.push(value);
+      }
+    });
+  });
+  if (minutes.length) {
+    return Math.min(...minutes);
+  }
+  return DEFAULT_DEPARTURE_MINUTES;
+}
+
 function buildTravelDisplay(plan) {
   const travel = plan.travel;
   if (!plan.stay) {
@@ -668,28 +832,56 @@ function buildTravelDisplay(plan) {
   const skippedTitle = skippedCount
     ? `${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing map pins`
     : '';
+  const originLabel = typeof travel.originStay?.label === 'string' ? travel.originStay.label.trim() : '';
+  const destinationLabel = typeof travel.destinationStay?.label === 'string'
+    ? travel.destinationStay.label.trim()
+    : (plan.stay ? getStayLabel(plan.stay) : '');
+  const routeLabel = originLabel && destinationLabel ? `${originLabel} → ${destinationLabel}` : '';
+  const transitInfo = travel.transit || travel.modes?.transit;
+  const drivingInfo = travel.driving || travel.modes?.driving;
+  const primaryLabel = travel.profile === 'public-transport' ? 'Transit' : 'Travel';
 
   switch (travel.status) {
     case 'ready': {
       const durationText = formatDuration(Number(travel.durationSeconds));
       const distanceText = formatDistance(Number(travel.distanceMeters));
       const parts = [];
+      if (routeLabel) parts.push(`Route ${routeLabel}`);
       if (durationText) parts.push(`Time ${durationText}`);
       if (distanceText) parts.push(`Distance ${distanceText}`);
+      parts.push(`Mode ${travel.profile === 'public-transport' ? 'Public transport' : 'Driving'}`);
+      const transitSummary = formatTransitSummary(transitInfo || null, { includeLines: true });
+      if (transitSummary && travel.profile !== 'public-transport') {
+        parts.push(transitSummary);
+      } else if (transitSummary) {
+        parts.push(transitSummary);
+      }
+      if (drivingInfo && travel.profile === 'public-transport') {
+        const altDuration = formatDuration(Number(drivingInfo.durationSeconds));
+        if (altDuration) {
+          parts.push(`Driving alt ${altDuration}`);
+        }
+      }
       if (skippedTitle) parts.push(skippedTitle);
       return {
-        text: `Travel: ${durationText || '—'}`,
+        text: `${primaryLabel}: ${durationText || '—'}`,
         state: skippedCount ? 'warning' : 'ready',
         title: parts.join(' · '),
       };
     }
     case 'pending':
-      return { text: 'Travel: calculating…', state: 'pending', title: 'Travel time is being calculated.' };
+      return {
+        text: 'Travel: calculating…',
+        state: 'pending',
+        title: routeLabel ? `Calculating travel time for ${routeLabel}.` : 'Travel time is being calculated.',
+      };
     case 'missing-key':
       return {
         text: 'Travel: add API key',
         state: 'warning',
-        title: 'Add your OpenRouteService API key to calculate travel time.',
+        title: routeLabel
+          ? `Add your OpenRouteService API key to calculate travel time for ${routeLabel}.`
+          : 'Add your OpenRouteService API key to calculate travel time.',
       };
     case 'missing-stay':
       return {
@@ -701,19 +893,25 @@ function buildTravelDisplay(plan) {
       return {
         text: 'Travel: 0m',
         state: skippedCount ? 'warning' : 'ready',
-        title: skippedTitle || 'No mapped stops scheduled for this day.',
+        title: [routeLabel ? `Route ${routeLabel}` : '', skippedTitle || 'No mapped stops scheduled for this day.']
+          .filter(Boolean)
+          .join(' · '),
       };
     case 'insufficient-data':
       return {
         text: 'Travel: add map pins',
         state: 'warning',
-        title: buildMissingPinsTitle(travel.skipped),
+        title: [routeLabel ? `Route ${routeLabel}` : '', buildMissingPinsTitle(travel.skipped)]
+          .filter(Boolean)
+          .join(' · '),
       };
     case 'error':
       return {
         text: 'Travel: unavailable',
         state: 'error',
-        title: travel.error || 'Routing request failed.',
+        title: [routeLabel ? `Route ${routeLabel}` : '', travel.error || 'Routing request failed.']
+          .filter(Boolean)
+          .join(' · '),
       };
     default:
       return { text: 'Travel: —', state: 'pending', title: '' };
@@ -762,6 +960,10 @@ function refreshTravelChip(dateKey) {
 
 function scheduleTravelChipRefresh(dateKey) {
   const updated = refreshTravelChip(dateKey);
+  refreshTravelSummary(dateKey);
+  if (activeMapDate === dateKey) {
+    updateMapDirections(dateKey);
+  }
   const schedule = typeof queueMicrotask === 'function'
     ? queueMicrotask
     : (typeof window !== 'undefined' && typeof window.requestAnimationFrame === 'function'
@@ -769,8 +971,278 @@ function scheduleTravelChipRefresh(dateKey) {
         : (fn) => setTimeout(fn, 0));
   schedule(() => {
     refreshTravelChip(dateKey);
+    refreshTravelSummary(dateKey);
+    if (activeMapDate === dateKey) {
+      updateMapDirections(dateKey);
+    }
   });
   return updated;
+}
+
+function applyTravelSummary(summaryEl, plan, dateKey) {
+  if (!summaryEl) return;
+  summaryEl.innerHTML = '';
+  const itinerary = buildItineraryForDay(plan, dateKey);
+  const travel = plan.travel;
+  const expanded = travelExpansionState.get(dateKey) ?? false;
+  summaryEl.dataset.expanded = expanded ? 'true' : 'false';
+
+  const originLabel = typeof travel?.originStay?.label === 'string'
+    ? travel.originStay.label.trim()
+    : (itinerary.originStay?.label || '').trim();
+  const destinationLabel = typeof travel?.destinationStay?.label === 'string'
+    ? travel.destinationStay.label.trim()
+    : (itinerary.stay?.label || '').trim();
+  const routeLabel = originLabel && destinationLabel ? `${originLabel} → ${destinationLabel}` : '';
+
+  const skippedCount = Array.isArray(travel?.skipped) ? travel.skipped.length : 0;
+  const skippedTitle = skippedCount ? buildMissingPinsTitle(travel.skipped) : '';
+  const modeLabel = travel?.profile === 'public-transport' ? 'Public transport' : 'Driving';
+
+  let state = 'pending';
+  let headerTime = '—';
+  let caption = '';
+  let detailMessage = '';
+
+  function appendRouteRow(target) {
+    if (!routeLabel || !target) return;
+    const routeRow = document.createElement('div');
+    routeRow.className = 'travel-summary__route';
+
+    const startBlock = document.createElement('div');
+    startBlock.className = 'travel-summary__point';
+    const startLabelEl = document.createElement('span');
+    startLabelEl.className = 'travel-summary__point-label';
+    startLabelEl.textContent = 'Start';
+    const startNameEl = document.createElement('span');
+    startNameEl.className = 'travel-summary__point-name';
+    startNameEl.textContent = originLabel || '—';
+    startBlock.append(startLabelEl, startNameEl);
+
+    const arrowEl = document.createElement('span');
+    arrowEl.className = 'travel-summary__arrow';
+    arrowEl.textContent = '→';
+
+    const endBlock = document.createElement('div');
+    endBlock.className = 'travel-summary__point';
+    const endLabelEl = document.createElement('span');
+    endLabelEl.className = 'travel-summary__point-label';
+    endLabelEl.textContent = 'Finish';
+    const endNameEl = document.createElement('span');
+    endNameEl.className = 'travel-summary__point-name';
+    endNameEl.textContent = destinationLabel || '—';
+    endBlock.append(endLabelEl, endNameEl);
+
+    routeRow.append(startBlock, arrowEl, endBlock);
+    target.appendChild(routeRow);
+  }
+
+  if (!plan.stay) {
+    state = 'warning';
+    caption = 'Add a stay to calculate travel time.';
+    detailMessage = caption;
+  } else if (!travel) {
+    state = 'pending';
+    caption = routeLabel ? `Calculating travel time for ${routeLabel}…` : 'Travel time will be calculated soon.';
+    detailMessage = caption;
+  } else if (travel.status !== 'ready') {
+    switch (travel.status) {
+      case 'pending':
+        state = 'pending';
+        caption = routeLabel ? `Calculating travel time for ${routeLabel}…` : 'Calculating travel time…';
+        break;
+      case 'missing-key':
+        state = 'warning';
+        caption = 'Add your OpenRouteService API key to calculate travel time.';
+        break;
+      case 'missing-stay':
+        state = 'warning';
+        caption = 'Select a stay with coordinates to calculate travel time.';
+        break;
+      case 'insufficient-data':
+        state = 'warning';
+        caption = skippedTitle || 'Add coordinates for all stops to calculate travel time.';
+        break;
+      case 'error':
+        state = 'error';
+        caption = travel.error || 'Unable to calculate travel time.';
+        break;
+      default:
+        state = 'pending';
+        caption = 'Travel time is not available for this day.';
+        break;
+    }
+    detailMessage = caption || 'Travel time is not available for this day.';
+  } else {
+    state = skippedCount ? 'warning' : 'ready';
+    headerTime = formatDuration(Number(travel.durationSeconds)) || '—';
+    const distanceText = formatDistance(Number(travel.distanceMeters));
+    const captionParts = [routeLabel || '', distanceText || '', modeLabel];
+    if (skippedCount) {
+      captionParts.push(`${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing pins`);
+    }
+    caption = captionParts.filter(Boolean).join(' · ') || 'Travel details ready.';
+  }
+
+  summaryEl.dataset.state = state;
+
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'travel-summary__toggle';
+  toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  toggle.addEventListener('click', () => {
+    travelExpansionState.set(dateKey, !expanded);
+    applyTravelSummary(summaryEl, plan, dateKey);
+  });
+
+  const meta = document.createElement('div');
+  meta.className = 'travel-summary__meta';
+
+  const titleEl = document.createElement('span');
+  titleEl.className = 'travel-summary__title';
+  titleEl.textContent = 'Travel time';
+  meta.appendChild(titleEl);
+
+  const timeEl = document.createElement('span');
+  timeEl.className = 'travel-summary__time';
+  timeEl.textContent = headerTime || '—';
+  meta.appendChild(timeEl);
+
+  const captionEl = document.createElement('span');
+  captionEl.className = 'travel-summary__caption';
+  captionEl.textContent = caption || 'Expand for route details.';
+  meta.appendChild(captionEl);
+
+  const chevron = document.createElement('span');
+  chevron.className = 'travel-summary__chevron';
+  chevron.setAttribute('aria-hidden', 'true');
+  chevron.textContent = '▾';
+
+  toggle.append(meta, chevron);
+  summaryEl.appendChild(toggle);
+
+  const body = document.createElement('div');
+  body.className = 'travel-summary__body';
+  summaryEl.appendChild(body);
+
+  if (!expanded) {
+    return;
+  }
+
+  if (!plan.stay) {
+    const notice = document.createElement('div');
+    notice.className = 'travel-summary__notice';
+    notice.textContent = detailMessage;
+    body.appendChild(notice);
+    return;
+  }
+
+  if (!travel || travel.status !== 'ready') {
+    const notice = document.createElement('div');
+    notice.className = 'travel-summary__notice';
+    notice.textContent = detailMessage || 'Travel time is not available for this day.';
+    body.appendChild(notice);
+    appendRouteRow(body);
+    return;
+  }
+
+  const distanceText = formatDistance(Number(travel.distanceMeters));
+  const metrics = document.createElement('div');
+  metrics.className = 'travel-summary__headline';
+  if (distanceText) {
+    const distanceEl = document.createElement('span');
+    distanceEl.className = 'travel-summary__metric';
+    distanceEl.textContent = distanceText;
+    metrics.appendChild(distanceEl);
+  }
+  const modeEl = document.createElement('span');
+  modeEl.className = 'travel-summary__mode';
+  modeEl.textContent = modeLabel;
+  metrics.appendChild(modeEl);
+  body.appendChild(metrics);
+
+  appendRouteRow(body);
+
+  const stops = Array.isArray(travel.stops) ? travel.stops : [];
+  if (stops.length) {
+    const stopsList = document.createElement('ol');
+    stopsList.className = 'travel-summary__stops';
+    stops.slice(0, 6).forEach((stop, index) => {
+      const item = document.createElement('li');
+      item.textContent = stop.label || `Stop ${index + 1}`;
+      stopsList.appendChild(item);
+    });
+    if (stops.length > 6) {
+      const moreItem = document.createElement('li');
+      moreItem.className = 'travel-summary__more';
+      moreItem.textContent = `+${stops.length - 6} more stops`;
+      stopsList.appendChild(moreItem);
+    }
+    body.appendChild(stopsList);
+  } else {
+    const noStops = document.createElement('div');
+    noStops.className = 'travel-summary__note';
+    noStops.textContent = Number(travel.durationSeconds) > 0
+      ? 'Travel between stays with no mapped stops.'
+      : 'No mapped stops scheduled for this day.';
+    body.appendChild(noStops);
+  }
+
+  const transitInfo = travel.transit || travel.modes?.transit;
+  const drivingInfo = travel.driving || travel.modes?.driving;
+  const transitSummary = formatTransitSummary(transitInfo || null, { includeLines: true });
+  if (transitSummary) {
+    const transitRow = document.createElement('div');
+    transitRow.className = 'travel-summary__transit';
+    transitRow.textContent = transitSummary;
+    body.appendChild(transitRow);
+
+    const legs = Array.isArray(transitInfo?.legs)
+      ? transitInfo.legs.filter((leg) => leg && (leg.kind === 'transit' || leg.kind === 'walk'))
+      : [];
+    if (legs.length) {
+      const legList = document.createElement('ol');
+      legList.className = 'travel-summary__legs';
+      legs.slice(0, 5).forEach((leg) => {
+        const legItem = document.createElement('li');
+        legItem.className = `travel-summary__leg travel-summary__leg--${leg.kind}`;
+        const legDuration = formatDuration(Number(leg.durationSeconds));
+        const details = [
+          leg.kind === 'transit' ? (leg.line || leg.mode || 'Transit') : (leg.info || 'Walk'),
+          leg.kind === 'transit' ? leg.info || '' : '',
+          legDuration ? `(${legDuration})` : '',
+        ]
+          .filter(Boolean)
+          .join(' ');
+        legItem.textContent = details;
+        legList.appendChild(legItem);
+      });
+      body.appendChild(legList);
+    }
+  } else if (drivingInfo && travel.profile === 'public-transport') {
+    const drivingRow = document.createElement('div');
+    drivingRow.className = 'travel-summary__transit';
+    const drivingDuration = formatDuration(Number(drivingInfo.durationSeconds));
+    const drivingDistance = formatDistance(Number(drivingInfo.distanceMeters));
+    drivingRow.textContent = ['Driving alternative', drivingDuration, drivingDistance].filter(Boolean).join(' · ');
+    body.appendChild(drivingRow);
+  }
+
+  if (skippedTitle) {
+    const notice = document.createElement('div');
+    notice.className = 'travel-summary__notice';
+    notice.textContent = skippedTitle;
+    body.appendChild(notice);
+  }
+}
+
+function refreshTravelSummary(dateKey) {
+  if (!calendarEl) return false;
+  const summaryEl = calendarEl.querySelector(`.travel-summary[data-travel-summary="${dateKey}"]`);
+  if (!summaryEl) return false;
+  const day = ensureDay(dateKey);
+  applyTravelSummary(summaryEl, day, dateKey);
+  return true;
 }
 
 function setDayTravel(dateKey, travel, { persist = true, updateCard = true } = {}) {
@@ -785,6 +1257,7 @@ function setDayTravel(dateKey, travel, { persist = true, updateCard = true } = {
   if (activeMapDate === dateKey) {
     renderMapRoute(dateKey);
     updateMapSummary(dateKey);
+    updateMapDirections(dateKey);
   }
 }
 
@@ -808,25 +1281,35 @@ function scheduleTravelCalculation(dateKey, { interactive = false } = {}) {
 
 async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   const provider = 'openrouteservice';
-  const profile = 'driving-car';
+  const drivingProfile = 'driving-car';
+  const transitProfile = 'public-transport';
   const day = ensureDay(dateKey);
-  const itinerary = buildItineraryForDay(day);
+  const itinerary = buildItineraryForDay(day, dateKey);
 
   const skipped = Array.isArray(itinerary.skipped) ? itinerary.skipped : [];
   const signatureBase = itinerary.signature || '';
-  const signature = `${provider}:${profile}:${signatureBase}`;
+  const signature = `${provider}:${drivingProfile}:${signatureBase}`;
+  const originSnapshot = serializeStay(itinerary.originStay);
+  const destinationSnapshot = serializeStay(itinerary.stay);
+  const stopSnapshots = serializeActivities(itinerary.activities);
 
   if (itinerary.status === 'missing-stay') {
     setDayTravel(
       dateKey,
-      { status: 'missing-stay', provider, profile, signature, skipped },
+      { status: 'missing-stay', provider, profile: drivingProfile, signature, skipped, originStay: originSnapshot, destinationStay: destinationSnapshot },
       { persist: false }
     );
     return null;
   }
 
   const existing = day.travel;
-  if (existing && existing.signature === signature && existing.status === 'ready') {
+  if (
+    existing &&
+    existing.signature === signature &&
+    existing.status === 'ready' &&
+    staysMatch(existing.originStay, originSnapshot) &&
+    staysMatch(existing.destinationStay, destinationSnapshot)
+  ) {
     return existing;
   }
 
@@ -834,13 +1317,22 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     const travelData = {
       status: 'ready',
       provider,
-      profile,
+      profile: drivingProfile,
       signature,
       durationSeconds: 0,
       distanceMeters: 0,
       fetchedAt: Date.now(),
       skipped,
       geometry: null,
+      originStay: originSnapshot,
+      destinationStay: destinationSnapshot,
+      stops: stopSnapshots,
+      modes: {
+        driving: { status: 'ready', profile: drivingProfile, durationSeconds: 0, distanceMeters: 0, geometry: null },
+        transit: { status: 'unavailable' },
+      },
+      driving: { status: 'ready', profile: drivingProfile, durationSeconds: 0, distanceMeters: 0, geometry: null },
+      transit: { status: 'unavailable' },
     };
     setDayTravel(dateKey, travelData);
     return travelData;
@@ -849,7 +1341,16 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   if (!Array.isArray(itinerary.routePoints) || itinerary.routePoints.length < 2) {
     setDayTravel(
       dateKey,
-      { status: 'insufficient-data', provider, profile, signature, skipped },
+      {
+        status: 'insufficient-data',
+        provider,
+        profile: drivingProfile,
+        signature,
+        skipped,
+        originStay: originSnapshot,
+        destinationStay: destinationSnapshot,
+        stops: stopSnapshots,
+      },
       { persist: false }
     );
     return null;
@@ -859,7 +1360,16 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   if (!apiKey) {
     setDayTravel(
       dateKey,
-      { status: 'missing-key', provider, profile, signature, skipped },
+      {
+        status: 'missing-key',
+        provider,
+        profile: drivingProfile,
+        signature,
+        skipped,
+        originStay: originSnapshot,
+        destinationStay: destinationSnapshot,
+        stops: stopSnapshots,
+      },
       { persist: false }
     );
     return null;
@@ -867,22 +1377,69 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
 
   setDayTravel(
     dateKey,
-    { status: 'pending', provider, profile, signature, requestedAt: Date.now(), skipped },
+    {
+      status: 'pending',
+      provider,
+      profile: drivingProfile,
+      signature,
+      requestedAt: Date.now(),
+      skipped,
+      originStay: originSnapshot,
+      destinationStay: destinationSnapshot,
+      stops: stopSnapshots,
+    },
     { persist: false }
   );
 
   try {
-    const route = await requestOpenRouteRoute(itinerary.routePoints, apiKey, profile);
+    const drivingRoute = await requestOpenRouteRoute(itinerary.routePoints, apiKey, drivingProfile);
+    let transitDetails = null;
+    try {
+      const transitRoute = await requestOpenRouteRoute(itinerary.routePoints, apiKey, transitProfile);
+      transitDetails = buildTransitDetails(transitRoute);
+    } catch (transitError) {
+      console.warn('Transit routing unavailable', transitError);
+      transitDetails = { status: 'error', error: transitError?.message || 'Transit route unavailable.' };
+    }
+
+    const drivingDetails = buildDrivingDetails(drivingRoute, drivingProfile) || {
+      status: 'ready',
+      profile: drivingProfile,
+      durationSeconds: Number(drivingRoute.summary?.duration ?? 0) || 0,
+      distanceMeters: Number(drivingRoute.summary?.distance ?? 0) || 0,
+      geometry: drivingRoute.geometry || null,
+      legs: [],
+    };
+
+    const transitReady = transitDetails && transitDetails.status === 'ready';
+    const primaryProfile = transitReady ? transitProfile : drivingProfile;
+    const primaryDuration = transitReady && Number.isFinite(transitDetails.durationSeconds)
+      ? transitDetails.durationSeconds
+      : drivingDetails.durationSeconds;
+    const primaryDistance = transitReady && Number.isFinite(transitDetails.distanceMeters)
+      ? transitDetails.distanceMeters
+      : drivingDetails.distanceMeters;
+    const geometry = transitReady && transitDetails.geometry ? transitDetails.geometry : drivingDetails.geometry;
+
     const travelData = {
       status: 'ready',
       provider,
-      profile,
+      profile: primaryProfile,
       signature,
-      durationSeconds: Number(route.summary?.duration ?? 0),
-      distanceMeters: Number(route.summary?.distance ?? 0),
+      durationSeconds: primaryDuration,
+      distanceMeters: primaryDistance,
       fetchedAt: Date.now(),
       skipped,
-      geometry: route.geometry || null,
+      geometry: geometry || null,
+      originStay: originSnapshot,
+      destinationStay: destinationSnapshot,
+      stops: stopSnapshots,
+      modes: {
+        driving: drivingDetails,
+        transit: transitDetails || { status: 'unavailable' },
+      },
+      driving: drivingDetails,
+      transit: transitDetails || { status: 'unavailable' },
     };
     setDayTravel(dateKey, travelData);
     return travelData;
@@ -893,11 +1450,14 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
       {
         status: 'error',
         provider,
-        profile,
+        profile: drivingProfile,
         signature,
         error: error?.message || 'Routing request failed',
         fetchedAt: Date.now(),
         skipped,
+        originStay: originSnapshot,
+        destinationStay: destinationSnapshot,
+        stops: stopSnapshots,
       },
       { persist: false }
     );
@@ -933,7 +1493,7 @@ function getRoutingApiKey({ interactive = false } = {}) {
   }
 }
 
-async function requestOpenRouteRoute(points, apiKey, profile = 'driving-car') {
+async function requestOpenRouteRoute(points, apiKey, profile = 'driving-car', options = {}) {
   const coordinates = points.map((coord) => {
     if (!Array.isArray(coord) || coord.length !== 2) {
       throw new Error('Invalid coordinate provided to routing request.');
@@ -942,13 +1502,16 @@ async function requestOpenRouteRoute(points, apiKey, profile = 'driving-car') {
     return [Number(lon), Number(lat)];
   });
 
+  const extraBody = options?.body && typeof options.body === 'object' ? options.body : null;
+  const payload = extraBody ? { coordinates, ...extraBody } : { coordinates };
+
   const response = await fetch(`https://api.openrouteservice.org/v2/directions/${profile}/geojson`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: apiKey,
     },
-    body: JSON.stringify({ coordinates }),
+    body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
@@ -972,31 +1535,469 @@ async function requestOpenRouteRoute(points, apiKey, profile = 'driving-car') {
   if (!feature) {
     throw new Error('No route found for the selected stops.');
   }
+  const properties = feature.properties || {};
   return {
     geometry: feature.geometry,
-    summary: feature.properties?.summary || {},
+    summary: properties.summary || {},
+    segments: Array.isArray(properties.segments) ? properties.segments : [],
+    wayPoints: Array.isArray(properties.way_points) ? properties.way_points : [],
+    bbox: Array.isArray(feature.bbox) ? [...feature.bbox] : null,
+    metadata: {
+      transfers: properties.transfers,
+      fare: properties.fare,
+      warnings: properties.warnings,
+    },
   };
+}
+
+function uniqueOrdered(values) {
+  const seen = new Set();
+  const result = [];
+  values.forEach((value) => {
+    const key = typeof value === 'string' ? value.trim() : value;
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    result.push(key);
+  });
+  return result;
+}
+
+function buildDrivingDetails(route, profile = 'driving-car') {
+  if (!route) return null;
+  const segments = Array.isArray(route.segments) ? route.segments : [];
+  const legs = [];
+  segments.forEach((segment) => {
+    const steps = Array.isArray(segment.steps) ? segment.steps : [];
+    steps.forEach((step) => {
+      if (typeof step.instruction !== 'string' || !step.instruction.trim()) {
+        return;
+      }
+      const mode = step.mode || '';
+      const isWalk = mode.includes('foot') || mode.includes('walk');
+      legs.push({
+        kind: isWalk ? 'walk' : 'drive',
+        mode: step.mode || (isWalk ? 'Walk' : 'Drive'),
+        info: step.instruction.trim(),
+        durationSeconds: Number(step.duration ?? segment.duration ?? 0) || 0,
+        distanceMeters: Number(step.distance ?? segment.distance ?? 0) || 0,
+      });
+    });
+  });
+
+  return {
+    status: 'ready',
+    profile,
+    durationSeconds: Number(route.summary?.duration ?? 0) || 0,
+    distanceMeters: Number(route.summary?.distance ?? 0) || 0,
+    geometry: route.geometry || null,
+    legs,
+  };
+}
+
+function buildTransitDetails(route) {
+  if (!route) return null;
+  const segments = Array.isArray(route.segments) ? route.segments : [];
+  if (!segments.length) return null;
+
+  const legs = [];
+  segments.forEach((segment) => {
+    const steps = Array.isArray(segment.steps) ? segment.steps : [];
+    steps.forEach((step) => {
+      const transit = step?.transit || segment?.transit;
+      if (transit) {
+        const lineName = [
+          transit.route_short_name,
+          transit.route_long_name,
+          transit.name,
+          transit.line,
+          transit.code,
+        ].find((value) => typeof value === 'string' && value.trim());
+        const mode = transit.mode || transit.type || transit.vehicle_type || 'Transit';
+        const from = transit.from?.name || transit.departure_stop?.name || step.departure?.name || '';
+        const to = transit.to?.name || transit.arrival_stop?.name || step.arrival?.name || '';
+        const headsign = transit.headsign || transit.direction || '';
+        const agency = transit.agency || transit.agency_name || '';
+        const infoParts = [lineName, headsign ? `to ${headsign}` : '', agency ? `(${agency})` : ''].filter(Boolean);
+        legs.push({
+          kind: 'transit',
+          mode,
+          line: lineName || mode,
+          from: from || null,
+          to: to || null,
+          info: infoParts.join(' '),
+          durationSeconds: Number(step.duration ?? segment.duration ?? 0) || 0,
+          distanceMeters: Number(step.distance ?? segment.distance ?? 0) || 0,
+        });
+      } else if (step && typeof step.instruction === 'string' && step.instruction.trim()) {
+        const moveType = step.mode || (step.type === 11 ? 'Walk' : 'Move');
+        legs.push({
+          kind: 'walk',
+          mode: moveType,
+          info: step.instruction.trim(),
+          durationSeconds: Number(step.duration ?? 0) || 0,
+          distanceMeters: Number(step.distance ?? 0) || 0,
+        });
+      }
+    });
+  });
+
+  if (!legs.length) {
+    return null;
+  }
+
+  const transitLegs = legs.filter((leg) => leg.kind === 'transit');
+  const transfers = Math.max(0, transitLegs.length - 1);
+  const lines = uniqueOrdered(transitLegs.map((leg) => leg.line || leg.mode).filter(Boolean));
+
+  return {
+    status: 'ready',
+    durationSeconds: Number(route.summary?.duration ?? 0) || 0,
+    distanceMeters: Number(route.summary?.distance ?? 0) || 0,
+    transfers,
+    lines,
+    legs,
+    geometry: route.geometry || null,
+    metadata: route.metadata || {},
+  };
+}
+
+function formatTransitSummary(transit, { includeLines = true } = {}) {
+  if (!transit) return '';
+  if (transit.status === 'ready') {
+    const durationText = formatDuration(Number(transit.durationSeconds));
+    let transferText = '';
+    if (Number.isInteger(transit.transfers) && transit.transfers >= 0) {
+      transferText = transit.transfers === 0 ? 'Direct' : `${transit.transfers} transfer${transit.transfers === 1 ? '' : 's'}`;
+    }
+    const linesText = includeLines && Array.isArray(transit.lines) && transit.lines.length
+      ? transit.lines.slice(0, 3).join(' → ')
+      : '';
+    return ['Transit', durationText, transferText, linesText].filter(Boolean).join(' · ');
+  }
+  if (transit.status === 'error') {
+    return transit.error ? `Transit unavailable: ${transit.error}` : 'Transit unavailable';
+  }
+  if (transit.status === 'unavailable') {
+    return '';
+  }
+  return '';
+}
+
+function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '' } = {}) {
+  if (!travel || travel.status !== 'ready') {
+    return [];
+  }
+
+  const steps = [];
+  const departureMinutes = getPreferredDepartureMinutes(day);
+  const baseDate = dateKey ? new Date(`${dateKey}T00:00:00`) : new Date();
+  const startTimestamp = baseDate.getTime() + departureMinutes * 60000;
+  let cursor = startTimestamp;
+
+  const startStep = {
+    kind: 'milestone',
+    role: 'start',
+    title: itinerary.originStay?.label ? `Depart ${itinerary.originStay.label}` : 'Depart stay',
+    detail: itinerary.originStay?.label || '',
+    start: new Date(startTimestamp),
+    end: new Date(startTimestamp),
+    durationSeconds: 0,
+    distanceMeters: 0,
+  };
+  steps.push(startStep);
+
+  const transit = travel.transit && travel.transit.status === 'ready' ? travel.transit : null;
+  const driving = !transit && travel.driving && travel.driving.status === 'ready' ? travel.driving : null;
+  const legSource = Array.isArray(transit ? transit.legs : driving?.legs) ? (transit ? transit.legs : driving.legs) : [];
+
+  if (legSource.length) {
+    legSource.forEach((leg) => {
+      const legDuration = Number(leg.durationSeconds) || 0;
+      const legStart = new Date(cursor);
+      cursor += legDuration * 1000;
+      const legEnd = new Date(cursor);
+      const kind = leg.kind === 'walk' ? 'walk' : transit ? 'transit' : 'drive';
+      const lineName = leg.line || leg.mode || (kind === 'drive' ? 'Drive' : kind === 'walk' ? 'Walk' : 'Transit');
+      const title = kind === 'transit'
+        ? `Take ${lineName}`
+        : kind === 'walk'
+          ? (leg.info || 'Walk')
+          : (leg.info && leg.info.length < 120 ? leg.info : 'Drive');
+      const detailParts = [];
+      if (leg.from || leg.to) {
+        detailParts.push(`${leg.from || 'Start'} → ${leg.to || 'Destination'}`);
+      }
+      if (kind === 'transit' && leg.info) {
+        detailParts.push(leg.info);
+      }
+      steps.push({
+        kind,
+        role: null,
+        mode: leg.mode || lineName,
+        line: leg.line || '',
+        from: leg.from || '',
+        to: leg.to || '',
+        info: leg.info || '',
+        title,
+        detail: detailParts.filter(Boolean).join(' · '),
+        start: legStart,
+        end: legEnd,
+        durationSeconds: legDuration,
+        distanceMeters: Number(leg.distanceMeters) || 0,
+      });
+    });
+  } else {
+    const durationSeconds = Number(travel.durationSeconds) || 0;
+    const segmentStart = new Date(cursor);
+    cursor += durationSeconds * 1000;
+    const segmentEnd = new Date(cursor);
+    const fallbackTitle = travel.profile === 'public-transport'
+      ? 'Use public transport between stops'
+      : 'Drive between stops';
+    const detailParts = [];
+    if (itinerary.activities.length) {
+      detailParts.push(itinerary.activities.map((activity) => activity.label).join(' → '));
+    } else if (routeLabel) {
+      detailParts.push(routeLabel);
+    }
+    steps.push({
+      kind: travel.profile === 'public-transport' ? 'transit' : 'drive',
+      role: null,
+      mode: travel.profile === 'public-transport' ? 'Transit' : 'Driving',
+      line: '',
+      from: '',
+      to: '',
+      info: routeLabel,
+      title: fallbackTitle,
+      detail: detailParts.filter(Boolean).join(' · '),
+      start: segmentStart,
+      end: segmentEnd,
+      durationSeconds,
+      distanceMeters: Number(travel.distanceMeters) || 0,
+    });
+  }
+
+  const arrivalStep = {
+    kind: 'milestone',
+    role: 'arrive',
+    title: itinerary.stay?.label ? `Arrive at ${itinerary.stay.label}` : 'Arrive at stay',
+    detail: itinerary.stay?.label || '',
+    start: new Date(cursor),
+    end: new Date(cursor),
+    durationSeconds: 0,
+    distanceMeters: 0,
+  };
+  steps.push(arrivalStep);
+
+  return steps;
+}
+
+function getDirectionIcon(step) {
+  if (!step) return '•';
+  if (step.kind === 'milestone') {
+    return step.role === 'arrive' ? '🏁' : '🚩';
+  }
+  if (step.kind === 'walk') return '🚶';
+  if (step.kind === 'drive') return '🚗';
+  if (step.kind === 'transit') {
+    const mode = (step.mode || '').toLowerCase();
+    if (mode.includes('bus')) return '🚌';
+    if (mode.includes('ferry') || mode.includes('boat') || mode.includes('ship')) return '⛴️';
+    if (mode.includes('subway') || mode.includes('metro')) return '🚇';
+    if (mode.includes('tram')) return '🚊';
+    if (mode.includes('air') || mode.includes('flight') || mode.includes('plane')) return '✈️';
+    if (mode.includes('shinkansen') || mode.includes('bullet')) return '🚄';
+    return '🚆';
+  }
+  return '➡️';
+}
+
+function updateMapDirections(dateKey) {
+  if (!mapDirectionsEl) return;
+  mapDirectionsEl.innerHTML = '';
+  const day = ensureDay(dateKey);
+  const itinerary = buildItineraryForDay(day, dateKey);
+  const travel = day.travel;
+  const originLabel = itinerary.originStay?.label || '';
+  const destinationLabel = itinerary.stay?.label || '';
+  const routeLabel = originLabel && destinationLabel ? `${originLabel} → ${destinationLabel}` : '';
+  const skippedTitle = Array.isArray(travel?.skipped) && travel.skipped.length ? buildMissingPinsTitle(travel.skipped) : '';
+
+  if (!day.stay) {
+    mapDirectionsEl.dataset.state = 'empty';
+    mapDirectionsEl.textContent = 'Add a stay with map coordinates to see travel instructions.';
+    return;
+  }
+
+  if (!travel) {
+    mapDirectionsEl.dataset.state = 'pending';
+    mapDirectionsEl.textContent = routeLabel
+      ? `Calculating travel time for ${routeLabel}…`
+      : 'Travel time will be calculated soon.';
+    return;
+  }
+
+  if (travel.status !== 'ready') {
+    let message = '';
+    let state = 'pending';
+    switch (travel.status) {
+      case 'pending':
+        message = routeLabel ? `Calculating travel time for ${routeLabel}…` : 'Calculating travel time…';
+        break;
+      case 'missing-key':
+        message = 'Add your OpenRouteService API key to calculate travel time.';
+        break;
+      case 'missing-stay':
+        message = 'Select a stay with coordinates to calculate travel time.';
+        break;
+      case 'insufficient-data':
+        message = skippedTitle || 'Add coordinates for all stops to calculate travel time.';
+        break;
+      case 'error':
+        message = travel.error || 'Unable to calculate travel time.';
+        state = 'error';
+        break;
+      default:
+        message = 'Travel time is not available for this day.';
+        break;
+    }
+    mapDirectionsEl.dataset.state = state;
+    mapDirectionsEl.textContent = message;
+    return;
+  }
+
+  const steps = buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel });
+  if (!steps.length) {
+    mapDirectionsEl.dataset.state = 'pending';
+    mapDirectionsEl.textContent = 'Travel directions are not available for this route yet.';
+    return;
+  }
+
+  mapDirectionsEl.dataset.state = 'ready';
+  const list = document.createElement('ol');
+  list.className = 'directions__list';
+
+  steps.forEach((step) => {
+    const item = document.createElement('li');
+    item.className = 'directions__item';
+    if (step.kind === 'milestone') {
+      item.classList.add('directions__item--milestone');
+    } else {
+      item.classList.add(`directions__item--${step.kind}`);
+    }
+
+    const timeColumn = document.createElement('div');
+    timeColumn.className = 'directions__time';
+    const startLabel = formatTimeLabel(step.start);
+    if (startLabel) {
+      const startEl = document.createElement('span');
+      startEl.textContent = startLabel;
+      timeColumn.appendChild(startEl);
+    }
+    const endLabel = formatTimeLabel(step.end);
+    if (endLabel && step.end && step.end.getTime() !== step.start?.getTime()) {
+      const endEl = document.createElement('span');
+      endEl.textContent = endLabel;
+      timeColumn.appendChild(endEl);
+    }
+    item.appendChild(timeColumn);
+
+    const content = document.createElement('div');
+    content.className = 'directions__content';
+
+    const titleRow = document.createElement('div');
+    titleRow.className = 'directions__title';
+    const iconEl = document.createElement('span');
+    iconEl.className = 'directions__icon';
+    iconEl.textContent = getDirectionIcon(step);
+    titleRow.appendChild(iconEl);
+    const titleText = document.createElement('span');
+    titleText.textContent = step.title || (step.kind === 'milestone' ? 'Route milestone' : 'Route step');
+    titleRow.appendChild(titleText);
+    content.appendChild(titleRow);
+
+    if (step.kind !== 'milestone') {
+      const metaParts = [];
+      if (startLabel) {
+        metaParts.push(`Dep ${startLabel}`);
+      }
+      if (endLabel && step.end && step.end.getTime() !== step.start?.getTime()) {
+        metaParts.push(`Arr ${endLabel}`);
+      }
+      if (Number(step.durationSeconds) > 0) {
+        metaParts.push(formatDuration(Number(step.durationSeconds)));
+      }
+      if (Number(step.distanceMeters) > 0) {
+        metaParts.push(formatDistance(Number(step.distanceMeters)));
+      }
+      if (metaParts.length) {
+        const meta = document.createElement('div');
+        meta.className = 'directions__meta';
+        meta.textContent = metaParts.join(' · ');
+        content.appendChild(meta);
+      }
+    }
+
+    const detailText = step.detail || '';
+    if (detailText) {
+      const detailEl = document.createElement('div');
+      detailEl.className = 'directions__detail';
+      detailEl.textContent = detailText;
+      content.appendChild(detailEl);
+    }
+
+    item.appendChild(content);
+    list.appendChild(item);
+  });
+
+  mapDirectionsEl.appendChild(list);
+
+  if (skippedTitle) {
+    const note = document.createElement('div');
+    note.className = 'directions__note';
+    note.textContent = skippedTitle;
+    mapDirectionsEl.appendChild(note);
+  }
 }
 
 function updateMapSummary(dateKey) {
   if (!mapSummaryEl) return;
   const day = ensureDay(dateKey);
   const travel = day.travel;
+  const itinerary = buildItineraryForDay(day, dateKey);
   const skippedCount = Array.isArray(travel?.skipped) ? travel.skipped.length : 0;
+  const originLabel = typeof travel?.originStay?.label === 'string'
+    ? travel.originStay.label.trim()
+    : (itinerary.originStay?.label || '').trim();
+  const destinationLabel = typeof travel?.destinationStay?.label === 'string'
+    ? travel.destinationStay.label.trim()
+    : (itinerary.stay?.label || '').trim();
+  const routeLabel = originLabel && destinationLabel ? `${originLabel} → ${destinationLabel}` : '';
+  const transitInfo = travel?.transit || travel?.modes?.transit;
+  const drivingInfo = travel?.driving || travel?.modes?.driving;
 
   let message = '';
   if (!day.stay) {
     message = 'Pick a stay with map coordinates to calculate travel time.';
   } else if (!travel) {
-    message = 'Travel time will be calculated shortly.';
+    message = routeLabel ? `Calculating travel time for ${routeLabel}…` : 'Travel time will be calculated shortly.';
   } else if (travel.status === 'pending') {
-    message = 'Calculating travel time…';
+    message = routeLabel ? `Calculating travel time for ${routeLabel}…` : 'Calculating travel time…';
   } else if (travel.status === 'ready') {
     const durationText = formatDuration(Number(travel.durationSeconds));
     const distanceText = formatDistance(Number(travel.distanceMeters));
     const parts = [];
-    if (durationText) parts.push(`Total travel time: ${durationText}`);
-    if (distanceText) parts.push(`Distance: ${distanceText}`);
+    if (routeLabel) parts.push(`Route: ${routeLabel}`);
+    if (durationText) parts.push(`Total ${durationText}`);
+    if (distanceText) parts.push(distanceText);
+    const transitSummary = formatTransitSummary(transitInfo || null, { includeLines: true });
+    if (transitSummary) {
+      parts.push(transitSummary);
+    } else if (drivingInfo && travel.profile === 'public-transport') {
+      const driveDur = formatDuration(Number(drivingInfo.durationSeconds));
+      const driveDist = formatDistance(Number(drivingInfo.distanceMeters));
+      parts.push(['Driving alt', driveDur, driveDist].filter(Boolean).join(' '));
+    }
     if (skippedCount) {
       parts.push(`${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing map pins`);
     }
@@ -1006,13 +2007,17 @@ function updateMapSummary(dateKey) {
   } else if (travel.status === 'missing-stay') {
     message = 'Pick a stay with map coordinates to calculate travel time.';
   } else if (travel.status === 'no-activities') {
-    message = skippedCount
+    const base = routeLabel ? `Route: ${routeLabel}` : '';
+    const detail = skippedCount
       ? `${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing map pins.`
       : 'No mapped stops scheduled for this day.';
+    message = [base, detail].filter(Boolean).join(' · ');
   } else if (travel.status === 'insufficient-data') {
-    message = buildMissingPinsTitle(travel.skipped);
+    const base = routeLabel ? `Route: ${routeLabel}` : '';
+    message = [base, buildMissingPinsTitle(travel.skipped)].filter(Boolean).join(' · ');
   } else if (travel.status === 'error') {
-    message = `Unable to calculate travel time. ${travel.error || ''}`.trim();
+    const errorText = travel.error || 'Unable to calculate travel time.';
+    message = routeLabel ? `${routeLabel} · ${errorText}` : errorText;
   } else {
     message = 'Travel time is not available for this day.';
   }
@@ -1026,8 +2031,21 @@ function renderMapMarkers(dateKey) {
   clearMapRoute();
 
   const day = ensureDay(dateKey);
-  const itinerary = buildItineraryForDay(day);
+  const itinerary = buildItineraryForDay(day, dateKey);
   const bounds = window.L.latLngBounds([]);
+
+  if (itinerary.originStay?.coords && (!itinerary.stay?.coords || !coordsEqual(itinerary.originStay.coords, itinerary.stay.coords))) {
+    const startMarker = window.L.circleMarker(itinerary.originStay.coords, {
+      radius: 7,
+      color: '#10b981',
+      fillColor: '#10b981',
+      fillOpacity: 0.85,
+      weight: 2,
+      opacity: 0.9,
+    }).addTo(mapMarkersLayer);
+    startMarker.bindPopup(`Start: ${itinerary.originStay.label || 'Previous stay'}`);
+    bounds.extend(itinerary.originStay.coords);
+  }
 
   if (itinerary.stay?.coords) {
     const stayMarker = window.L.circleMarker(itinerary.stay.coords, {
@@ -1206,11 +2224,20 @@ function renderDayCard(dateKey) {
   header.appendChild(badges);
   card.appendChild(header);
 
-  const slotsWrap = document.createElement("div");
-  slotsWrap.className = "slots";
-  ["morning", "afternoon", "evening"].forEach((slotName) => {
-    const slotSection = document.createElement("section");
-    slotSection.className = "slot";
+  const travelSummary = document.createElement('div');
+  travelSummary.className = 'travel-summary';
+  travelSummary.dataset.travelSummary = dateKey;
+  if (!travelExpansionState.has(dateKey)) {
+    travelExpansionState.set(dateKey, false);
+  }
+  applyTravelSummary(travelSummary, plan, dateKey);
+  card.appendChild(travelSummary);
+
+  const slotsWrap = document.createElement('div');
+  slotsWrap.className = 'slots';
+  ['morning', 'afternoon', 'evening'].forEach((slotName) => {
+    const slotSection = document.createElement('section');
+    slotSection.className = 'slot';
     slotSection.dataset.slot = slotName;
     slotSection.dataset.date = dateKey;
 
@@ -1275,6 +2302,8 @@ function renderDayCard(dateKey) {
     event.dataTransfer.dropEffect = "move";
   });
   card.addEventListener("drop", handleCardDrop);
+
+  scheduleTravelCalculation(dateKey, { interactive: false });
 
   scheduleTravelCalculation(dateKey, { interactive: false });
 
@@ -1558,9 +2587,17 @@ function setStay(dateKey, stayId) {
   const day = ensureDay(dateKey);
   day.stay = stayId;
   invalidateTravel(dateKey, { persist: false, updateCard: false });
+  const nextDate = getAdjacentDateKey(dateKey, 1);
+  if (nextDate) {
+    invalidateTravel(nextDate, { persist: false, updateCard: false });
+  }
   persistState();
   updateDayCard(dateKey);
-  if (sheetState.open && sheetState.tab === "stay") {
+  if (nextDate) {
+    scheduleTravelChipRefresh(nextDate);
+    scheduleTravelCalculation(nextDate, { interactive: false });
+  }
+  if (sheetState.open && sheetState.tab === 'stay') {
     renderSheet();
   }
 }
@@ -2112,6 +3149,7 @@ function openMap(dateKey) {
   const mapTitle = document.getElementById('mapTitle');
   mapTitle.textContent = `${formatLongDate(dateKey)} — ${plan.theme || getDefaultTheme(plan.loc) || ''}`;
   updateMapSummary(dateKey);
+  updateMapDirections(dateKey);
 
   setTimeout(() => {
     if (!mapInstance) {
@@ -2131,6 +3169,7 @@ function openMap(dateKey) {
     if (activeMapDate === dateKey) {
       updateMapSummary(dateKey);
       renderMapRoute(dateKey);
+      updateMapDirections(dateKey);
     }
   });
 }
@@ -2146,6 +3185,10 @@ function closeMap() {
   }
   if (mapSummaryEl) {
     mapSummaryEl.textContent = '';
+  }
+  if (mapDirectionsEl) {
+    mapDirectionsEl.innerHTML = '';
+    mapDirectionsEl.removeAttribute('data-state');
   }
 }
 
