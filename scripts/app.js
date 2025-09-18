@@ -46,6 +46,7 @@ let mapInstance = null;
 let mapMarkersLayer = null;
 let mapRouteLayer = null;
 let activeMapDate = null;
+let overlayMode = null;
 const travelRequests = new Map();
 const travelExpansionState = new Map();
 const DEFAULT_DEPARTURE_MINUTES = 9 * 60;
@@ -3143,6 +3144,7 @@ function formatLongDate(dateKey) {
 function openMap(dateKey) {
   const plan = ensureDay(dateKey);
   activeMapDate = dateKey;
+  overlayMode = 'map';
   mapOverlay.classList.add('is-open');
   mapOverlay.setAttribute('aria-hidden', 'false');
   document.body.classList.add('map-open');
@@ -3175,6 +3177,7 @@ function openMap(dateKey) {
 }
 
 function closeMap() {
+  overlayMode = null;
   mapOverlay.classList.remove('is-open');
   mapOverlay.setAttribute('aria-hidden', 'true');
   document.body.classList.remove('map-open');
