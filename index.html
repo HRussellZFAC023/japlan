@@ -68,6 +68,33 @@
       <div class="sheet__body" id="sheetBody"></div>
     </aside>
 
+    <div id="itemOverlay" class="overlay" aria-hidden="true">
+      <div
+        class="overlay__dialog overlay__dialog--item"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="itemDetailTitle"
+      >
+        <div class="overlay__header">
+          <div>
+            <p class="overlay__subtitle" id="itemDetailSubtitle"></p>
+            <h2 class="overlay__title" id="itemDetailTitle">Item details</h2>
+          </div>
+          <button class="btn btn--subtle" data-action="close-item">Close</button>
+        </div>
+        <div class="item-detail" id="itemDetailContent">
+          <figure class="item-detail__media" id="itemDetailMedia">
+            <img id="itemDetailImage" alt="" loading="lazy" />
+          </figure>
+          <div class="item-detail__body">
+            <p class="item-detail__description" id="itemDetailDescription"></p>
+            <dl class="item-detail__meta" id="itemDetailMeta"></dl>
+            <div class="item-detail__links" id="itemDetailLinks"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div id="mapOverlay" class="overlay" aria-hidden="true">
       <div class="overlay__dialog" role="dialog" aria-modal="true" aria-labelledby="mapTitle">
         <div class="overlay__header">
