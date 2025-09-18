@@ -1070,6 +1070,11 @@ button:disabled {
   grid-template-columns: 72px 1fr;
   gap: 12px;
   align-items: start;
+  cursor: pointer;
+}
+
+.directions__item[tabindex='-1'] {
+  cursor: default;
 }
 
 .directions__item--milestone .directions__content {

@@ -62,6 +62,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
     akihabara: [35.6987, 139.7714],
     harajukuVintage: [35.6695, 139.7058],
     roppongiMidtown: [35.6665, 139.7316],
+    dxbAirport: [25.2532, 55.3657],
     kix: [34.4338, 135.2263],
     hirakatashi: [34.8165, 135.6477],
     usj: [34.6654, 135.4323],
@@ -92,7 +93,8 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: '00:40 Arrive DXB (transit)',
         locked: true,
         url: 'https://www.dubaiairports.ae/',
-        image: 'https://images.unsplash.com/photo-1529074963764-98f45c47344b?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-flight-dxb-arrival-search.svg',
+        skipRoute: true,
         description:
           "Land in Dubai International Airport's bright Terminal 3 to begin the long-haul connection toward Japan. Use the brief layover to stretch, refuel, and make note of the departure gates for the overnight Emirates sector.",
       },
@@ -103,7 +105,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         coord: 'kix',
         locked: true,
         url: 'https://www.emirates.com/english/destinations/flights-to-osaka/',
-        image: 'https://images.unsplash.com/photo-1504196606672-aef5c9cefc92?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-flight-dxb-kix-emirates-logo-badge.svg',
         description:
           'Board Emirates flight EK316 from Dubai to Kansai International Airport with lie-flat seats and Japanese inflight dining. Expect a smooth overnight sector that positions you for a late-afternoon arrival in Osaka.',
       },
@@ -114,7 +116,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         coord: 'kix',
         locked: true,
         url: 'https://www.kansai-airport.or.jp/en/',
-        image: 'https://images.unsplash.com/photo-1518544889280-380c7c9d0277?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-arrive-kix-logo-kix-01.png',
         description:
           'Touch down at Kansai International Airport\'s man-made island terminal and breeze through automated arrivals. Pick up an IC transit card and freshen up before transferring toward Hirakata.',
       },
@@ -124,7 +126,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'KIX → Hirakata (~90m)',
         coord: 'hirakatashi',
         url: 'https://www.kansai-airport.or.jp/en/access/train',
-        image: 'https://images.unsplash.com/photo-1471623432079-b009d30b6729?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-transfer-kix-hirakata-logo-kix-01.png',
         description:
           'Ride the Haruka limited express and Keihan line for a relaxed ninety-minute hop from Kansai Airport to Hirakatashi Station. Keep luggage handy for the Tennoji transfer and enjoy bay views as the train swings inland.',
       },
@@ -134,7 +136,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Dinner with Nana (Hirakata)',
         coord: 'hirakatashi',
         url: 'https://www.osaka-info.jp/en/areas/hirakata/',
-        image: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-dinner-nana-logo.svg',
         description:
           'Celebrate arrival with a relaxed izakaya dinner in Hirakata alongside Nana and sample seasonal Kansai dishes. Use the evening catch-up to review the week\'s plans and ease gently into Japan time.',
       },
@@ -144,7 +146,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Hirakata → KIX',
         coord: 'kix',
         url: 'https://www.kansai-airport.or.jp/en/access/limousine',
-        image: 'https://images.unsplash.com/photo-1509223197845-458d87318791?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-transfer-hirakata-kix-logo-kix-01.png',
         description:
           'Pack up for the return trip and take the early Keihan and JR services or limousine bus back to Kansai Airport. Leave buffer time for duty-free shopping and last-minute snacks before clearing security.',
       },
@@ -155,7 +157,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         coord: 'kix',
         locked: true,
         url: 'https://www.emirates.com/english/destinations/flights-from-osaka/',
-        image: 'https://images.unsplash.com/photo-1506869640319-fe1a24fd76dc?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-flight-kix-dxb-emirates-logo-badge.svg',
         description:
           'Depart Kansai on Emirates EK317 for the overnight hop back to Dubai with time for a final bowl of udon in the lounge. Watch Osaka Bay fade beneath the wing as you settle in for a restful flight home.',
       },
@@ -165,7 +167,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Dōtonbori walk + street food',
         coord: 'dotonbori',
         url: 'https://osaka-info.jp/en/discover/dotonbori/',
-        image: 'https://images.unsplash.com/photo-1554797589-7241bb691973?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-dotonbori-walk-logo.svg',
         description:
           'Follow the neon-lit Dōtonbori canal past takoyaki stalls, souvenir arcades, and the iconic Glico runner. Book tables at Mizuno and Kushikatsu Daruma to sample Osaka soul food between photo stops.',
         bookingIds: ['book-mizuno', 'book-daruma'],
@@ -176,7 +178,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Umeda Sky Building sunset',
         coord: 'umedaSky',
         url: 'https://www.skybldg.co.jp/en/',
-        image: 'https://images.unsplash.com/photo-1517824806704-9040b037703b?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-umeda-sky-ogp.jpg',
         description:
           'Ride the floating escalators up the Umeda Sky Building for a golden-hour panorama over Osaka. Linger on the open-air rooftop deck as the Yodo River sparkles with city lights.',
         bookingIds: ['book-umeda-sky'],
@@ -187,7 +189,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Abeno HARUKAS 300 view',
         coord: 'abenoHarukas',
         url: 'https://www.abenoharukas-300.jp/en/',
-        image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-abeno-harukas-logo.png',
         description:
           "Ascend Japan's tallest skyscraper for floor-to-ceiling vistas stretching from Osaka Castle to Mount Ikoma. Pair the observatory visit with a stop at the museum shop and a coffee in the Sky Garden 300 lounge.",
         bookingIds: ['book-harukas'],
@@ -198,7 +200,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Namba karaoke & late izakaya',
         coord: 'dotonbori',
         url: 'https://www.japan-guide.com/e/e4009.html',
-        image: 'https://images.unsplash.com/photo-1525706732402-1302a5f4b2aa?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-karaoke-namba-4009_01.jpg',
         description:
           'Reserve a private karaoke booth in Namba for neon-drenched singalongs and endless drink refills. Close the night with kushikatsu skewers and highballs delivered straight from Daruma.',
         bookingIds: ['book-daruma'],
@@ -209,7 +211,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Donki night run (Dōtonbori)',
         coord: 'dotonbori',
         url: 'https://www.donki.com/en/store/shop_detail.php?shop_id=154',
-        image: 'https://images.unsplash.com/photo-1526481280695-3c469c1c1bda?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/guide-donki-night-run-btn_headermenu_off.png',
         description:
           'Dash through the multistory Don Quijote flagship for quirky souvenirs, cosmetics, and late-night snacks. Ride the canal-side ferris wheel and leave with armfuls of specialty KitKats and gachapon prizes.',
       },
@@ -219,7 +221,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Osaka Festival of the Lights — Midosuji',
         coord: 'midosujiIllumination',
         url: 'https://www.hikari-kyoen.com/en/',
-        image: 'https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/event-midosuji-lights-ogp.png',
         description:
           "Stroll beneath illuminated gingko trees and projection-mapped facades along Osaka's grand Midosuji boulevard. Live choirs and pop-up cafés keep the festive energy high from Namba to Umeda.",
         bookingIds: ['book-midosuji-lights'],
@@ -241,7 +243,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Arashiyama bamboo grove & river',
         coord: 'arashiyama',
         url: 'https://www.japan-guide.com/e/e3912.html',
-        image: 'https://images.unsplash.com/photo-1549692520-acc6669e2f0c?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-arashiyama-3912_top.jpg',
         description:
           'Hop aboard the Sagano Romantic Train for river views before wandering Arashiyama\'s bamboo grove and Togetsukyo Bridge. Rent bikes or a rowboat to explore temples and maple-filled backstreets at your own pace.',
         bookingIds: ['book-sagano'],
@@ -252,7 +254,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Kiyomizu-dera & Sannenzaka',
         coord: 'kiyomizudera',
         url: 'https://www.kiyomizudera.or.jp/en/',
-        image: 'https://images.unsplash.com/photo-1544986581-efac024faf62?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-kiyomizudera-ogp.jpg',
         description:
           'Climb the lantern-lined lanes of Higashiyama to Kiyomizu-dera\'s wooden stage overlooking Kyoto. Browse pottery studios on Sannenzaka and toast with matcha before descending at sunset.',
         bookingIds: ['book-kiyomizu-night'],
@@ -263,7 +265,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Fushimi Inari at dusk',
         coord: 'fushimiInari',
         url: 'https://inari.jp/en/',
-        image: 'https://images.unsplash.com/photo-1549693578-d683be217e58?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-fushimi-inari-index_about.jpg',
         description:
           'Hike the seemingly endless tunnels of vermilion torii gates at Fushimi Inari as lanterns flicker on. Pause at quiet sub-shrines for fox ema and sweeping views across Kyoto basin.',
       },
@@ -273,7 +275,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Uji tea tastings & Byōdō-in stroll',
         coord: 'uji',
         url: 'https://matcha-jp.com/en/1155',
-        image: 'https://images.unsplash.com/photo-1518977956815-dee909d5940d?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-uji-tea-30-67134.png',
         description:
           'Travel to Uji for hand-whisked matcha tastings along the approach to Byōdō-in Temple. Join a small-group tea ceremony to grind tencha, savor wagashi, and learn the rituals of Ujicha service.',
         bookingIds: ['book-tea-ceremony'],
@@ -284,7 +286,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Nara Park deer + Tōdai-ji',
         coord: 'naraPark',
         url: 'https://www.visitnara.jp/destinations/nara-city/nara-park/',
-        image: 'https://images.unsplash.com/photo-1543248939-ff40856f65d4?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-nara-park-PMH_160814_194534_1319.jpg',
         description:
           "Spend a gentle morning feeding senbei to Nara's bowing deer before visiting the Great Buddha at Tōdai-ji. Wander Kasuga Taisha's lantern-lined forest paths and sample persimmon-leaf sushi on Sanjo-dori.",
       },
@@ -294,7 +296,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Kōyasan Okunoin night walk',
         coord: 'okunoin',
         url: 'https://www.koyasan.or.jp/en/meguru/spot/okunoin/',
-        image: 'https://images.unsplash.com/photo-1553662923-51dcb1d9651a?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-koyasan-okunoin-og_image.jpg',
         description:
           'Join a monk-guided night walk through Okunoin\'s cedar forest to the Torodo lantern hall and Kobo Daishi\'s mausoleum. Hear centuries-old legends as mossy gravestones glow softly in the dark.',
       },
@@ -304,7 +306,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Kimono stroll photo spot',
         coord: 'kiyomizudera',
         url: 'https://www.yumeyakata.com/',
-        image: 'https://images.unsplash.com/photo-1526481280695-3c469c1c1bd9?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/guide-kimono-stroll-yumeyakata_logo_white.png',
         description:
           'Rent seasonal kimono or hakama, complete with hairstyling, before wandering Kyoto\'s preserved lanes. Pose beneath paper lanterns and pagoda backdrops while the studio stores your day bag.',
         bookingIds: ['book-kimono'],
@@ -315,7 +317,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Kiyomizu-dera autumn night illumination',
         coord: 'kiyomizudera',
         url: 'https://www.kiyomizudera.or.jp/en/event/',
-        image: 'https://images.unsplash.com/photo-1575936123452-b67c3203c357?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/event-kiyomizu-lightup-ogp.jpg',
         description:
           "Return after dark for Kiyomizu-dera's limited autumn illumination with a cobalt beam stretching across Kyoto. Glide along the verandas to watch fiery maples reflected in the temple ponds.",
         bookingIds: ['book-kiyomizu-night'],
@@ -326,7 +328,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Eikando Zenrinji maple light-up',
         coord: 'eikando',
         url: 'https://eikando.or.jp/',
-        image: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/event-eikando-lightup-logo01-1.png',
         description:
           'Marvel at Eikandō\'s mirror-still pond and scarlet momiji during the evening illumination. Expect timed entry and enjoy the hillside terrace view before following lantern paths back toward Nanzen-ji.',
         bookingIds: ['book-eikando-night'],
@@ -348,7 +350,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Arima Onsen golden & silver baths',
         coord: 'arimaOnsen',
         url: 'https://visit.arima-onsen.com/en/',
-        image: 'https://images.unsplash.com/photo-1517959105821-eaf2591984b1?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-arima-onsen-ogimage.png',
         description:
           'Soak in Arima Onsen\'s famous gold and silver mineral springs, alternating between open-air rotenburo and hinoki tubs. Wander the steep village lanes afterward for carbonated senbei and local crafts.',
       },
@@ -358,7 +360,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Himeji Castle + Kōko-en',
         coord: 'himejiCastle',
         url: 'https://www.himejicastle.jp/en/',
-        image: 'https://images.unsplash.com/photo-1505577058444-a3dab90d4253?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-himeji-castle-ogp.png',
         description:
           'Climb the wooden towers of UNESCO-listed Himeji Castle for sweeping views of the white heron keep. Pair the visit with a tea break inside Kōko-en\'s landscaped garden rooms.',
         bookingIds: ['book-himeji'],
@@ -369,7 +371,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Kobe Harborland evening lights',
         coord: 'harborland',
         url: 'https://www.feel-kobe.jp/en/sightseeing/spot/?sid=250',
-        image: 'https://images.unsplash.com/photo-1499189498362-5ca264f57f30?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-harborland-night-things_nature_pic01.jpg',
         description:
           "Catch the sunset from Kobe Harborland's Mosaic promenade with ferris wheel views over the bay. Cap the night with a harbor cruise or Kobe beef dinner overlooking the illuminated port tower.",
       },
@@ -390,7 +392,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'teamLab Planets experience',
         coord: 'teamlabPlanets',
         url: 'https://teamlabplanets.dmm.com/en/',
-        image: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-teamlab-planets-thumbnail.jpg',
         description:
           "Wade barefoot through teamLab Planets' mirrored cosmos, water rooms, and floating flower garden in Toyosu. Allow extra time for the digital koi that react to every ripple of your movement.",
         bookingIds: ['book-teamlab-planets'],
@@ -401,7 +403,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Ghibli Museum (Mitaka)',
         coord: 'ghibliMuseum',
         url: 'https://www.ghibli-museum.jp/en/',
-        image: 'https://images.unsplash.com/photo-1562564055-71e051d33c19?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-ghibli-museum-ghibli-museum.png',
         description:
           "Step inside Hayao Miyazaki's whimsical sketches, exclusive short films, and rooftop Laputa robot at the Ghibli Museum. Lawson-timed tickets keep crowds light so you can linger in the Straw Hat Café.",
         bookingIds: ['book-ghibli'],
@@ -412,7 +414,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Collab café crawl (Animate/SQEX)',
         coord: 'sunshine60',
         url: 'https://cafe.animate.co.jp/',
-        image: 'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-collab-cafe-ogp.png',
         description:
           "Hop between Ikebukuro's rotating collaboration cafés for themed parfaits, exclusive coasters, and merch drops. Check reservation lotteries in advance to secure seats for the latest anime tie-ins.",
       },
@@ -422,7 +424,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Shibuya scramble + PARCO run',
         coord: 'shibuyaParco',
         url: 'https://www.japan-guide.com/e/e3007.html',
-        image: 'https://images.unsplash.com/photo-1476718406336-bb5a9690ee2a?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-shibuya-scramble-3007_01.jpg',
         description:
           "Surge across the world-famous Shibuya Scramble before exploring PARCO's pop-culture floors and rooftop park. Ride the elevator to Shibuya SKY for a helipad panorama over Tokyo's neon canyon.",
         bookingIds: ['book-shibuya-sky'],
@@ -433,7 +435,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Harajuku fashion lanes',
         coord: 'takeshitaStreet',
         url: 'https://www.gotokyo.org/en/spot/257/index.html',
-        image: 'https://images.unsplash.com/photo-1505904267569-596a0f8204b1?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-harajuku-fashion-ogp.png',
         description:
           'Browse Takeshita Street for lolita boutiques, vintage treasures, and rainbow crepes before drifting down Cat Street. Refuel with gyukatsu or fluffy pancakes between boutique hopping.',
         bookingIds: ['book-gyukatsu'],
@@ -444,7 +446,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Ikebukuro Sunshine & otaku stops',
         coord: 'sunshine60',
         url: 'https://www.sunshinecity.co.jp/en/',
-        image: 'https://images.unsplash.com/photo-1504805572947-34fad45aed93?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-ikebukuro-day-ogp_koushiki.png',
         description:
           "Devote a day to Sunshine City's Sky Circus, Pokémon Center Mega Tokyo, and VR experiences at Namja Town. Wander Otome Road for doujinshi finds and cap the night with Animate's newest releases.",
       },
@@ -454,7 +456,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Late karaoke & izakaya with crew',
         coord: 'shibuyaParco',
         url: 'https://www.pasela.co.jp/en/',
-        image: 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-karaoke-friends-404logo.jpg',
         description:
           'Reserve a large karaoke suite for the full crew and queue up anime anthems until the first train. Share highballs, honey toast, and late-night izakaya plates delivered straight to the room.',
       },
@@ -464,7 +466,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Shibuya SKY (observation deck)',
         coord: 'shibuyaParco',
         url: 'https://www.shibuya-scramble-square.com/en/sky/',
-        image: 'https://images.unsplash.com/photo-1578925480211-2a72d4e436f0?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/guide-shibuya-sky-og-img.jpg',
         description:
           "Secure timed tickets to Shibuya SKY's rooftop helipad for a 360-degree Tokyo skyline experience. Arrive thirty minutes before sunset to capture the scramble intersection glowing below.",
         bookingIds: ['book-shibuya-sky'],
@@ -475,7 +477,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Omotesandō cafés & boutiques',
         coord: 'takeshitaStreet',
         url: 'https://www.timeout.com/tokyo/restaurants/the-best-cafes-in-omotesando',
-        image: 'https://images.unsplash.com/photo-1521017432531-fbd92d768814?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/guide-omotesando-cafes-image.jpg',
         description:
           'Spend an easy afternoon café-hopping along tree-lined Omotesandō between Kengo Kuma-designed boutiques. Sample pour-over coffee, delicate pastries, and hidden basement roasters between shopping stops.',
       },
@@ -485,7 +487,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Nintendo Tokyo & Pokémon Center',
         coord: 'shibuyaParco',
         url: 'https://www.nintendo.co.jp/officialstore/en/',
-        image: 'https://images.unsplash.com/photo-1529429617124-aee7112a4a01?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/guide-nintendo-parco-og_nintendo.png',
         description:
           'Queue early for the Nintendo Tokyo and Pokémon Center Shibuya floors packed with exclusive merch and interactive displays. Rotate through neighboring Jump, Capcom, and eSports stores for more limited drops.',
       },
@@ -495,7 +497,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Animate Ikebukuro flagship',
         coord: 'animateIkebukuro',
         url: 'https://www.animate.co.jp/shop/ikebukuro/',
-        image: 'https://images.unsplash.com/photo-1553524913-efba3f0b10e3?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/guide-animate-ikebukuro-ikebukuro.jpg',
         description:
           'Navigate the multi-level Animate Ikebukuro flagship for fresh manga, drama CDs, and BL exclusives. Check the event floors for autograph sessions and limited-edition pop-up exhibits.',
       },
@@ -505,7 +507,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Akihabara retro arcades crawl',
         coord: 'akihabara',
         url: 'https://www.gotokyo.org/en/destinations/northern-tokyo/akihabara/index.html',
-        image: 'https://images.unsplash.com/photo-1558877065-d1c1a692ad55?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/guide-akihabara-arcades-ogp.png',
         description:
           'Dive into Akihabara\'s multi-story arcades for rhythm games, crane prizes, and retro cabinets. Trade 100-yen coins for plays at Taito Station, GiGO, and Club Sega before wandering electric-town alleys.',
       },
@@ -515,7 +517,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Harajuku thrift & vintage run',
         coord: 'harajukuVintage',
         url: 'https://www.timeout.com/tokyo/shopping/harajuku-vintage-shops',
-        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/guide-harajuku-vintage-image.jpg',
         description:
           "Map out Harajuku's top vintage shops like Ragtag, Chicago, and Kinji for one-of-a-kind finds. Hunt for varsity jackets and reworked kimono pieces before rewarding yourself with gyukatsu.",
         bookingIds: ['book-gyukatsu'],
@@ -526,7 +528,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Tokyo Midtown Roppongi illuminations',
         coord: 'roppongiMidtown',
         url: 'https://www.tokyo-midtown.com/en/event/xmas/',
-        image: 'https://images.unsplash.com/photo-1519125323398-675f0ddb6308?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/event-roppongi-illumination-ogp.png',
         description:
           "Witness Tokyo Midtown's Starlight Garden where synchronized LEDs blanket the lawn in cosmic hues. Sip mulled wine at the Christmas market and stroll the sparkling Keyakizaka terrace.",
         bookingIds: ['book-midtown-christmas'],
@@ -550,7 +552,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Candeo Hotels Osaka Hirakata',
         url: 'https://www.candeohotels.com/en/osaka-hirakata/',
         coord: 'stay-candeo-hirakata',
-        image: 'https://images.unsplash.com/photo-1542317854-0d6e498c6478?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/stay-candeo-hirakata-hirakata_main_kv-thumb-2560x1774-18748.jpg',
         description:
           'Check into Candeo Hirakata for modern business-class rooms, Sky Spa baths, and a hearty Japanese-Western breakfast buffet. The hotel sits steps from Hirakatashi Station for quick Keihan Line hops into Osaka or Kyoto.',
         bookingIds: ['book-candeo-hirakata'],
@@ -583,7 +585,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'THE THOUSAND KYOTO',
         url: 'https://www.keihanhotels-resorts.co.jp/the-thousand-kyoto/en/',
         coord: 'stay-the-thousand-kyoto',
-        image: 'https://images.unsplash.com/photo-1542317854-e21684359eef?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/stay-the-thousand-kyoto-ogp.png',
         description:
           'Minimalist suites combine tatami accents with deep hinoki baths just steps from Kyoto Station\'s central exit. The property features a serene spa, tea lounge, and concierge team skilled at securing temple reservations.',
         bookingIds: ['book-the-thousand-kyoto'],
@@ -594,7 +596,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Hotel Granvia Kyoto',
         url: 'https://www.granviakyoto.com/',
         coord: 'stay-hotel-granvia-kyoto',
-        image: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/stay-hotel-granvia-kyoto-site_logo.png',
         description:
           'Perched above Kyoto Station, Hotel Granvia delivers spacious rooms, indoor pool access, and unbeatable rail connections. Upper floors capture skyline views while the lobby hosts seasonal art installations.',
         bookingIds: ['book-hotel-granvia-kyoto'],
@@ -605,7 +607,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Kōyasan Eko-in temple stay',
         url: 'https://www.ekoin.jp/en/',
         coord: 'stay-ekoin-koyasan',
-        image: 'https://images.unsplash.com/photo-1470115636492-6d2b56f9146e?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/stay-ekoin-koyasan-twitter_card.jpg',
         description:
           'Sleep on tatami floors at the 1,100-year-old Eko-in, where monks serve vegan shōjin ryōri dinners and lead morning prayers. Guests can join meditation workshops and lantern-lit night tours through nearby Okunoin.',
         bookingIds: ['book-ekoin-koyasan'],
@@ -616,7 +618,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Arima Grand Hotel',
         url: 'https://www.arima-gh.jp/en/',
         coord: 'stay-arima-grand',
-        image: 'https://images.unsplash.com/photo-1501117716987-c8e1ecb210ca?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/stay-arima-grand-ogp.jpg',
         description:
           'This hilltop ryokan overlooks Arima Onsen with both gold and silver hot-spring baths plus seasonal kaiseki dinners. Shuttle buses connect guests to the station, and panorama lounges frame the Rokko mountains.',
         bookingIds: ['book-arima-grand'],
@@ -627,7 +629,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Hotel La Suite Kobe Harborland',
         url: 'https://www.l-s.jp/english/',
         coord: 'stay-la-suite-kobe',
-        image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/act-abeno-harukas-logo.png',
         description:
           'Every room at La Suite Kobe includes a balcony facing the port, whirlpool bath, and L’Occitane amenities. Walk downstairs for patisserie treats before sunset cruises across Kobe Harborland.',
         bookingIds: ['book-la-suite-kobe'],
@@ -638,7 +640,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Mitsui Garden Hotel Otemachi',
         url: 'https://www.gardenhotels.co.jp/otemachi/eng/',
         coord: 'stay-mitsui-garden-otemachi',
-        image: 'https://images.unsplash.com/photo-1506127943505-5704b16abefa?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/stay-mitsui-garden-otemachi-logo-mfg.svg',
         description:
           'A calm hideaway north of Tokyo Station, Mitsui Garden Otemachi blends modern Japanese décor with a soothing public bath. Grab free bikes to explore Nihonbashi or hop the Marunouchi Line from the nearby station.',
         bookingIds: ['book-mitsui-garden-otemachi'],
@@ -649,7 +651,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Hotel Niwa Tokyo',
         url: 'https://www.hotelniwa.jp/en/',
         coord: 'stay-hotel-niwa-tokyo',
-        image: 'https://images.unsplash.com/photo-1562790351-d273a961e0e9?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/stay-hotel-niwa-tokyo-ogp.png',
         description:
           'Hotel Niwa layers warm wood, courtyard gardens, and pillow menus for a boutique stay near Suidobashi Station. Amenities include a 24-hour gym, coin laundry, and staff who can secure dinner reservations.',
         bookingIds: ['book-hotel-niwa-tokyo'],
@@ -660,7 +662,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
         label: 'Airbnb — central Tokyo flat',
         url: 'https://www.airbnb.com/s/Tokyo--Japan/homes',
         coord: 'stay-airbnb-tokyo',
-        image: 'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?auto=format&fit=crop&w=1200&q=80',
+        image: 'assets/images/stay-airbnb-tokyo-fe7217ff-0b24-438d-880d-b94722c75bf5.jpg',
         description:
           'Opt for a central Tokyo Airbnb to gain extra living space, a kitchenette, and flexible self-check-in. Filter for listings near JR Yamanote stations to simplify meetups with friends and late-night returns.',
         bookingIds: ['book-airbnb-tokyo'],
@@ -744,7 +746,7 @@ export const DEFAULT_TRIP_TEMPLATE = {
       loc: 'work',
       theme: 'Flights → Osaka',
       friends: ['Nana'],
-      stay: null,
+      stay: 'stay-candeo-hirakata',
       slots: {
         morning: ['act-flight-dxb-arrival'],
         afternoon: ['act-flight-dxb-kix'],

@@ -105,6 +105,18 @@
           <div id="map" class="overlay__map" role="presentation"></div>
           <aside class="overlay__panel">
             <div id="mapSummary" class="overlay__summary" aria-live="polite"></div>
+            <div class="overlay__controls">
+              <div
+                class="mode-toggle"
+                data-role="mode-toggle"
+                role="group"
+                aria-label="Map travel mode"
+              >
+                <button type="button" class="mode-toggle__btn" data-map-mode="transit">Transit</button>
+                <button type="button" class="mode-toggle__btn" data-map-mode="walking">Walking</button>
+                <button type="button" class="mode-toggle__btn" data-map-mode="driving">Driving</button>
+              </div>
+            </div>
             <div id="mapDirections" class="directions" aria-live="polite"></div>
           </aside>
         </div>

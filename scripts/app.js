@@ -35,6 +35,9 @@ const configContent = document.getElementById("configContent");
 const configTitle = document.getElementById("configTitle");
 const configSubtitle = document.getElementById("configSubtitle");
 const closeConfigBtn = document.querySelector('[data-action="close-config"]');
+const mapModeControls = mapOverlay ? mapOverlay.querySelector('.overlay__controls') : null;
+const mapModeToggle = mapModeControls?.querySelector('[data-role="mode-toggle"]') || null;
+const mapModeButtons = mapModeToggle ? Array.from(mapModeToggle.querySelectorAll('[data-map-mode]')) : [];
 
 let storageBucket = loadStorageBucket();
 let activeTripId = storageBucket.activeTripId || null;
@@ -55,18 +58,147 @@ let chipDragData = null;
 let mapInstance = null;
 let mapMarkersLayer = null;
 let mapRouteLayer = null;
+let mapStepHighlightLayer = null;
+let mapOverlayMode = 'transit';
+let overlayMode = null;
 let activeMapDate = null;
 let activeItemDetail = null;
 const travelRequests = new Map();
 const travelExpansionState = new Map();
+const mapModeState = new Map();
+let mapDirectionsData = null;
 const DEFAULT_DEPARTURE_MINUTES = 9 * 60;
 let routingKeyPromptActive = false;
+let wizardState = null;
+let tripLibraryConfirm = null;
+let uniqueIdCounter = 0;
+
+const MODE_TO_PROFILE = {
+  transit: 'public-transport',
+  walking: 'foot-walking',
+  driving: 'driving-car',
+};
+
+const PROFILE_TO_MODE = Object.entries(MODE_TO_PROFILE).reduce((acc, [mode, profile]) => {
+  acc[profile] = mode;
+  return acc;
+}, {});
+
+function getModeLabel(mode) {
+  switch (mode) {
+    case 'transit':
+      return 'Transit';
+    case 'walking':
+      return 'Walking';
+    case 'driving':
+      return 'Driving';
+    default:
+      return 'Travel';
+  }
+}
+
+function isModeReady(details) {
+  return details && details.status === 'ready';
+}
+
+function getActiveTravelMode(travel) {
+  if (!travel) return null;
+  if (typeof travel.mode === 'string' && travel.mode) {
+    return travel.mode;
+  }
+  return PROFILE_TO_MODE[travel.profile] || null;
+}
+
+function getModeDetails(travel, mode) {
+  if (!travel || !mode) return null;
+  if (travel.modes && travel.modes[mode]) {
+    return travel.modes[mode];
+  }
+  switch (mode) {
+    case 'transit':
+      return travel.transit || null;
+    case 'walking':
+      return travel.walking || null;
+    case 'driving':
+      return travel.driving || null;
+    default:
+      return null;
+  }
+}
+
+function getDefaultMapMode(travel) {
+  if (!travel || travel.status !== 'ready') {
+    return 'transit';
+  }
+  if (isModeReady(getModeDetails(travel, 'transit'))) return 'transit';
+  if (isModeReady(getModeDetails(travel, 'walking'))) return 'walking';
+  if (isModeReady(getModeDetails(travel, 'driving'))) return 'driving';
+  return getActiveTravelMode(travel) || 'transit';
+}
+
+function getMapModeForDate(dateKey) {
+  if (!dateKey) return 'transit';
+  if (mapModeState.has(dateKey)) {
+    return mapModeState.get(dateKey);
+  }
+  const day = ensureDay(dateKey);
+  const travel = day.travel;
+  const mode = getDefaultMapMode(travel);
+  mapModeState.set(dateKey, mode);
+  return mode;
+}
+
+function setMapModeForDate(dateKey, mode) {
+  if (!dateKey || !mode) return;
+  mapModeState.set(dateKey, mode);
+}
+
+function updateMapModeUI(dateKey) {
+  if (!mapModeControls) return;
+  const day = ensureDay(dateKey);
+  const travel = day.travel;
+  if (!travel || travel.status !== 'ready') {
+    mapModeControls.style.display = 'none';
+    mapModeButtons.forEach((btn) => {
+      btn.classList.remove('mode-toggle__btn--active');
+      btn.setAttribute('aria-pressed', 'false');
+      btn.disabled = true;
+    });
+    return;
+  }
+
+  mapModeControls.style.display = '';
+  const currentMode = getMapModeForDate(dateKey);
+  mapModeButtons.forEach((btn) => {
+    const mode = btn.dataset.mapMode;
+    const details = getModeDetails(travel, mode);
+    const ready = isModeReady(details);
+    btn.disabled = !ready;
+    const isActive = mode === currentMode;
+    if (isActive) {
+      btn.classList.add('mode-toggle__btn--active');
+    } else {
+      btn.classList.remove('mode-toggle__btn--active');
+    }
+    btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
 
 renderChrome();
 renderCalendar();
 updateFilterChips();
 attachToolbarEvents();
 attachGlobalShortcuts();
+if (mapDirectionsEl) {
+  mapDirectionsEl.addEventListener('click', handleDirectionsInteraction);
+  mapDirectionsEl.addEventListener('keydown', handleDirectionsKeydown);
+}
+if (mapModeToggle) {
+  mapModeToggle.addEventListener('click', handleMapModeClick);
+}
+if (mapModeControls) {
+  mapModeControls.style.display = 'none';
+}
 
 function buildDateSequence(start, end) {
   const results = [];
@@ -628,11 +760,14 @@ function buildItineraryForDay(day, dateKey) {
   const previousDateKey = dateKey ? getAdjacentDateKey(dateKey, -1) : null;
   const previousDay = previousDateKey ? planState.days?.[previousDateKey] : null;
   const previousStay = previousDay ? getStayInfo(previousDay) : null;
+  const originFromPrevious = previousStay?.coords ? previousStay : null;
+  let originActivityId = null;
 
   ['morning', 'afternoon', 'evening'].forEach((slot) => {
     (day.slots?.[slot] || []).forEach((itemId) => {
       const activity = ACTIVITY_MAP.get(itemId);
       if (!activity) return;
+      if (activity.skipRoute) return;
       const coords = getCoordinateValue(activity.coord);
       if (!coords) {
         skipped.push(activity.label || itemId);
@@ -655,19 +790,42 @@ function buildItineraryForDay(day, dateKey) {
     };
   }
 
-  const originStay = previousStay?.coords ? previousStay : stay;
+  let originStay = originFromPrevious || null;
+  if (!originStay && activities.length) {
+    const firstDistinct = activities.find((activity) => !coordsEqual(activity.coords, stay.coords));
+    if (firstDistinct) {
+      originActivityId = firstDistinct.id || null;
+      originStay = {
+        id: originActivityId ? `activity-origin-${originActivityId}` : null,
+        label: firstDistinct.label || 'Start location',
+        coords: firstDistinct.coords,
+      };
+    }
+  }
+  if (!originStay) {
+    originStay = stay;
+  }
+
   if (previousStay && !previousStay.coords) {
     skipped.unshift(previousStay.label || 'Previous stay');
   }
 
   const routePoints = [originStay.coords];
-  if (!coordsEqual(originStay.coords, stay.coords)) {
+  if (!originActivityId && !coordsEqual(originStay.coords, stay.coords)) {
     routePoints.push(stay.coords);
   }
   activities.forEach((activity) => {
+    if (originActivityId && activity.id === originActivityId) {
+      return;
+    }
+    if (originActivityId && coordsEqual(activity.coords, originStay.coords)) {
+      return;
+    }
     routePoints.push(activity.coords);
   });
-  routePoints.push(stay.coords);
+  if (!coordsEqual(routePoints[routePoints.length - 1] || [], stay.coords)) {
+    routePoints.push(stay.coords);
+  }
 
   const normalizedRoutePoints = normalizeRoutePoints(routePoints);
   const status = normalizedRoutePoints.length > 1 ? 'ok' : 'no-activities';
@@ -743,6 +901,86 @@ function serializeCoords(coords) {
   const lon = Number(coords[1]);
   if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
   return [lat, lon];
+}
+
+function toLatLng(point) {
+  if (!Array.isArray(point) || point.length < 2) return null;
+  const lon = Number(point[0]);
+  const lat = Number(point[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  return [lat, lon];
+}
+
+function geometryToLatLngs(geometry) {
+  if (!geometry || typeof geometry !== 'object') return [];
+  const { type, coordinates } = geometry;
+  if (type === 'LineString' && Array.isArray(coordinates)) {
+    return coordinates.map(toLatLng).filter(Boolean);
+  }
+  if (type === 'MultiLineString' && Array.isArray(coordinates)) {
+    const flattened = [];
+    coordinates.forEach((segment) => {
+      if (!Array.isArray(segment)) return;
+      segment.forEach((point) => {
+        const latLng = toLatLng(point);
+        if (latLng) flattened.push(latLng);
+      });
+    });
+    return flattened;
+  }
+  return [];
+}
+
+function extractLegPath(geometry, wayPoints) {
+  if (!geometry || typeof geometry !== 'object') return null;
+  if (!Array.isArray(wayPoints) || wayPoints.length !== 2) return null;
+  const [startRaw, endRaw] = wayPoints;
+  if (!Number.isInteger(startRaw) || !Number.isInteger(endRaw)) return null;
+
+  let coordinates = null;
+  if (geometry.type === 'MultiLineString') {
+    const flat = Array.isArray(geometry.coordinates)
+      ? geometry.coordinates.flat().filter(Array.isArray)
+      : null;
+    coordinates = Array.isArray(flat) ? flat : null;
+  } else if (geometry.type === 'LineString') {
+    coordinates = Array.isArray(geometry.coordinates) ? geometry.coordinates : null;
+  }
+  if (!coordinates || coordinates.length < 2) return null;
+
+  const startIndex = Math.max(0, Math.min(startRaw, endRaw));
+  const endIndex = Math.min(coordinates.length - 1, Math.max(startRaw, endRaw));
+  if (endIndex <= startIndex) {
+    const point = toLatLng(coordinates[startIndex]);
+    return point ? [point] : null;
+  }
+  const slice = coordinates.slice(startIndex, endIndex + 1);
+  const latLngs = slice.map(toLatLng).filter(Boolean);
+  return latLngs.length ? latLngs : null;
+}
+
+function computeBoundsFromPath(path) {
+  if (!Array.isArray(path) || !path.length) return null;
+  let minLat = Number.POSITIVE_INFINITY;
+  let maxLat = Number.NEGATIVE_INFINITY;
+  let minLon = Number.POSITIVE_INFINITY;
+  let maxLon = Number.NEGATIVE_INFINITY;
+  path.forEach((point) => {
+    if (!Array.isArray(point) || point.length !== 2) return;
+    const [lat, lon] = point.map(Number);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    if (lat < minLat) minLat = lat;
+    if (lat > maxLat) maxLat = lat;
+    if (lon < minLon) minLon = lon;
+    if (lon > maxLon) maxLon = lon;
+  });
+  if (!Number.isFinite(minLat) || !Number.isFinite(maxLat) || !Number.isFinite(minLon) || !Number.isFinite(maxLon)) {
+    return null;
+  }
+  return [
+    [minLat, minLon],
+    [maxLat, maxLon],
+  ];
 }
 
 function serializeStay(stay) {
@@ -851,9 +1089,11 @@ function buildTravelDisplay(plan) {
     ? travel.destinationStay.label.trim()
     : (plan.stay ? getStayLabel(plan.stay) : '');
   const routeLabel = originLabel && destinationLabel ? `${originLabel} → ${destinationLabel}` : '';
-  const transitInfo = travel.transit || travel.modes?.transit;
-  const drivingInfo = travel.driving || travel.modes?.driving;
-  const primaryLabel = travel.profile === 'public-transport' ? 'Transit' : 'Travel';
+  const activeMode = getActiveTravelMode(travel) || 'driving';
+  const primaryLabel = getModeLabel(activeMode);
+  const transitInfo = getModeDetails(travel, 'transit');
+  const walkingInfo = getModeDetails(travel, 'walking');
+  const drivingInfo = getModeDetails(travel, 'driving');
 
   switch (travel.status) {
     case 'ready': {
@@ -863,18 +1103,22 @@ function buildTravelDisplay(plan) {
       if (routeLabel) parts.push(`Route ${routeLabel}`);
       if (durationText) parts.push(`Time ${durationText}`);
       if (distanceText) parts.push(`Distance ${distanceText}`);
-      parts.push(`Mode ${travel.profile === 'public-transport' ? 'Public transport' : 'Driving'}`);
+      parts.push(`Mode ${primaryLabel}`);
       const transitSummary = formatTransitSummary(transitInfo || null, { includeLines: true });
-      if (transitSummary && travel.profile !== 'public-transport') {
+      if (transitSummary && activeMode !== 'transit') {
         parts.push(transitSummary);
       } else if (transitSummary) {
         parts.push(transitSummary);
       }
-      if (drivingInfo && travel.profile === 'public-transport') {
-        const altDuration = formatDuration(Number(drivingInfo.durationSeconds));
-        if (altDuration) {
-          parts.push(`Driving alt ${altDuration}`);
-        }
+      if (isModeReady(walkingInfo) && activeMode !== 'walking') {
+        const walkDuration = formatDuration(Number(walkingInfo.durationSeconds));
+        const walkDistance = formatDistance(Number(walkingInfo.distanceMeters));
+        parts.push(['Walking', walkDuration, walkDistance].filter(Boolean).join(' '));
+      }
+      if (isModeReady(drivingInfo) && activeMode !== 'driving') {
+        const driveDuration = formatDuration(Number(drivingInfo.durationSeconds));
+        const driveDistance = formatDistance(Number(drivingInfo.distanceMeters));
+        parts.push(['Driving', driveDuration, driveDistance].filter(Boolean).join(' '));
       }
       if (skippedTitle) parts.push(skippedTitle);
       return {
@@ -1011,7 +1255,12 @@ function applyTravelSummary(summaryEl, plan, dateKey) {
 
   const skippedCount = Array.isArray(travel?.skipped) ? travel.skipped.length : 0;
   const skippedTitle = skippedCount ? buildMissingPinsTitle(travel.skipped) : '';
-  const modeLabel = travel?.profile === 'public-transport' ? 'Public transport' : 'Driving';
+  const activeMode = getActiveTravelMode(travel) || 'driving';
+  const modeLabel = getModeLabel(activeMode);
+  const transitInfo = getModeDetails(travel, 'transit');
+  const walkingInfo = getModeDetails(travel, 'walking');
+  const drivingInfo = getModeDetails(travel, 'driving');
+  const transitSummary = formatTransitSummary(transitInfo || null, { includeLines: true });
 
   let state = 'pending';
   let headerTime = '—';
@@ -1202,9 +1451,6 @@ function applyTravelSummary(summaryEl, plan, dateKey) {
     body.appendChild(noStops);
   }
 
-  const transitInfo = travel.transit || travel.modes?.transit;
-  const drivingInfo = travel.driving || travel.modes?.driving;
-  const transitSummary = formatTransitSummary(transitInfo || null, { includeLines: true });
   if (transitSummary) {
     const transitRow = document.createElement('div');
     transitRow.className = 'travel-summary__transit';
@@ -1233,7 +1479,18 @@ function applyTravelSummary(summaryEl, plan, dateKey) {
       });
       body.appendChild(legList);
     }
-  } else if (drivingInfo && travel.profile === 'public-transport') {
+  }
+
+  if (isModeReady(walkingInfo)) {
+    const walkingRow = document.createElement('div');
+    walkingRow.className = 'travel-summary__transit';
+    const walkDuration = formatDuration(Number(walkingInfo.durationSeconds));
+    const walkDistance = formatDistance(Number(walkingInfo.distanceMeters));
+    walkingRow.textContent = ['Walking route', walkDuration, walkDistance].filter(Boolean).join(' · ');
+    body.appendChild(walkingRow);
+  }
+
+  if (isModeReady(drivingInfo) && activeMode === 'transit') {
     const drivingRow = document.createElement('div');
     drivingRow.className = 'travel-summary__transit';
     const drivingDuration = formatDuration(Number(drivingInfo.durationSeconds));
@@ -1262,6 +1519,14 @@ function refreshTravelSummary(dateKey) {
 function setDayTravel(dateKey, travel, { persist = true, updateCard = true } = {}) {
   const day = ensureDay(dateKey);
   day.travel = travel;
+  if (travel && travel.status === 'ready') {
+    const currentMode = getMapModeForDate(dateKey);
+    const currentDetails = getModeDetails(travel, currentMode);
+    if (!isModeReady(currentDetails)) {
+      const fallbackMode = getDefaultMapMode(travel);
+      setMapModeForDate(dateKey, fallbackMode);
+    }
+  }
   if (persist) {
     persistState();
   }
@@ -1269,9 +1534,13 @@ function setDayTravel(dateKey, travel, { persist = true, updateCard = true } = {
     scheduleTravelChipRefresh(dateKey);
   }
   if (activeMapDate === dateKey) {
-    renderMapRoute(dateKey);
+    mapOverlayMode = getMapModeForDate(dateKey);
+    updateMapModeUI(dateKey);
+    renderMapRoute(dateKey, { mode: mapOverlayMode });
     updateMapSummary(dateKey);
-    updateMapDirections(dateKey);
+    updateMapDirections(dateKey, { mode: mapOverlayMode });
+  } else if (mapOverlayMode && mapModeControls) {
+    updateMapModeUI(dateKey);
   }
 }
 
@@ -1295,8 +1564,9 @@ function scheduleTravelCalculation(dateKey, { interactive = false } = {}) {
 
 async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   const provider = 'openrouteservice';
-  const drivingProfile = 'driving-car';
-  const transitProfile = 'public-transport';
+  const drivingProfile = MODE_TO_PROFILE.driving;
+  const transitProfile = MODE_TO_PROFILE.transit;
+  const walkingProfile = MODE_TO_PROFILE.walking;
   const day = ensureDay(dateKey);
   const itinerary = buildItineraryForDay(day, dateKey);
 
@@ -1306,13 +1576,23 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   const originSnapshot = serializeStay(itinerary.originStay);
   const destinationSnapshot = serializeStay(itinerary.stay);
   const stopSnapshots = serializeActivities(itinerary.activities);
+  const defaultMode = PROFILE_TO_MODE[drivingProfile] || 'driving';
+
+  const composeTravel = (status, extra = {}) => ({
+    status,
+    provider,
+    profile: drivingProfile,
+    mode: defaultMode,
+    signature,
+    skipped,
+    originStay: originSnapshot,
+    destinationStay: destinationSnapshot,
+    stops: stopSnapshots,
+    ...extra,
+  });
 
   if (itinerary.status === 'missing-stay') {
-    setDayTravel(
-      dateKey,
-      { status: 'missing-stay', provider, profile: drivingProfile, signature, skipped, originStay: originSnapshot, destinationStay: destinationSnapshot },
-      { persist: false }
-    );
+    setDayTravel(dateKey, composeTravel('missing-stay'), { persist: false });
     return null;
   }
 
@@ -1328,85 +1608,79 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   }
 
   if (itinerary.status === 'no-activities') {
-    const travelData = {
-      status: 'ready',
-      provider,
-      profile: drivingProfile,
-      signature,
+    const travelData = composeTravel('ready', {
       durationSeconds: 0,
       distanceMeters: 0,
       fetchedAt: Date.now(),
-      skipped,
       geometry: null,
-      originStay: originSnapshot,
-      destinationStay: destinationSnapshot,
-      stops: stopSnapshots,
       modes: {
-        driving: { status: 'ready', profile: drivingProfile, durationSeconds: 0, distanceMeters: 0, geometry: null },
+        driving: {
+          status: 'ready',
+          profile: drivingProfile,
+          mode: 'driving',
+          durationSeconds: 0,
+          distanceMeters: 0,
+          geometry: null,
+          legs: [],
+          path: [],
+        },
+        walking: { status: 'unavailable' },
         transit: { status: 'unavailable' },
       },
-      driving: { status: 'ready', profile: drivingProfile, durationSeconds: 0, distanceMeters: 0, geometry: null },
+      driving: {
+        status: 'ready',
+        profile: drivingProfile,
+        mode: 'driving',
+        durationSeconds: 0,
+        distanceMeters: 0,
+        geometry: null,
+        legs: [],
+        path: [],
+      },
+      walking: { status: 'unavailable' },
       transit: { status: 'unavailable' },
-    };
+    });
     setDayTravel(dateKey, travelData);
     return travelData;
   }
 
   if (!Array.isArray(itinerary.routePoints) || itinerary.routePoints.length < 2) {
-    setDayTravel(
-      dateKey,
-      {
-        status: 'insufficient-data',
-        provider,
-        profile: drivingProfile,
-        signature,
-        skipped,
-        originStay: originSnapshot,
-        destinationStay: destinationSnapshot,
-        stops: stopSnapshots,
-      },
-      { persist: false }
-    );
+    setDayTravel(dateKey, composeTravel('insufficient-data'), { persist: false });
     return null;
   }
 
   const apiKey = getRoutingApiKey({ interactive });
   if (!apiKey) {
-    setDayTravel(
-      dateKey,
-      {
-        status: 'missing-key',
-        provider,
-        profile: drivingProfile,
-        signature,
-        skipped,
-        originStay: originSnapshot,
-        destinationStay: destinationSnapshot,
-        stops: stopSnapshots,
-      },
-      { persist: false }
-    );
+    setDayTravel(dateKey, composeTravel('missing-key'), { persist: false });
     return null;
   }
 
   setDayTravel(
     dateKey,
-    {
-      status: 'pending',
-      provider,
-      profile: drivingProfile,
-      signature,
+    composeTravel('pending', {
       requestedAt: Date.now(),
-      skipped,
-      originStay: originSnapshot,
-      destinationStay: destinationSnapshot,
-      stops: stopSnapshots,
-    },
+    }),
     { persist: false }
   );
 
   try {
-    const drivingRoute = await requestOpenRouteRoute(itinerary.routePoints, apiKey, drivingProfile);
+    const drivingPromise = requestOpenRouteRoute(itinerary.routePoints, apiKey, drivingProfile);
+    const walkingPromise = requestOpenRouteRoute(itinerary.routePoints, apiKey, walkingProfile).then(
+      (route) => route,
+      (error) => ({ error })
+    );
+
+    const [drivingRoute, walkingOutcome] = await Promise.all([drivingPromise, walkingPromise]);
+
+    let walkingRoute = null;
+    let walkingError = null;
+    if (walkingOutcome && walkingOutcome.error) {
+      walkingError = walkingOutcome.error;
+      console.warn('Walking routing unavailable', walkingError);
+    } else if (walkingOutcome) {
+      walkingRoute = walkingOutcome;
+    }
+
     let transitDetails = null;
     try {
       const transitRoute = await requestOpenRouteRoute(itinerary.routePoints, apiKey, transitProfile);
@@ -1416,63 +1690,78 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
       transitDetails = { status: 'error', error: transitError?.message || 'Transit route unavailable.' };
     }
 
-    const drivingDetails = buildDrivingDetails(drivingRoute, drivingProfile) || {
+    const drivingDetails = buildRouteDetails(drivingRoute, drivingProfile, { defaultKind: 'drive' }) || {
       status: 'ready',
       profile: drivingProfile,
+      mode: 'driving',
       durationSeconds: Number(drivingRoute.summary?.duration ?? 0) || 0,
       distanceMeters: Number(drivingRoute.summary?.distance ?? 0) || 0,
       geometry: drivingRoute.geometry || null,
       legs: [],
+      path: geometryToLatLngs(drivingRoute.geometry),
     };
 
-    const transitReady = transitDetails && transitDetails.status === 'ready';
-    const primaryProfile = transitReady ? transitProfile : drivingProfile;
-    const primaryDuration = transitReady && Number.isFinite(transitDetails.durationSeconds)
-      ? transitDetails.durationSeconds
-      : drivingDetails.durationSeconds;
-    const primaryDistance = transitReady && Number.isFinite(transitDetails.distanceMeters)
-      ? transitDetails.distanceMeters
-      : drivingDetails.distanceMeters;
-    const geometry = transitReady && transitDetails.geometry ? transitDetails.geometry : drivingDetails.geometry;
+    let walkingDetails = null;
+    if (walkingRoute) {
+      walkingDetails = buildRouteDetails(walkingRoute, walkingProfile, { defaultKind: 'walk' }) || {
+        status: 'ready',
+        profile: walkingProfile,
+        mode: 'walking',
+        durationSeconds: Number(walkingRoute.summary?.duration ?? 0) || 0,
+        distanceMeters: Number(walkingRoute.summary?.distance ?? 0) || 0,
+        geometry: walkingRoute.geometry || null,
+        legs: [],
+        path: geometryToLatLngs(walkingRoute.geometry),
+      };
+    } else if (walkingError) {
+      walkingDetails = { status: 'error', error: walkingError?.message || 'Walking route unavailable.' };
+    }
 
-    const travelData = {
-      status: 'ready',
-      provider,
+    const transitReady = isModeReady(transitDetails);
+    const walkingReady = isModeReady(walkingDetails);
+    const drivingReady = isModeReady(drivingDetails);
+
+    let primaryMode = transitReady ? 'transit' : walkingReady ? 'walking' : drivingReady ? 'driving' : defaultMode;
+    const primaryProfile = MODE_TO_PROFILE[primaryMode] || drivingProfile;
+    const primaryDetails =
+      primaryMode === 'transit'
+        ? transitDetails
+        : primaryMode === 'walking'
+          ? walkingDetails
+          : drivingDetails;
+
+    const primaryDuration = Number(primaryDetails?.durationSeconds) || 0;
+    const primaryDistance = Number(primaryDetails?.distanceMeters) || 0;
+    const geometry = primaryDetails?.geometry || drivingDetails?.geometry || transitDetails?.geometry || null;
+
+    const modes = {
+      driving: drivingDetails || { status: 'unavailable' },
+      walking: walkingDetails || { status: 'unavailable' },
+      transit: transitDetails || { status: 'unavailable' },
+    };
+
+    const travelData = composeTravel('ready', {
       profile: primaryProfile,
-      signature,
+      mode: primaryMode,
       durationSeconds: primaryDuration,
       distanceMeters: primaryDistance,
       fetchedAt: Date.now(),
-      skipped,
       geometry: geometry || null,
-      originStay: originSnapshot,
-      destinationStay: destinationSnapshot,
-      stops: stopSnapshots,
-      modes: {
-        driving: drivingDetails,
-        transit: transitDetails || { status: 'unavailable' },
-      },
-      driving: drivingDetails,
-      transit: transitDetails || { status: 'unavailable' },
-    };
+      modes,
+      driving: modes.driving,
+      walking: modes.walking,
+      transit: modes.transit,
+    });
     setDayTravel(dateKey, travelData);
     return travelData;
   } catch (error) {
     console.error('Routing request failed', error);
     setDayTravel(
       dateKey,
-      {
-        status: 'error',
-        provider,
-        profile: drivingProfile,
-        signature,
+      composeTravel('error', {
         error: error?.message || 'Routing request failed',
         fetchedAt: Date.now(),
-        skipped,
-        originStay: originSnapshot,
-        destinationStay: destinationSnapshot,
-        stops: stopSnapshots,
-      },
+      }),
       { persist: false }
     );
     return null;
@@ -1576,7 +1865,7 @@ function uniqueOrdered(values) {
   return result;
 }
 
-function buildDrivingDetails(route, profile = 'driving-car') {
+function buildRouteDetails(route, profile = 'driving-car', { defaultKind = 'drive' } = {}) {
   if (!route) return null;
   const segments = Array.isArray(route.segments) ? route.segments : [];
   const legs = [];
@@ -1586,14 +1875,26 @@ function buildDrivingDetails(route, profile = 'driving-car') {
       if (typeof step.instruction !== 'string' || !step.instruction.trim()) {
         return;
       }
-      const mode = step.mode || '';
-      const isWalk = mode.includes('foot') || mode.includes('walk');
+      const rawMode = typeof step.mode === 'string' ? step.mode : '';
+      const modeLower = rawMode.toLowerCase();
+      let kind = defaultKind;
+      if (modeLower.includes('foot') || modeLower.includes('walk') || modeLower.includes('pedestrian')) {
+        kind = 'walk';
+      } else if (modeLower.includes('bike') || modeLower.includes('bicycle')) {
+        kind = 'cycle';
+      } else if (modeLower.includes('bus') || modeLower.includes('train') || modeLower.includes('metro')) {
+        kind = 'transit';
+      }
+      const modeLabel = rawMode || (kind === 'walk' ? 'Walk' : kind === 'drive' ? 'Drive' : 'Move');
+      const path = extractLegPath(route.geometry, step.way_points);
       legs.push({
-        kind: isWalk ? 'walk' : 'drive',
-        mode: step.mode || (isWalk ? 'Walk' : 'Drive'),
+        kind,
+        mode: modeLabel,
         info: step.instruction.trim(),
         durationSeconds: Number(step.duration ?? segment.duration ?? 0) || 0,
         distanceMeters: Number(step.distance ?? segment.distance ?? 0) || 0,
+        path,
+        wayPoints: Array.isArray(step.way_points) ? [...step.way_points] : null,
       });
     });
   });
@@ -1601,10 +1902,12 @@ function buildDrivingDetails(route, profile = 'driving-car') {
   return {
     status: 'ready',
     profile,
+    mode: PROFILE_TO_MODE[profile] || null,
     durationSeconds: Number(route.summary?.duration ?? 0) || 0,
     distanceMeters: Number(route.summary?.distance ?? 0) || 0,
     geometry: route.geometry || null,
     legs,
+    path: geometryToLatLngs(route.geometry),
   };
 }
 
@@ -1632,6 +1935,7 @@ function buildTransitDetails(route) {
         const headsign = transit.headsign || transit.direction || '';
         const agency = transit.agency || transit.agency_name || '';
         const infoParts = [lineName, headsign ? `to ${headsign}` : '', agency ? `(${agency})` : ''].filter(Boolean);
+        const path = extractLegPath(route.geometry, step.way_points || segment.way_points);
         legs.push({
           kind: 'transit',
           mode,
@@ -1641,15 +1945,28 @@ function buildTransitDetails(route) {
           info: infoParts.join(' '),
           durationSeconds: Number(step.duration ?? segment.duration ?? 0) || 0,
           distanceMeters: Number(step.distance ?? segment.distance ?? 0) || 0,
+          path,
+          wayPoints: Array.isArray(step.way_points)
+            ? [...step.way_points]
+            : Array.isArray(segment.way_points)
+              ? [...segment.way_points]
+              : null,
         });
       } else if (step && typeof step.instruction === 'string' && step.instruction.trim()) {
         const moveType = step.mode || (step.type === 11 ? 'Walk' : 'Move');
+        const path = extractLegPath(route.geometry, step.way_points || segment.way_points);
         legs.push({
           kind: 'walk',
           mode: moveType,
           info: step.instruction.trim(),
           durationSeconds: Number(step.duration ?? 0) || 0,
           distanceMeters: Number(step.distance ?? 0) || 0,
+          path,
+          wayPoints: Array.isArray(step.way_points)
+            ? [...step.way_points]
+            : Array.isArray(segment.way_points)
+              ? [...segment.way_points]
+              : null,
         });
       }
     });
@@ -1665,12 +1982,14 @@ function buildTransitDetails(route) {
 
   return {
     status: 'ready',
+    mode: 'transit',
     durationSeconds: Number(route.summary?.duration ?? 0) || 0,
     distanceMeters: Number(route.summary?.distance ?? 0) || 0,
     transfers,
     lines,
     legs,
     geometry: route.geometry || null,
+    path: geometryToLatLngs(route.geometry),
     metadata: route.metadata || {},
   };
 }
@@ -1697,7 +2016,7 @@ function formatTransitSummary(transit, { includeLines = true } = {}) {
   return '';
 }
 
-function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '' } = {}) {
+function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '', modeKey = null } = {}) {
   if (!travel || travel.status !== 'ready') {
     return [];
   }
@@ -1707,6 +2026,18 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '' 
   const baseDate = dateKey ? new Date(`${dateKey}T00:00:00`) : new Date();
   const startTimestamp = baseDate.getTime() + departureMinutes * 60000;
   let cursor = startTimestamp;
+
+  const requestedMode = modeKey || getActiveTravelMode(travel) || 'driving';
+  const fallbackOrder = ['transit', 'walking', 'driving'];
+  const candidateModes = [requestedMode, ...fallbackOrder.filter((mode) => mode !== requestedMode)];
+  let activeMode = candidateModes.find((mode) => isModeReady(getModeDetails(travel, mode))) || requestedMode;
+  let activeDetails = getModeDetails(travel, activeMode);
+  if (!isModeReady(activeDetails)) {
+    activeDetails = null;
+  }
+
+  const transit = getModeDetails(travel, 'transit');
+  const driving = getModeDetails(travel, 'driving');
 
   const startStep = {
     kind: 'milestone',
@@ -1720,17 +2051,21 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '' 
   };
   steps.push(startStep);
 
-  const transit = travel.transit && travel.transit.status === 'ready' ? travel.transit : null;
-  const driving = !transit && travel.driving && travel.driving.status === 'ready' ? travel.driving : null;
-  const legSource = Array.isArray(transit ? transit.legs : driving?.legs) ? (transit ? transit.legs : driving.legs) : [];
+  const legSource = Array.isArray(activeDetails?.legs) ? activeDetails.legs : [];
 
   if (legSource.length) {
-    legSource.forEach((leg) => {
+    legSource.forEach((leg, legIndex) => {
       const legDuration = Number(leg.durationSeconds) || 0;
       const legStart = new Date(cursor);
       cursor += legDuration * 1000;
       const legEnd = new Date(cursor);
-      const kind = leg.kind === 'walk' ? 'walk' : transit ? 'transit' : 'drive';
+      const kind = leg.kind === 'walk'
+        ? 'walk'
+        : activeMode === 'transit'
+          ? 'transit'
+          : leg.kind === 'transit'
+            ? 'transit'
+            : 'drive';
       const lineName = leg.line || leg.mode || (kind === 'drive' ? 'Drive' : kind === 'walk' ? 'Walk' : 'Transit');
       const title = kind === 'transit'
         ? `Take ${lineName}`
@@ -1758,6 +2093,9 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '' 
         end: legEnd,
         durationSeconds: legDuration,
         distanceMeters: Number(leg.distanceMeters) || 0,
+        path: Array.isArray(leg.path) && leg.path.length ? leg.path : null,
+        modeKey: activeMode,
+        legIndex,
       });
     });
   } else {
@@ -1765,9 +2103,11 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '' 
     const segmentStart = new Date(cursor);
     cursor += durationSeconds * 1000;
     const segmentEnd = new Date(cursor);
-    const fallbackTitle = travel.profile === 'public-transport'
+    const fallbackTitle = activeMode === 'transit'
       ? 'Use public transport between stops'
-      : 'Drive between stops';
+      : activeMode === 'walking'
+        ? 'Walk between stops'
+        : 'Drive between stops';
     const detailParts = [];
     if (itinerary.activities.length) {
       detailParts.push(itinerary.activities.map((activity) => activity.label).join(' → '));
@@ -1775,9 +2115,9 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '' 
       detailParts.push(routeLabel);
     }
     steps.push({
-      kind: travel.profile === 'public-transport' ? 'transit' : 'drive',
+      kind: activeMode === 'transit' ? 'transit' : activeMode === 'walking' ? 'walk' : 'drive',
       role: null,
-      mode: travel.profile === 'public-transport' ? 'Transit' : 'Driving',
+      mode: getModeLabel(activeMode),
       line: '',
       from: '',
       to: '',
@@ -1788,6 +2128,12 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '' 
       end: segmentEnd,
       durationSeconds,
       distanceMeters: Number(travel.distanceMeters) || 0,
+      path:
+        Array.isArray(activeDetails?.path) && activeDetails.path.length
+          ? activeDetails.path
+          : geometryToLatLngs(travel.geometry),
+      modeKey: activeMode,
+      legIndex: null,
     });
   }
 
@@ -1800,6 +2146,9 @@ function buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel = '' 
     end: new Date(cursor),
     durationSeconds: 0,
     distanceMeters: 0,
+    path: null,
+    modeKey: activeMode,
+    legIndex: null,
   };
   steps.push(arrivalStep);
 
@@ -1826,9 +2175,12 @@ function getDirectionIcon(step) {
   return '➡️';
 }
 
-function updateMapDirections(dateKey) {
+function updateMapDirections(dateKey, { mode: modeOverride, focus = false } = {}) {
   if (!mapDirectionsEl) return;
   mapDirectionsEl.innerHTML = '';
+  mapDirectionsEl.dataset.mode = '';
+  clearStepHighlight();
+
   const day = ensureDay(dateKey);
   const itinerary = buildItineraryForDay(day, dateKey);
   const travel = day.travel;
@@ -1840,6 +2192,7 @@ function updateMapDirections(dateKey) {
   if (!day.stay) {
     mapDirectionsEl.dataset.state = 'empty';
     mapDirectionsEl.textContent = 'Add a stay with map coordinates to see travel instructions.';
+    mapDirectionsData = null;
     return;
   }
 
@@ -1848,6 +2201,7 @@ function updateMapDirections(dateKey) {
     mapDirectionsEl.textContent = routeLabel
       ? `Calculating travel time for ${routeLabel}…`
       : 'Travel time will be calculated soon.';
+    mapDirectionsData = null;
     return;
   }
 
@@ -1877,21 +2231,25 @@ function updateMapDirections(dateKey) {
     }
     mapDirectionsEl.dataset.state = state;
     mapDirectionsEl.textContent = message;
+    mapDirectionsData = null;
     return;
   }
 
-  const steps = buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel });
+  const mode = modeOverride || getMapModeForDate(dateKey);
+  const steps = buildDirectionSteps(dateKey, day, itinerary, travel, { routeLabel, modeKey: mode });
   if (!steps.length) {
     mapDirectionsEl.dataset.state = 'pending';
     mapDirectionsEl.textContent = 'Travel directions are not available for this route yet.';
+    mapDirectionsData = null;
     return;
   }
 
   mapDirectionsEl.dataset.state = 'ready';
+  mapDirectionsEl.dataset.mode = mode;
   const list = document.createElement('ol');
   list.className = 'directions__list';
 
-  steps.forEach((step) => {
+  steps.forEach((step, index) => {
     const item = document.createElement('li');
     item.className = 'directions__item';
     if (step.kind === 'milestone') {
@@ -1899,6 +2257,9 @@ function updateMapDirections(dateKey) {
     } else {
       item.classList.add(`directions__item--${step.kind}`);
     }
+    item.dataset.stepIndex = String(index);
+    const interactive = step.kind !== 'milestone';
+    item.tabIndex = interactive ? 0 : -1;
 
     const timeColumn = document.createElement('div');
     timeColumn.className = 'directions__time';
@@ -1972,6 +2333,21 @@ function updateMapDirections(dateKey) {
     note.textContent = skippedTitle;
     mapDirectionsEl.appendChild(note);
   }
+
+  mapDirectionsData = {
+    dateKey,
+    mode,
+    steps,
+    travelSignature: travel.signature || null,
+    activeIndex: null,
+  };
+
+  if (focus) {
+    const firstInteractive = steps.findIndex((step) => step.kind !== 'milestone');
+    if (firstInteractive >= 0) {
+      activateDirectionStep(firstInteractive, { flyTo: true });
+    }
+  }
 }
 
 function updateMapSummary(dateKey) {
@@ -1987,8 +2363,10 @@ function updateMapSummary(dateKey) {
     ? travel.destinationStay.label.trim()
     : (itinerary.stay?.label || '').trim();
   const routeLabel = originLabel && destinationLabel ? `${originLabel} → ${destinationLabel}` : '';
-  const transitInfo = travel?.transit || travel?.modes?.transit;
-  const drivingInfo = travel?.driving || travel?.modes?.driving;
+  const activeMode = getActiveTravelMode(travel) || 'driving';
+  const transitInfo = getModeDetails(travel, 'transit');
+  const walkingInfo = getModeDetails(travel, 'walking');
+  const drivingInfo = getModeDetails(travel, 'driving');
 
   let message = '';
   if (!day.stay) {
@@ -2004,13 +2382,22 @@ function updateMapSummary(dateKey) {
     if (routeLabel) parts.push(`Route: ${routeLabel}`);
     if (durationText) parts.push(`Total ${durationText}`);
     if (distanceText) parts.push(distanceText);
+    parts.push(`Mode ${getModeLabel(activeMode)}`);
     const transitSummary = formatTransitSummary(transitInfo || null, { includeLines: true });
-    if (transitSummary) {
+    if (transitSummary && activeMode !== 'transit') {
       parts.push(transitSummary);
-    } else if (drivingInfo && travel.profile === 'public-transport') {
+    } else if (transitSummary) {
+      parts.push(transitSummary);
+    }
+    if (isModeReady(walkingInfo) && activeMode !== 'walking') {
+      const walkDur = formatDuration(Number(walkingInfo.durationSeconds));
+      const walkDist = formatDistance(Number(walkingInfo.distanceMeters));
+      parts.push(['Walking', walkDur, walkDist].filter(Boolean).join(' '));
+    }
+    if (isModeReady(drivingInfo) && activeMode !== 'driving') {
       const driveDur = formatDuration(Number(drivingInfo.durationSeconds));
       const driveDist = formatDistance(Number(drivingInfo.distanceMeters));
-      parts.push(['Driving alt', driveDur, driveDist].filter(Boolean).join(' '));
+      parts.push(['Driving', driveDur, driveDist].filter(Boolean).join(' '));
     }
     if (skippedCount) {
       parts.push(`${skippedCount} stop${skippedCount === 1 ? '' : 's'} missing map pins`);
@@ -2088,26 +2475,36 @@ function renderMapMarkers(dateKey) {
   }
 }
 
-function renderMapRoute(dateKey) {
+function renderMapRoute(dateKey, { mode: modeOverride, fit = true } = {}) {
   if (!mapInstance || activeMapDate !== dateKey) {
     return;
   }
   clearMapRoute();
   const day = ensureDay(dateKey);
   const travel = day.travel;
-  if (!travel || travel.status !== 'ready' || !travel.geometry) {
+  if (!travel || travel.status !== 'ready') {
     return;
   }
-  mapRouteLayer = window.L.geoJSON(travel.geometry, {
-    style: { color: '#2563eb', weight: 4, opacity: 0.85 },
-  }).addTo(mapInstance);
-  try {
-    const bounds = mapRouteLayer.getBounds();
-    if (bounds.isValid()) {
-      mapInstance.fitBounds(bounds, { padding: [48, 48] });
+  const mode = modeOverride || getMapModeForDate(dateKey);
+  const modeDetails = getModeDetails(travel, mode);
+  const geometry = modeDetails?.geometry || travel.geometry;
+  if (!geometry) {
+    return;
+  }
+  const color = mode === 'walking' ? '#0f766e' : mode === 'driving' ? '#f97316' : '#2563eb';
+  const style = mode === 'walking'
+    ? { color, weight: 4, opacity: 0.85, dashArray: '6 6' }
+    : { color, weight: 4, opacity: 0.85 };
+  mapRouteLayer = window.L.geoJSON(geometry, { style }).addTo(mapInstance);
+  if (fit) {
+    try {
+      const bounds = mapRouteLayer.getBounds();
+      if (bounds.isValid()) {
+        mapInstance.fitBounds(bounds, { padding: [48, 48] });
+      }
+    } catch (error) {
+      console.warn('Unable to fit map to route', error);
     }
-  } catch (error) {
-    console.warn('Unable to fit map to route', error);
   }
 }
 
@@ -2116,6 +2513,70 @@ function clearMapRoute() {
     mapInstance.removeLayer(mapRouteLayer);
   }
   mapRouteLayer = null;
+  clearStepHighlight();
+}
+
+function clearStepHighlight() {
+  if (mapStepHighlightLayer && mapInstance) {
+    mapInstance.removeLayer(mapStepHighlightLayer);
+  }
+  mapStepHighlightLayer = null;
+  if (mapDirectionsEl) {
+    mapDirectionsEl.querySelectorAll('.directions__item--active').forEach((item) => {
+      item.classList.remove('directions__item--active');
+    });
+  }
+  if (mapDirectionsData) {
+    mapDirectionsData.activeIndex = null;
+  }
+}
+
+function activateDirectionStep(stepIndex, { flyTo = true } = {}) {
+  if (!mapDirectionsData || mapDirectionsData.dateKey !== activeMapDate) {
+    return;
+  }
+  const index = Number(stepIndex);
+  if (!Number.isInteger(index)) return;
+  const steps = mapDirectionsData.steps || [];
+  const step = steps[index];
+  if (!step) return;
+
+  clearStepHighlight();
+
+  const item = mapDirectionsEl?.querySelector(`.directions__item[data-step-index="${index}"]`);
+  if (item) {
+    item.classList.add('directions__item--active');
+    mapDirectionsData.activeIndex = index;
+    if (typeof item.scrollIntoView === 'function') {
+      item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  const path = Array.isArray(step.path) && step.path.length ? step.path : null;
+  if (mapInstance && path) {
+    mapStepHighlightLayer = window.L.polyline(path, {
+      color: '#f97316',
+      weight: 6,
+      opacity: 0.9,
+      lineCap: 'round',
+      lineJoin: 'round',
+    }).addTo(mapInstance);
+    if (flyTo) {
+      const bounds = computeBoundsFromPath(path);
+      if (bounds) {
+        mapInstance.fitBounds(bounds, { padding: [48, 48] });
+      }
+    }
+  } else if (flyTo && mapRouteLayer) {
+    try {
+      const bounds = mapRouteLayer.getBounds();
+      if (bounds.isValid()) {
+        mapInstance.fitBounds(bounds, { padding: [48, 48] });
+      }
+    } catch (error) {
+      console.warn('Unable to focus map on step', error);
+    }
+  }
 }
 
 function renderCalendar() {
@@ -2126,6 +2587,44 @@ function renderCalendar() {
   });
   applyFilters();
   updateEditButton();
+}
+
+function handleDirectionsInteraction(event) {
+  const item = event.target.closest('.directions__item');
+  if (!item || item.tabIndex < 0) return;
+  const index = Number(item.dataset.stepIndex);
+  if (Number.isInteger(index)) {
+    activateDirectionStep(index, { flyTo: true });
+  }
+}
+
+function handleDirectionsKeydown(event) {
+  if (event.key !== 'Enter' && event.key !== ' ') return;
+  const item = event.target.closest('.directions__item');
+  if (!item || item.tabIndex < 0) return;
+  event.preventDefault();
+  const index = Number(item.dataset.stepIndex);
+  if (Number.isInteger(index)) {
+    activateDirectionStep(index, { flyTo: true });
+  }
+}
+
+function handleMapModeClick(event) {
+  const button = event.target.closest('[data-map-mode]');
+  if (!button || button.disabled) return;
+  const mode = button.dataset.mapMode;
+  if (!mode || !activeMapDate) return;
+  const day = ensureDay(activeMapDate);
+  const travel = day.travel;
+  if (!travel || travel.status !== 'ready') return;
+  const details = getModeDetails(travel, mode);
+  if (!isModeReady(details)) return;
+  mapOverlayMode = mode;
+  setMapModeForDate(activeMapDate, mode);
+  updateMapModeUI(activeMapDate);
+  renderMapRoute(activeMapDate, { mode, fit: true });
+  updateMapSummary(activeMapDate);
+  updateMapDirections(activeMapDate, { mode, focus: true });
 }
 
 function renderTravelChip(dateKey, plan) {
@@ -3556,13 +4055,15 @@ function closeItemDetail() {
 function openMap(dateKey) {
   const plan = ensureDay(dateKey);
   activeMapDate = dateKey;
+  mapOverlayMode = getMapModeForDate(dateKey);
   mapOverlay.classList.add('is-open');
   mapOverlay.setAttribute('aria-hidden', 'false');
   document.body.classList.add('map-open');
   const mapTitle = document.getElementById('mapTitle');
   mapTitle.textContent = `${formatLongDate(dateKey)} — ${plan.theme || getDefaultTheme(plan.loc) || ''}`;
   updateMapSummary(dateKey);
-  updateMapDirections(dateKey);
+  updateMapModeUI(dateKey);
+  updateMapDirections(dateKey, { mode: mapOverlayMode });
 
   setTimeout(() => {
     if (!mapInstance) {
@@ -3575,14 +4076,15 @@ function openMap(dateKey) {
     }
     mapInstance.invalidateSize();
     renderMapMarkers(dateKey);
-    renderMapRoute(dateKey);
+    renderMapRoute(dateKey, { mode: mapOverlayMode, fit: true });
   }, 50);
 
   scheduleTravelCalculation(dateKey, { interactive: true }).finally(() => {
     if (activeMapDate === dateKey) {
       updateMapSummary(dateKey);
-      renderMapRoute(dateKey);
-      updateMapDirections(dateKey);
+      updateMapModeUI(dateKey);
+      renderMapRoute(dateKey, { mode: mapOverlayMode, fit: true });
+      updateMapDirections(dateKey, { mode: mapOverlayMode });
     }
   });
 }
@@ -3603,6 +4105,10 @@ function closeMap() {
     mapDirectionsEl.innerHTML = '';
     mapDirectionsEl.removeAttribute('data-state');
   }
+  if (mapModeControls) {
+    mapModeControls.style.display = 'none';
+  }
+  clearStepHighlight();
 }
 
 function exportIcs() {
@@ -5017,8 +5523,6 @@ function generateCustomId(prefix) {
 function generateTripId() {
   return generateCustomId("trip");
 }
-
-let uniqueIdCounter = 0;
 
 function nextId(prefix = "field") {
   uniqueIdCounter += 1;
