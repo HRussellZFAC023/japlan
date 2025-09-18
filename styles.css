@@ -28,7 +28,8 @@ body {
 
 body.sheet-open,
 body.map-open,
-body.config-open {
+body.config-open,
+body.item-open {
   overflow: hidden;
 }
 
@@ -43,6 +44,18 @@ button {
 
 button:disabled {
   cursor: not-allowed;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .site-header {
@@ -271,6 +284,12 @@ button:disabled {
   display: inline-flex;
   gap: 6px;
   flex-wrap: wrap;
+}
+
+.day-card__stay {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .travel-summary {
@@ -581,6 +600,28 @@ button:disabled {
   background: rgba(45, 58, 100, 0.08);
 }
 
+.chiplet__info {
+  width: 26px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: #fff;
+  font-size: 0.75rem;
+}
+
+.chiplet__info:hover {
+  background: rgba(45, 58, 100, 0.08);
+}
+
+.chiplet__btn:focus-visible,
+.chiplet__info:focus-visible {
+  outline: 2px solid rgba(45, 58, 100, 0.4);
+  outline-offset: 2px;
+}
+
 .day-card__friends {
   display: flex;
   flex-wrap: wrap;
@@ -707,8 +748,8 @@ button:disabled {
 
 .sheet-group__list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 12px;
 }
 
 .sheet-custom {
@@ -740,14 +781,13 @@ button:disabled {
 
 .sheet-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
   gap: 12px;
   border: 1px solid var(--line);
   border-radius: 14px;
-  padding: 10px 12px;
-  font-size: 0.86rem;
+  padding: 12px;
   background: #fff;
+  height: 100%;
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
@@ -760,9 +800,83 @@ button:disabled {
   box-shadow: 0 0 0 2px rgba(45, 58, 100, 0.22);
 }
 
+.sheet-card__media {
+  border-radius: 10px;
+  overflow: hidden;
+  aspect-ratio: 16 / 10;
+  background: #f3f4f6;
+}
+
+.sheet-card__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.sheet-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.sheet-card__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+}
+
 .sheet-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   font-size: 0.75rem;
   color: var(--muted);
+}
+
+.sheet-card__description {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.sheet-card__tag {
+  background: rgba(45, 58, 100, 0.08);
+  border-radius: 999px;
+  padding: 2px 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.68rem;
+  color: #1f2937;
+}
+
+.sheet-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: auto;
+}
+
+.sheet-card__action {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.78rem;
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.sheet-card--compact .sheet-card__title {
+  font-size: 0.88rem;
+}
+
+.sheet-card--compact .sheet-card__body {
+  gap: 6px;
+}
+
+.sheet-card--compact .sheet-card__actions {
+  margin-top: 0;
 }
 
 .overlay {
@@ -838,6 +952,86 @@ button:disabled {
 
 .overlay__summary strong {
   color: #111827;
+}
+
+.overlay__subtitle {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.overlay__dialog--item {
+  width: min(100%, 720px);
+  max-height: 90vh;
+}
+
+.item-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  overflow-y: auto;
+}
+
+.item-detail__media {
+  margin: 0;
+  border-radius: 16px;
+  overflow: hidden;
+  max-height: 320px;
+}
+
+.item-detail__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.item-detail__body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.item-detail__description {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+.item-detail__meta {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin: 0;
+}
+
+.item-detail__meta dt {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.item-detail__meta dd {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #1f2937;
+}
+
+.item-detail__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.item-detail__links .btn {
+  font-size: 0.82rem;
+  padding: 8px 14px;
+  border-radius: 12px;
 }
 
 .directions {
@@ -957,6 +1151,32 @@ button:disabled {
 
   .directions {
     max-height: 40vh;
+  }
+}
+
+@media (max-width: 720px) {
+  .overlay {
+    padding: 0;
+    align-items: stretch;
+  }
+
+  .overlay__dialog {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    max-height: none;
+  }
+
+  .overlay__dialog--item {
+    height: 100%;
+  }
+
+  .item-detail {
+    padding: 20px 16px;
+  }
+
+  .item-detail__media {
+    max-height: 240px;
   }
 }
 
@@ -1206,6 +1426,6 @@ button:disabled {
 
 @media (max-width: 600px) {
   .sheet-group__list {
-    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 }
