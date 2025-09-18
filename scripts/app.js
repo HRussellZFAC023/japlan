@@ -84,6 +84,102 @@ const PROFILE_TO_MODE = Object.entries(MODE_TO_PROFILE).reduce((acc, [mode, prof
   return acc;
 }, {});
 
+const MODE_COLORS = {
+  transit: '#2563eb',
+  walking: '#0f766e',
+  driving: '#f97316',
+};
+
+const VALID_ROUTING_PROFILES = new Set(Object.values(MODE_TO_PROFILE));
+
+const RAIL_FALLBACKS = {
+  'act-transfer-kix-hirakata': {
+    summary: {
+      route: 'Kansai Airport → Hirakata',
+      services: 'JR Haruka Limited Express → JR Katamachi Line',
+      keyStops: 'Kansai Airport · Tennoji · Shin-Osaka · Hirakatashi',
+      duration: '85 min',
+      durationMinutes: 85,
+      cost: 2200,
+      pass: 'JR Pass fully covered',
+    },
+    legs: [
+      {
+        kind: 'transit',
+        line: 'JR Haruka Limited Express',
+        info: 'Kansai Airport → Tennoji → Shin-Osaka',
+        durationMinutes: 50,
+        color: '#2563eb',
+      },
+      {
+        kind: 'transit',
+        line: 'JR Katamachi Line',
+        info: 'Shin-Osaka → Hirakatashi',
+        durationMinutes: 35,
+        color: '#16a34a',
+      },
+      {
+        kind: 'walk',
+        line: 'Walk',
+        info: 'Hirakatashi Station → Candeo Hotels Hirakata',
+        durationMinutes: 5,
+        color: '#0f766e',
+      },
+    ],
+  },
+};
+
+const JAPAN_RAIL_REFERENCE = [
+  {
+    route: 'Kansai Airport → Shin-Osaka',
+    services: 'JR Haruka Limited Express',
+    keyStops: 'Tennoji, Osaka',
+    duration: '50 min',
+    cost: '1,800 JPY',
+    pass: 'Fully covered',
+  },
+  {
+    route: 'Kansai Airport → Kyoto',
+    services: 'JR Haruka Limited Express',
+    keyStops: 'Tennoji, Osaka, Shin-Osaka',
+    duration: '80 min',
+    cost: '2,200 JPY',
+    pass: 'Fully covered',
+  },
+  {
+    route: 'Shin-Osaka → Kyoto',
+    services: 'JR Special Rapid / Shinkansen',
+    keyStops: 'Direct',
+    duration: '25 min / 15 min',
+    cost: '580 JPY / 1,450 JPY',
+    pass: 'Fully covered',
+  },
+  {
+    route: 'Osaka → Nara',
+    services: 'JR Yamatoji Rapid Service',
+    keyStops: 'Tennoji',
+    duration: '50 min',
+    cost: '810 JPY',
+    pass: 'Fully covered',
+  },
+  {
+    route: 'Osaka → Himeji',
+    services: 'JR Special Rapid / Shinkansen',
+    keyStops: 'Kobe, Akashi',
+    duration: '65 min / 30 min',
+    cost: '1,520 JPY / 3,280 JPY',
+    pass: 'Fully covered',
+  },
+  {
+    route: 'Osaka → Kobe (Sannomiya)',
+    services: 'JR Special Rapid Service',
+    keyStops: 'Amagasaki, Ashiya',
+    duration: '25 min',
+    cost: '420 JPY',
+    pass: 'Fully covered',
+  },
+];
+
 function getModeLabel(mode) {
   switch (mode) {
     case 'transit':
@@ -173,6 +269,9 @@ function updateMapModeUI(dateKey) {
     const mode = btn.dataset.mapMode;
     const details = getModeDetails(travel, mode);
     const ready = isModeReady(details);
+    const color = MODE_COLORS[mode] || '#64748b';
+    btn.style.setProperty('--mode-color', color);
+    btn.classList.add(`mode-toggle__btn--${mode}`);
     btn.disabled = !ready;
     const isActive = mode === currentMode;
     if (isActive) {
@@ -983,6 +1082,41 @@ function computeBoundsFromPath(path) {
   ];
 }
 
+function buildLineStringFromPoints(points) {
+  if (!Array.isArray(points) || points.length < 2) return null;
+  const coords = points
+    .map((coord) => (Array.isArray(coord) && coord.length === 2 ? [Number(coord[1]), Number(coord[0])] : null))
+    .filter(Boolean);
+  if (coords.length < 2) return null;
+  return {
+    type: 'LineString',
+    coordinates: coords,
+  };
+}
+
+function haversineDistance(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b)) return 0;
+  const toRad = (value) => (value * Math.PI) / 180;
+  const [lat1, lon1] = a;
+  const [lat2, lon2] = b;
+  const R = 6371000;
+  const dLat = toRad(lat2 - lat1);
+  const dLon = toRad(lon2 - lon1);
+  const sLat1 = toRad(lat1);
+  const sLat2 = toRad(lat2);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(sLat1) * Math.cos(sLat2) * Math.sin(dLon / 2) ** 2;
+  return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+}
+
+function estimateRouteDistance(points) {
+  if (!Array.isArray(points) || points.length < 2) return 0;
+  let total = 0;
+  for (let i = 1; i < points.length; i += 1) {
+    total += haversineDistance(points[i - 1], points[i]);
+  }
+  return total;
+}
+
 function serializeStay(stay) {
   if (!stay) return null;
   return {
@@ -1203,6 +1337,69 @@ function applyTravelChipState(chip, plan) {
   } else {
     chip.removeAttribute('title');
   }
+}
+
+function getFallbackRailTravel(itinerary, context) {
+  if (!itinerary || !Array.isArray(itinerary.activities)) return null;
+  const match = itinerary.activities.find((activity) => RAIL_FALLBACKS[activity.id]);
+  if (!match) return null;
+  const fallback = RAIL_FALLBACKS[match.id];
+  if (!fallback) return null;
+
+  const coords = itinerary.routePoints && itinerary.routePoints.length
+    ? itinerary.routePoints
+    : (context?.points || []);
+  const geometry = buildLineStringFromPoints(coords);
+  const durationSeconds = (fallback.summary.durationMinutes || 0) * 60;
+  const transitLegs = fallback.legs.map((leg) => ({
+    kind: leg.kind || 'transit',
+    mode: leg.line,
+    line: leg.line,
+    info: leg.info,
+    durationSeconds: (leg.durationMinutes || 0) * 60,
+    distanceMeters: 0,
+    color: leg.color || MODE_COLORS.transit,
+  }));
+  const transitDetails = {
+    status: 'ready',
+    durationSeconds,
+    distanceMeters: 0,
+    legs: transitLegs,
+    lines: transitLegs.map((leg) => leg.line).filter(Boolean),
+    transfers: Math.max(0, transitLegs.filter((leg) => leg.kind === 'transit').length - 1),
+    metadata: {
+      cost: fallback.summary.cost,
+      pass: fallback.summary.pass,
+      services: fallback.summary.services,
+    },
+    geometry,
+    path: geometryToLatLngs(geometry),
+  };
+
+  return {
+    status: 'ready',
+    provider: 'japan-rail-guide',
+    profile: MODE_TO_PROFILE.transit,
+    mode: 'transit',
+    signature: 'rail-fallback',
+    durationSeconds,
+    distanceMeters: 0,
+    fetchedAt: Date.now(),
+    skipped: itinerary.skipped || [],
+    geometry,
+    originStay: context.originSnapshot || null,
+    destinationStay: context.destinationSnapshot || null,
+    stops: context.stopSnapshots || [],
+    modes: {
+      transit: transitDetails,
+      walking: { status: 'unavailable' },
+      driving: { status: 'unavailable' },
+    },
+    transit: transitDetails,
+    walking: { status: 'unavailable' },
+    driving: { status: 'unavailable' },
+    meta: fallback.summary,
+  };
 }
 
 function refreshTravelChip(dateKey) {
@@ -1581,8 +1778,8 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   const composeTravel = (status, extra = {}) => ({
     status,
     provider,
-    profile: drivingProfile,
-    mode: defaultMode,
+    profile: transitProfile,
+    mode: 'transit',
     signature,
     skipped,
     originStay: originSnapshot,
@@ -1664,20 +1861,27 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   );
 
   try {
-    const drivingPromise = requestOpenRouteRoute(itinerary.routePoints, apiKey, drivingProfile);
-    const walkingPromise = requestOpenRouteRoute(itinerary.routePoints, apiKey, walkingProfile).then(
-      (route) => route,
-      (error) => ({ error })
-    );
+    const drivingPromise = VALID_ROUTING_PROFILES.has(drivingProfile)
+      ? requestOpenRouteRoute(itinerary.routePoints, apiKey, drivingProfile)
+      : Promise.resolve(null);
 
-    const [drivingRoute, walkingOutcome] = await Promise.all([drivingPromise, walkingPromise]);
+    const routeDistanceEstimate = estimateRouteDistance(itinerary.routePoints);
+    let walkingOutcome = null;
+    if (VALID_ROUTING_PROFILES.has(walkingProfile) && routeDistanceEstimate <= 30000) {
+      walkingOutcome = await requestOpenRouteRoute(itinerary.routePoints, apiKey, walkingProfile).then(
+        (route) => route,
+        (error) => ({ error })
+      );
+    }
+
+    const drivingRoute = await drivingPromise;
 
     let walkingRoute = null;
     let walkingError = null;
     if (walkingOutcome && walkingOutcome.error) {
       walkingError = walkingOutcome.error;
       console.warn('Walking routing unavailable', walkingError);
-    } else if (walkingOutcome) {
+    } else if (walkingOutcome && !walkingOutcome.error) {
       walkingRoute = walkingOutcome;
     }
 
@@ -1722,7 +1926,7 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     const drivingReady = isModeReady(drivingDetails);
 
     let primaryMode = transitReady ? 'transit' : walkingReady ? 'walking' : drivingReady ? 'driving' : defaultMode;
-    const primaryProfile = MODE_TO_PROFILE[primaryMode] || drivingProfile;
+    const primaryProfile = MODE_TO_PROFILE[primaryMode] || transitProfile;
     const primaryDetails =
       primaryMode === 'transit'
         ? transitDetails
@@ -1740,6 +1944,19 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
       transit: transitDetails || { status: 'unavailable' },
     };
 
+    if (primaryMode === 'driving') {
+      const fallback = getFallbackRailTravel(itinerary, {
+        originSnapshot,
+        destinationSnapshot,
+        stopSnapshots,
+        points: itinerary.routePoints,
+      });
+      if (fallback) {
+        setDayTravel(dateKey, fallback);
+        return fallback;
+      }
+    }
+
     const travelData = composeTravel('ready', {
       profile: primaryProfile,
       mode: primaryMode,
@@ -1756,6 +1973,16 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     return travelData;
   } catch (error) {
     console.error('Routing request failed', error);
+    const fallback = getFallbackRailTravel(itinerary, {
+      originSnapshot,
+      destinationSnapshot,
+      stopSnapshots,
+      points: itinerary.routePoints,
+    });
+    if (fallback) {
+      setDayTravel(dateKey, fallback);
+      return fallback;
+    }
     setDayTravel(
       dateKey,
       composeTravel('error', {
@@ -2260,6 +2487,10 @@ function updateMapDirections(dateKey, { mode: modeOverride, focus = false } = {}
     item.dataset.stepIndex = String(index);
     const interactive = step.kind !== 'milestone';
     item.tabIndex = interactive ? 0 : -1;
+    const stepColor = step.color || (step.modeKey ? MODE_COLORS[step.modeKey] : null);
+    if (stepColor) {
+      item.style.setProperty('--direction-color', stepColor);
+    }
 
     const timeColumn = document.createElement('div');
     timeColumn.className = 'directions__time';
@@ -2320,6 +2551,12 @@ function updateMapDirections(dateKey, { mode: modeOverride, focus = false } = {}
       detailEl.textContent = detailText;
       content.appendChild(detailEl);
     }
+    if (stepColor && step.kind !== 'milestone') {
+      const indicator = document.createElement('span');
+      indicator.className = 'directions__line';
+      indicator.style.background = stepColor;
+      content.appendChild(indicator);
+    }
 
     item.appendChild(content);
     list.appendChild(item);
@@ -2334,12 +2571,46 @@ function updateMapDirections(dateKey, { mode: modeOverride, focus = false } = {}
     mapDirectionsEl.appendChild(note);
   }
 
+  if (travel.meta) {
+    const summary = document.createElement('div');
+    summary.className = 'rail-summary';
+    const title = document.createElement('h4');
+    title.textContent = travel.meta.route || 'Transit summary';
+    summary.appendChild(title);
+    const listEl = document.createElement('dl');
+    listEl.className = 'rail-summary__grid';
+
+    const addRow = (label, value) => {
+      if (!value) return;
+      const term = document.createElement('dt');
+      term.textContent = label;
+      const desc = document.createElement('dd');
+      desc.textContent = value;
+      listEl.append(term, desc);
+    };
+
+    addRow('Services', travel.meta.services);
+    addRow('Key stops', travel.meta.keyStops);
+    addRow('Approx. travel time', travel.meta.duration);
+    addRow('Cost', travel.meta.cost);
+    addRow('Pass coverage', travel.meta.pass);
+
+    summary.appendChild(listEl);
+    mapDirectionsEl.appendChild(summary);
+  }
+
+  const reference = renderRailReference();
+  if (reference) {
+    mapDirectionsEl.appendChild(reference);
+  }
+
   mapDirectionsData = {
     dateKey,
     mode,
     steps,
     travelSignature: travel.signature || null,
     activeIndex: null,
+    meta: travel.meta || null,
   };
 
   if (focus) {
@@ -2348,6 +2619,48 @@ function updateMapDirections(dateKey, { mode: modeOverride, focus = false } = {}
       activateDirectionStep(firstInteractive, { flyTo: true });
     }
   }
+}
+
+function renderRailReference() {
+  if (!Array.isArray(JAPAN_RAIL_REFERENCE) || !JAPAN_RAIL_REFERENCE.length) {
+    return null;
+  }
+  const wrapper = document.createElement('section');
+  wrapper.className = 'rail-guide';
+  const title = document.createElement('h4');
+  title.className = 'rail-guide__title';
+  title.textContent = 'JR Kansai express cheat-sheet';
+  wrapper.appendChild(title);
+  const table = document.createElement('table');
+  table.className = 'rail-guide__table';
+  const thead = document.createElement('thead');
+  const headRow = document.createElement('tr');
+  ['Route', 'Train service(s)', 'Key stops', 'Approx. travel time', 'Cost', 'JR Pass coverage'].forEach((label) => {
+    const th = document.createElement('th');
+    th.textContent = label;
+    headRow.appendChild(th);
+  });
+  thead.appendChild(headRow);
+  table.appendChild(thead);
+  const tbody = document.createElement('tbody');
+  JAPAN_RAIL_REFERENCE.forEach((entry) => {
+    const row = document.createElement('tr');
+    const addCell = (value) => {
+      const td = document.createElement('td');
+      td.textContent = value || '—';
+      row.appendChild(td);
+    };
+    addCell(entry.route);
+    addCell(entry.services);
+    addCell(entry.keyStops);
+    addCell(entry.duration);
+    addCell(entry.cost);
+    addCell(entry.pass);
+    tbody.appendChild(row);
+  });
+  table.appendChild(tbody);
+  wrapper.appendChild(table);
+  return wrapper;
 }
 
 function updateMapSummary(dateKey) {
@@ -2491,7 +2804,7 @@ function renderMapRoute(dateKey, { mode: modeOverride, fit = true } = {}) {
   if (!geometry) {
     return;
   }
-  const color = mode === 'walking' ? '#0f766e' : mode === 'driving' ? '#f97316' : '#2563eb';
+  const color = MODE_COLORS[mode] || '#2563eb';
   const style = mode === 'walking'
     ? { color, weight: 4, opacity: 0.85, dashArray: '6 6' }
     : { color, weight: 4, opacity: 0.85 };
@@ -2554,8 +2867,9 @@ function activateDirectionStep(stepIndex, { flyTo = true } = {}) {
 
   const path = Array.isArray(step.path) && step.path.length ? step.path : null;
   if (mapInstance && path) {
+    const highlightColor = step.color || (step.modeKey ? MODE_COLORS[step.modeKey] : '#f97316');
     mapStepHighlightLayer = window.L.polyline(path, {
-      color: '#f97316',
+      color: highlightColor,
       weight: 6,
       opacity: 0.9,
       lineCap: 'round',
@@ -2731,7 +3045,7 @@ function renderDayCard(dateKey) {
     infoBtn.className = "chiplet__info";
     const icon = document.createElement("span");
     icon.setAttribute("aria-hidden", "true");
-    icon.textContent = "ℹ︎";
+    icon.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/></svg>`;
     const sr = document.createElement("span");
     sr.className = "sr-only";
     sr.textContent = `View details for ${getStayLabel(plan.stay)}`;
@@ -2867,7 +3181,7 @@ function renderChip(dateKey, slotName, itemId, index) {
     infoBtn.className = "chiplet__info";
     const icon = document.createElement("span");
     icon.setAttribute("aria-hidden", "true");
-    icon.textContent = "ℹ︎";
+    icon.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="currentColor"/></svg>`;
     const srText = document.createElement("span");
     srText.className = "sr-only";
     srText.textContent = `View details for ${activity.label || label}`;
