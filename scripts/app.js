@@ -16,10 +16,19 @@ const sheetBackdrop = document.getElementById('sheetBackdrop');
 const sheetTitle = document.getElementById('sheetTitle');
 const sheetSubtitle = document.getElementById('sheetSubtitle');
 const sheetBody = document.getElementById('sheetBody');
+const itemOverlay = document.getElementById('itemOverlay');
+const itemDetailTitle = document.getElementById('itemDetailTitle');
+const itemDetailSubtitle = document.getElementById('itemDetailSubtitle');
+const itemDetailDescription = document.getElementById('itemDetailDescription');
+const itemDetailMedia = document.getElementById('itemDetailMedia');
+const itemDetailImage = document.getElementById('itemDetailImage');
+const itemDetailMeta = document.getElementById('itemDetailMeta');
+const itemDetailLinks = document.getElementById('itemDetailLinks');
 const mapOverlay = document.getElementById('mapOverlay');
 const mapSummaryEl = document.getElementById('mapSummary');
 const mapDirectionsEl = document.getElementById('mapDirections');
 const closeSheetBtn = sheetEl.querySelector('[data-action="close-sheet"]');
+const closeItemBtn = itemOverlay?.querySelector('[data-action="close-item"]');
 const closeMapBtn = mapOverlay.querySelector('[data-action="close-map"]');
 const configOverlay = document.getElementById("configOverlay");
 const configContent = document.getElementById("configContent");
@@ -36,6 +45,9 @@ let dateSequence = buildDateSequence(
 );
 let ACTIVITY_MAP = new Map();
 let STAY_MAP = new Map();
+let BOOKING_MAP = new Map();
+const IMAGE_CACHE = new Map();
+const PRELOADED_LINKS = new Set();
 refreshCatalogLookups();
 let editing = false;
 let filterState = { friend: null, location: null };
@@ -46,6 +58,7 @@ let mapInstance = null;
 let mapMarkersLayer = null;
 let mapRouteLayer = null;
 let activeMapDate = null;
+let activeItemDetail = null;
 const travelRequests = new Map();
 const travelExpansionState = new Map();
 const DEFAULT_DEPARTURE_MINUTES = 9 * 60;
@@ -457,6 +470,49 @@ function refreshCatalogLookups() {
   STAY_MAP = new Map(
     (planState.config.catalog.stay || []).map((item) => [item.id, item])
   );
+  BOOKING_MAP = new Map(
+    (planState.config.catalog.booking || []).map((item) => [item.id, item])
+  );
+  preloadCatalogImages();
+}
+
+function preloadCatalogImages(limit = 16) {
+  if (!planState?.config?.catalog) return;
+  const catalog = planState.config.catalog;
+  const urls = new Set();
+  ["activity", "stay", "booking"].forEach((type) => {
+    (catalog[type] || []).forEach((item) => {
+      if (item?.image) {
+        urls.add(item.image);
+      }
+    });
+  });
+
+  if (typeof Image !== "undefined") {
+    urls.forEach((url) => {
+      if (IMAGE_CACHE.has(url)) return;
+      const img = new Image();
+      img.decoding = "async";
+      img.loading = "eager";
+      img.src = url;
+      IMAGE_CACHE.set(url, img);
+    });
+  }
+
+  if (typeof document !== "undefined" && document.head) {
+    let added = 0;
+    urls.forEach((url) => {
+      if (PRELOADED_LINKS.has(url) || added >= limit) return;
+      const link = document.createElement("link");
+      link.rel = "preload";
+      link.as = "image";
+      link.href = url;
+      link.crossOrigin = "anonymous";
+      document.head.appendChild(link);
+      PRELOADED_LINKS.add(url);
+      added += 1;
+    });
+  }
 }
 
 function deepClone(value) {
@@ -2204,12 +2260,33 @@ function renderDayCard(dateKey) {
     badges.appendChild(themeChip);
   }
 
+  const stayWrap = document.createElement("span");
+  stayWrap.className = "day-card__stay";
   const stayButton = document.createElement("button");
   stayButton.type = "button";
   stayButton.className = "theme-chip theme-chip--link";
   stayButton.textContent = plan.stay ? getStayLabel(plan.stay) : "Pick stay";
   stayButton.addEventListener("click", () => openSheet(dateKey, "stay"));
-  badges.appendChild(stayButton);
+  stayWrap.appendChild(stayButton);
+  if (plan.stay && STAY_MAP.has(plan.stay)) {
+    const infoBtn = document.createElement("button");
+    infoBtn.type = "button";
+    infoBtn.className = "chiplet__info";
+    const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "ℹ︎";
+    const sr = document.createElement("span");
+    sr.className = "sr-only";
+    sr.textContent = `View details for ${getStayLabel(plan.stay)}`;
+    infoBtn.append(icon, sr);
+    infoBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      openItemDetail("stay", plan.stay);
+    });
+    stayWrap.appendChild(infoBtn);
+  }
+  badges.appendChild(stayWrap);
 
   const mapButton = document.createElement("button");
   mapButton.type = "button";
@@ -2325,6 +2402,26 @@ function renderChip(dateKey, slotName, itemId, index) {
   const label = getActivityLabel(itemId);
   const content = buildChipContent(label);
   chip.appendChild(content);
+
+  const activity = ACTIVITY_MAP.get(itemId);
+  if (activity) {
+    const infoBtn = document.createElement("button");
+    infoBtn.type = "button";
+    infoBtn.className = "chiplet__info";
+    const icon = document.createElement("span");
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "ℹ︎";
+    const srText = document.createElement("span");
+    srText.className = "sr-only";
+    srText.textContent = `View details for ${activity.label || label}`;
+    infoBtn.append(icon, srText);
+    infoBtn.addEventListener("click", (event) => {
+      event.stopPropagation();
+      event.preventDefault();
+      openItemDetail("activity", itemId);
+    });
+    chip.appendChild(infoBtn);
+  }
 
   const locked = isChipLocked(dateKey, itemId);
   if (locked) {
@@ -2625,11 +2722,11 @@ function renderSheet() {
   const dayLabel = formatLongDate(day);
   sheetTitle.textContent = dayLabel;
   if (tab === "activity") {
-    sheetSubtitle.textContent = `${slot.toUpperCase()} SLOT`;
+    sheetSubtitle.textContent = `${slot.toUpperCase()} • Activities & bookings`;
   } else if (tab === "stay") {
     sheetSubtitle.textContent = "Choose stay";
   } else {
-    sheetSubtitle.textContent = "Bookings & tickets";
+    sheetSubtitle.textContent = "";
   }
 
   sheetBody.innerHTML = "";
@@ -2646,21 +2743,37 @@ function renderSheet() {
   if (tab === "activity") {
     let hasOptions = false;
     locationOrder.forEach((loc) => {
-      const options = catalog.activity.filter((item) => item.city === loc);
-      if (!options.length) return;
+      const activities = catalog.activity.filter((item) => item.city === loc);
+      const bookings = catalog.booking.filter((item) => item.city === loc);
+      if (!activities.length && !bookings.length) return;
+      if (activities.length) {
+        sheetBody.appendChild(
+          renderSheetGroup(loc, activities, {
+            type: "activity",
+            onSelect: (item) => {
+              addActivity(day, slot, item.id);
+            },
+            slotName: slot,
+          })
+        );
+      }
+      if (bookings.length) {
+        sheetBody.appendChild(
+          renderSheetGroup(loc, bookings, {
+            type: "booking",
+            customTitle: `${getLocationLabel(loc)} bookings`,
+          })
+        );
+      }
       hasOptions = true;
-      sheetBody.appendChild(
-        renderSheetGroup(loc, options, (item) => {
-          addActivity(day, slot, item.id);
-        })
-      );
     });
     if (!hasOptions) {
       sheetBody.appendChild(
-        renderEmptyState("No saved activities yet. Add one below.")
+        renderEmptyState("No saved activities or bookings yet. Add one below.")
       );
     }
     sheetBody.appendChild(renderCustomCreator("activity", day, slot));
+    sheetBody.appendChild(renderCustomCreator("booking"));
   } else if (tab === "stay") {
     const dayPlan = ensureDay(day);
     let hasOptions = false;
@@ -2669,14 +2782,13 @@ function renderSheet() {
       if (!options.length) return;
       hasOptions = true;
       sheetBody.appendChild(
-        renderSheetGroup(
-          loc,
-          options,
-          (item) => {
+        renderSheetGroup(loc, options, {
+          type: "stay",
+          onSelect: (item) => {
             setStay(day, item.id);
           },
-          dayPlan.stay
-        )
+          selectedId: dayPlan.stay,
+        })
       );
     });
     if (!hasOptions) {
@@ -2685,32 +2797,15 @@ function renderSheet() {
       );
     }
     sheetBody.appendChild(renderCustomCreator("stay", day));
-  } else if (tab === "booking") {
-    let hasOptions = false;
-    locationOrder.forEach((loc) => {
-      const options = catalog.booking.filter((item) => item.city === loc);
-      if (!options.length) return;
-      hasOptions = true;
-      sheetBody.appendChild(
-        renderSheetGroup(loc, options, (item) => {
-          if (item.url) {
-            window.open(item.url, "_blank", "noopener");
-          }
-        })
-      );
-    });
-    if (!hasOptions) {
-      sheetBody.appendChild(
-        renderEmptyState("No bookings saved yet. Add one below.")
-      );
-    }
-    sheetBody.appendChild(renderCustomCreator("booking"));
   }
 }
 
-function renderSheetGroup(locationId, items, onSelect, selectedId) {
+function renderSheetGroup(locationId, items, options = {}) {
   const group = document.createElement("section");
   group.className = "sheet-group";
+  if (options.type === "booking") {
+    group.classList.add("sheet-group--booking");
+  }
 
   const header = document.createElement("div");
   header.className = "sheet-group__header";
@@ -2719,33 +2814,265 @@ function renderSheetGroup(locationId, items, onSelect, selectedId) {
   swatch.style.background =
     planState.config.locations[locationId]?.color || "#d1d5db";
   const title = document.createElement("span");
-  title.textContent = getLocationLabel(locationId);
+  title.textContent = options.customTitle || getLocationLabel(locationId);
   header.append(swatch, title);
   group.appendChild(header);
 
   const list = document.createElement("div");
   list.className = "sheet-group__list";
+  const { type = "activity", onSelect, selectedId, slotName } = options;
   items.forEach((item) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "sheet-card";
-    if (selectedId && item.id === selectedId) {
-      button.classList.add("sheet-card--selected");
+    let card;
+    if (type === "booking") {
+      card = createBookingCard(item);
+    } else {
+      card = createCatalogCard(type, item, {
+        onSelect,
+        selected: selectedId && item.id === selectedId,
+        slotName,
+      });
     }
-    const label = document.createElement("span");
-    label.textContent = item.label;
-    button.appendChild(label);
-    if (selectedId && item.id === selectedId) {
-      const meta = document.createElement("span");
-      meta.className = "sheet-card__meta";
-      meta.textContent = "Selected";
-      button.appendChild(meta);
-    }
-    button.addEventListener("click", () => onSelect(item));
-    list.appendChild(button);
+    list.appendChild(card);
   });
   group.appendChild(list);
   return group;
+}
+
+function createCatalogCard(type, item, options = {}) {
+  const card = document.createElement("article");
+  card.className = "sheet-card";
+  if (options.selected) {
+    card.classList.add("sheet-card--selected");
+  }
+
+  if (item.image) {
+    const media = document.createElement("div");
+    media.className = "sheet-card__media";
+    const img = document.createElement("img");
+    img.src = item.image;
+    img.alt = item.imageAlt || item.label || item.id;
+    img.loading = "lazy";
+    media.appendChild(img);
+    card.appendChild(media);
+  }
+
+  const body = document.createElement("div");
+  body.className = "sheet-card__body";
+
+  const title = document.createElement("h3");
+  title.className = "sheet-card__title";
+  title.textContent = item.label || item.id;
+  body.appendChild(title);
+
+  const meta = document.createElement("div");
+  meta.className = "sheet-card__meta";
+  const metaParts = [];
+  if (item.city) {
+    metaParts.push(getLocationLabel(item.city));
+  }
+  const coords = resolveItemCoordinates(item);
+  const coordLabel = formatCoordinatePair(coords);
+  if (coordLabel) {
+    metaParts.push(coordLabel);
+  }
+  metaParts.forEach((text) => {
+    if (!text) return;
+    const span = document.createElement("span");
+    span.textContent = text;
+    meta.appendChild(span);
+  });
+  if (item.locked) {
+    const tag = document.createElement("span");
+    tag.className = "sheet-card__tag";
+    tag.textContent = "Locked";
+    meta.appendChild(tag);
+  }
+  if (options.selected) {
+    const tag = document.createElement("span");
+    tag.className = "sheet-card__tag";
+    tag.textContent = "Selected";
+    meta.appendChild(tag);
+  }
+  if (meta.children.length) {
+    body.appendChild(meta);
+  }
+
+  if (item.description) {
+    const description = document.createElement("p");
+    description.className = "sheet-card__description";
+    description.textContent = item.description;
+    body.appendChild(description);
+  }
+
+  card.appendChild(body);
+
+  const actions = document.createElement("div");
+  actions.className = "sheet-card__actions";
+
+  if (typeof options.onSelect === "function") {
+    const selectBtn = document.createElement("button");
+    selectBtn.type = "button";
+    selectBtn.className = "btn btn--primary sheet-card__action";
+    if (options.selected) {
+      selectBtn.textContent = type === "stay" ? "Selected" : "Added";
+      selectBtn.disabled = true;
+    } else {
+      selectBtn.textContent =
+        type === "stay"
+          ? "Use this stay"
+          : `Add to ${formatSlotName(options.slotName)}`;
+    }
+    selectBtn.addEventListener("click", () => options.onSelect(item));
+    actions.appendChild(selectBtn);
+  }
+
+  const detailBtn = document.createElement("button");
+  detailBtn.type = "button";
+  detailBtn.className = "btn sheet-card__action";
+  detailBtn.textContent = "Details";
+  detailBtn.addEventListener("click", () => openItemDetail(type, item.id));
+  actions.appendChild(detailBtn);
+
+  if (item.url) {
+    const siteLink = document.createElement("a");
+    siteLink.href = item.url;
+    siteLink.target = "_blank";
+    siteLink.rel = "noreferrer noopener";
+    siteLink.className = "btn sheet-card__action";
+    siteLink.textContent = "Official site";
+    actions.appendChild(siteLink);
+  }
+
+  const bookingLinks = getBookingLinks(item.bookingIds);
+  bookingLinks.forEach((booking) => {
+    const link = document.createElement("a");
+    link.href = booking.url;
+    link.target = "_blank";
+    link.rel = "noreferrer noopener";
+    link.className = "btn sheet-card__action";
+    link.textContent = booking.label;
+    actions.appendChild(link);
+  });
+
+  if (actions.children.length) {
+    card.appendChild(actions);
+  }
+
+  return card;
+}
+
+function createBookingCard(item) {
+  const card = document.createElement("article");
+  card.className = "sheet-card sheet-card--compact sheet-card--booking";
+
+  if (item.image) {
+    const media = document.createElement("div");
+    media.className = "sheet-card__media";
+    const img = document.createElement("img");
+    img.src = item.image;
+    img.alt = item.imageAlt || item.label || item.id;
+    img.loading = "lazy";
+    media.appendChild(img);
+    card.appendChild(media);
+  }
+
+  const body = document.createElement("div");
+  body.className = "sheet-card__body";
+
+  const title = document.createElement("h3");
+  title.className = "sheet-card__title";
+  title.textContent = item.label || item.id;
+  body.appendChild(title);
+
+  const meta = document.createElement("div");
+  meta.className = "sheet-card__meta";
+  if (item.city) {
+    const span = document.createElement("span");
+    span.textContent = getLocationLabel(item.city);
+    meta.appendChild(span);
+  }
+  if (meta.children.length) {
+    body.appendChild(meta);
+  }
+
+  if (item.description) {
+    const blurb = document.createElement("p");
+    blurb.className = "sheet-card__description";
+    blurb.textContent = item.description;
+    body.appendChild(blurb);
+  }
+
+  card.appendChild(body);
+
+  const actions = document.createElement("div");
+  actions.className = "sheet-card__actions";
+  if (item.url) {
+    const openLink = document.createElement("a");
+    openLink.href = item.url;
+    openLink.target = "_blank";
+    openLink.rel = "noreferrer noopener";
+    openLink.className = "btn btn--primary sheet-card__action";
+    openLink.textContent = "Book now";
+    actions.appendChild(openLink);
+  }
+  if (actions.children.length) {
+    card.appendChild(actions);
+  }
+
+  return card;
+}
+
+function resolveItemCoordinates(item) {
+  if (!item) return null;
+  if (Array.isArray(item.coords) && item.coords.length >= 2) {
+    const lat = Number(item.coords[0]);
+    const lng = Number(item.coords[1]);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return [lat, lng];
+    }
+  }
+  const coordRef = item.coord || item.mapCoord || item.id;
+  if (coordRef && planState.config.mapCoordinates?.[coordRef]) {
+    const raw = planState.config.mapCoordinates[coordRef];
+    if (Array.isArray(raw) && raw.length >= 2) {
+      const lat = Number(raw[0]);
+      const lng = Number(raw[1]);
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        return [lat, lng];
+      }
+    }
+  }
+  return null;
+}
+
+function formatCoordinatePair(pair) {
+  if (!Array.isArray(pair) || pair.length < 2) return "";
+  const lat = Number(pair[0]);
+  const lng = Number(pair[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return "";
+  const latHem = lat >= 0 ? "N" : "S";
+  const lngHem = lng >= 0 ? "E" : "W";
+  return `${Math.abs(lat).toFixed(4)}° ${latHem}, ${Math.abs(lng).toFixed(4)}° ${lngHem}`;
+}
+
+function getBookingLinks(ids) {
+  if (!Array.isArray(ids)) return [];
+  const seen = new Set();
+  const links = [];
+  ids.forEach((id) => {
+    if (!id || seen.has(id)) return;
+    const booking = BOOKING_MAP.get(id);
+    if (booking && booking.url) {
+      links.push(booking);
+      seen.add(id);
+    }
+  });
+  return links;
+}
+
+function formatSlotName(slotName) {
+  const source = slotName ? String(slotName) : "plan";
+  return source.charAt(0).toUpperCase() + source.slice(1);
 }
 
 function renderEmptyState(message) {
@@ -2787,10 +3114,11 @@ function renderCustomCreator(tab, dayKey, slotName) {
   errorEl.className = "form-error";
   errorEl.hidden = true;
 
-  const dayPlan = ensureDay(dayKey);
-  const defaultLocation = planState.config.locations[dayPlan.loc]
-    ? dayPlan.loc
-    : getDefaultLocationId();
+  const dayPlan = dayKey ? ensureDay(dayKey) : null;
+  const defaultLocation =
+    dayPlan && planState.config.locations[dayPlan.loc]
+      ? dayPlan.loc
+      : getDefaultLocationId();
   const locationOptions = planState.config.locationOrder.map((locId) => ({
     value: locId,
     label: getLocationLabel(locId),
@@ -2824,6 +3152,10 @@ function renderCustomCreator(tab, dayKey, slotName) {
   let coordLabelInput;
   let coordLatInput;
   let coordLngInput;
+  let siteInput;
+  let imageInput;
+  let imageAltInput;
+  let descriptionInput;
   let urlInput;
 
   if (tab === "activity") {
@@ -2884,16 +3216,102 @@ function renderCustomCreator(tab, dayKey, slotName) {
     coordSelect.addEventListener("change", () => {
       coordFields.hidden = coordSelect.value !== "__new__";
     });
+
+    const websiteField = createLabeledInput({
+      label: "Website (optional)",
+      type: "url",
+      placeholder: "https://…",
+    });
+    siteInput = websiteField.input;
+    fields.appendChild(websiteField.wrapper);
+
+    const imageField = createLabeledInput({
+      label: "Image URL (optional)",
+      type: "url",
+      placeholder: "https://…",
+    });
+    imageInput = imageField.input;
+    fields.appendChild(imageField.wrapper);
+
+    const imageAltField = createLabeledInput({
+      label: "Image alt text",
+      placeholder: "Describe the image",
+    });
+    imageAltInput = imageAltField.input;
+    fields.appendChild(imageAltField.wrapper);
+
+    const descriptionField = createLabeledTextarea({
+      label: "Description (optional)",
+      placeholder: "Two-sentence summary for details",
+      rows: 3,
+    });
+    descriptionInput = descriptionField.textarea;
+    descriptionField.wrapper.classList.add("form-field--wide");
+    fields.appendChild(descriptionField.wrapper);
+  } else if (tab === "stay") {
+    const siteField = createLabeledInput({
+      label: "Official site (optional)",
+      type: "url",
+      placeholder: "https://…",
+    });
+    siteInput = siteField.input;
+    fields.appendChild(siteField.wrapper);
+
+    const imageField = createLabeledInput({
+      label: "Image URL (optional)",
+      type: "url",
+      placeholder: "https://…",
+    });
+    imageInput = imageField.input;
+    fields.appendChild(imageField.wrapper);
+
+    const imageAltField = createLabeledInput({
+      label: "Image alt text",
+      placeholder: "Describe the image",
+    });
+    imageAltInput = imageAltField.input;
+    fields.appendChild(imageAltField.wrapper);
+
+    const descriptionField = createLabeledTextarea({
+      label: "Description (optional)",
+      placeholder: "Two-sentence summary for the stay",
+      rows: 3,
+    });
+    descriptionInput = descriptionField.textarea;
+    descriptionField.wrapper.classList.add("form-field--wide");
+    fields.appendChild(descriptionField.wrapper);
   } else {
-    const labelText =
-      tab === "stay" ? "Link (optional)" : "Booking link (optional)";
     const urlField = createLabeledInput({
-      label: labelText,
+      label: "Booking link (optional)",
       type: "url",
       placeholder: "https://…",
     });
     urlInput = urlField.input;
     fields.appendChild(urlField.wrapper);
+
+    const imageField = createLabeledInput({
+      label: "Image URL (optional)",
+      type: "url",
+      placeholder: "https://…",
+    });
+    imageInput = imageField.input;
+    fields.appendChild(imageField.wrapper);
+
+    const imageAltField = createLabeledInput({
+      label: "Image alt text",
+      placeholder: "Describe the image",
+    });
+    imageAltInput = imageAltField.input;
+    fields.appendChild(imageAltField.wrapper);
+
+    const descriptionField = createLabeledTextarea({
+      label: "Notes (optional)",
+      placeholder: "Add booking details or confirmation info",
+      rows: 2,
+    });
+    descriptionInput = descriptionField.textarea;
+    descriptionField.wrapper.classList.add("form-field--wide");
+    fields.appendChild(descriptionField.wrapper);
   }
 
   const submitBtn = document.createElement("button");
@@ -2922,6 +3340,8 @@ function renderCustomCreator(tab, dayKey, slotName) {
     const selectedLocation = planState.config.locations[locationSelect.value]
       ? locationSelect.value
       : getDefaultLocationId();
+
+    let shouldPersist = false;
 
     if (tab === "activity") {
       let coordId = coordSelect?.value || "";
@@ -2957,39 +3377,91 @@ function renderCustomCreator(tab, dayKey, slotName) {
       if (coordId) {
         payload.coord = coordId;
       }
+      const siteLink = siteInput?.value.trim();
+      if (siteLink) {
+        payload.url = siteLink;
+      }
+      const imageUrl = imageInput?.value.trim();
+      if (imageUrl) {
+        payload.image = imageUrl;
+      }
+      const altText = imageAltInput?.value.trim();
+      if (altText) {
+        payload.imageAlt = altText;
+      }
+      const description = descriptionInput?.value.trim();
+      if (description) {
+        payload.description = description;
+      }
       planState.config.catalog.activity.push(payload);
       refreshCatalogLookups();
-      addActivity(dayKey, slotName, activityId);
-      renderSheet();
+      if (dayKey) {
+        addActivity(dayKey, slotName, activityId);
+      } else {
+        shouldPersist = true;
+      }
       form.reset();
       coordFields && (coordFields.hidden = true);
       locationSelect.value = selectedLocation;
     } else if (tab === "stay") {
       const stayId = generateCustomId("stay");
       const payload = { id: stayId, city: selectedLocation, label: name };
-      const link = urlInput.value.trim();
+      const link = siteInput?.value.trim();
       if (link) {
         payload.url = link;
       }
+      const imageUrl = imageInput?.value.trim();
+      if (imageUrl) {
+        payload.image = imageUrl;
+      }
+      const altText = imageAltInput?.value.trim();
+      if (altText) {
+        payload.imageAlt = altText;
+      }
+      const description = descriptionInput?.value.trim();
+      if (description) {
+        payload.description = description;
+      }
       planState.config.catalog.stay.push(payload);
       refreshCatalogLookups();
-      setStay(dayKey, stayId);
+      if (dayKey) {
+        setStay(dayKey, stayId);
+      } else {
+        shouldPersist = true;
+      }
       form.reset();
       locationSelect.value = selectedLocation;
     } else {
       const bookingId = generateCustomId("booking");
       const payload = { id: bookingId, city: selectedLocation, label: name };
-      const link = urlInput.value.trim();
+      const link = urlInput?.value.trim();
       if (link) {
         payload.url = link;
       }
+      const imageUrl = imageInput?.value.trim();
+      if (imageUrl) {
+        payload.image = imageUrl;
+      }
+      const altText = imageAltInput?.value.trim();
+      if (altText) {
+        payload.imageAlt = altText;
+      }
+      const note = descriptionInput?.value.trim();
+      if (note) {
+        payload.description = note;
+      }
       planState.config.catalog.booking.push(payload);
       refreshCatalogLookups();
-      persistState();
-      renderSheet();
+      shouldPersist = true;
       form.reset();
       locationSelect.value = selectedLocation;
     }
+
+    if (shouldPersist) {
+      persistState();
+    }
+
+    renderSheet();
   });
 
   form.append(fields);
@@ -3029,6 +3501,13 @@ function attachToolbarEvents() {
     });
   });
 
+  closeItemBtn?.addEventListener("click", closeItemDetail);
+  itemOverlay?.addEventListener("click", (event) => {
+    if (event.target === itemOverlay) {
+      closeItemDetail();
+    }
+  });
+
   closeMapBtn?.addEventListener("click", closeMap);
   mapOverlay.addEventListener("click", (event) => {
     if (event.target === mapOverlay) {
@@ -3058,6 +3537,7 @@ function attachGlobalShortcuts() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       if (sheetState.open) closeSheet();
+      if (itemOverlay?.classList.contains("is-open")) closeItemDetail();
       if (mapOverlay.classList.contains("is-open")) closeMap();
       if (configOverlay.classList.contains("is-open")) closeConfigOverlay();
     }
@@ -3138,6 +3618,143 @@ function formatLongDate(dateKey) {
   const weekday = date.toLocaleDateString(undefined, { weekday: "long" });
   const month = date.toLocaleDateString(undefined, { month: "short" });
   return `${weekday}, ${month} ${date.getDate()}`;
+}
+
+function openItemDetail(type, itemId) {
+  if (!itemOverlay) return;
+  let item = null;
+  if (type === "activity") {
+    item = ACTIVITY_MAP.get(itemId);
+  } else if (type === "stay") {
+    item = STAY_MAP.get(itemId);
+  }
+  if (!item) return;
+
+  activeItemDetail = { type, id: itemId };
+  const titleText =
+    item.label ||
+    (type === "activity" ? getActivityLabel(itemId) : getStayLabel(itemId)) ||
+    itemId;
+  if (itemDetailTitle) {
+    itemDetailTitle.textContent = titleText;
+  }
+  const typeLabel = type === "stay" ? "Stay" : "Activity";
+  const locationLabel = item.city ? getLocationLabel(item.city) : "";
+  if (itemDetailSubtitle) {
+    const subtitleParts = [typeLabel];
+    if (locationLabel) subtitleParts.push(locationLabel);
+    itemDetailSubtitle.textContent = subtitleParts.join(" • ");
+  }
+
+  if (itemDetailDescription) {
+    if (item.description) {
+      itemDetailDescription.textContent = item.description;
+      itemDetailDescription.hidden = false;
+    } else {
+      itemDetailDescription.textContent = "";
+      itemDetailDescription.hidden = true;
+    }
+  }
+
+  if (item.image && itemDetailImage) {
+    itemDetailImage.src = item.image;
+    itemDetailImage.alt = item.imageAlt || titleText;
+    if (itemDetailMedia) {
+      itemDetailMedia.hidden = false;
+      itemDetailMedia.classList.remove("is-hidden");
+    }
+  } else if (itemDetailImage) {
+    itemDetailImage.src = "";
+    if (itemDetailMedia) {
+      itemDetailMedia.hidden = true;
+      itemDetailMedia.classList.add("is-hidden");
+    }
+  }
+
+  const coords = resolveItemCoordinates(item);
+  const coordLabel = formatCoordinatePair(coords);
+  if (itemDetailMeta) {
+    itemDetailMeta.innerHTML = "";
+    const appendMeta = (label, value) => {
+      if (!value) return;
+      const dt = document.createElement("dt");
+      dt.textContent = label;
+      const dd = document.createElement("dd");
+      dd.textContent = value;
+      itemDetailMeta.append(dt, dd);
+    };
+    if (locationLabel) {
+      appendMeta("Location", locationLabel);
+    }
+    if (coordLabel) {
+      appendMeta("Coordinates", coordLabel);
+    }
+    if (item.locked) {
+      appendMeta("Status", "Locked itinerary item");
+    }
+  }
+
+  if (itemDetailLinks) {
+    itemDetailLinks.innerHTML = "";
+    if (item.url) {
+      const siteLink = document.createElement("a");
+      siteLink.href = item.url;
+      siteLink.target = "_blank";
+      siteLink.rel = "noreferrer noopener";
+      siteLink.className = "btn btn--primary";
+      siteLink.textContent = "Official site";
+      itemDetailLinks.appendChild(siteLink);
+    }
+    const bookingLinks = getBookingLinks(item.bookingIds);
+    bookingLinks.forEach((booking) => {
+      const link = document.createElement("a");
+      link.href = booking.url;
+      link.target = "_blank";
+      link.rel = "noreferrer noopener";
+      link.className = "btn";
+      link.textContent = booking.label;
+      itemDetailLinks.appendChild(link);
+    });
+    if (coordLabel && Array.isArray(coords)) {
+      const [lat, lng] = coords;
+      const mapLink = document.createElement("a");
+      mapLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      mapLink.target = "_blank";
+      mapLink.rel = "noreferrer noopener";
+      mapLink.className = "btn";
+      mapLink.textContent = "Open in Google Maps";
+      itemDetailLinks.appendChild(mapLink);
+    }
+  }
+
+  itemOverlay.classList.add("is-open");
+  itemOverlay.setAttribute("aria-hidden", "false");
+  document.body.classList.add("item-open");
+}
+
+function closeItemDetail() {
+  if (!itemOverlay) return;
+  itemOverlay.classList.remove("is-open");
+  itemOverlay.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("item-open");
+  activeItemDetail = null;
+  if (itemDetailImage) {
+    itemDetailImage.src = "";
+  }
+  if (itemDetailDescription) {
+    itemDetailDescription.textContent = "";
+    itemDetailDescription.hidden = true;
+  }
+  if (itemDetailMeta) {
+    itemDetailMeta.innerHTML = "";
+  }
+  if (itemDetailLinks) {
+    itemDetailLinks.innerHTML = "";
+  }
+  if (itemDetailMedia) {
+    itemDetailMedia.hidden = true;
+    itemDetailMedia.classList.add("is-hidden");
+  }
 }
 
 function openMap(dateKey) {
@@ -4690,6 +5307,28 @@ function createLabeledInput({
   }
   wrapper.append(labelEl, input);
   return { wrapper, input };
+}
+
+function createLabeledTextarea({ label, value = "", placeholder = "", rows = 3 }) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "form-field";
+  const labelEl = document.createElement("label");
+  labelEl.className = "form-label";
+  const textareaId = nextId("textarea");
+  labelEl.setAttribute("for", textareaId);
+  labelEl.textContent = label;
+  const textarea = document.createElement("textarea");
+  textarea.id = textareaId;
+  textarea.className = "form-textarea";
+  textarea.rows = rows;
+  if (value) {
+    textarea.value = value;
+  }
+  if (placeholder) {
+    textarea.placeholder = placeholder;
+  }
+  wrapper.append(labelEl, textarea);
+  return { wrapper, textarea };
 }
 
 function createLabeledSelect({ label, value = "", options = [] }) {
