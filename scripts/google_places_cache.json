@@ -1,0 +1,5426 @@
+{
+  "Kansai International Airport Terminal 1": {
+    "formatted_address": "Terminal 1, Osaka, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.4348282,
+        "lng": 135.2446195
+      }
+    },
+    "name": "Terminal 1",
+    "url": "https://maps.google.com/?cid=12104414214768042484"
+  },
+  "Hotel Agora Osaka Moriguchi": {
+    "formatted_address": "10-5 Kawaharachō, Moriguchi, Osaka 570-0038, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.7350206,
+        "lng": 135.5658619
+      }
+    },
+    "international_phone_number": "+81 6-6994-1111",
+    "name": "Hotel Agora Osaka Moriguchi",
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "open": {
+            "day": 0,
+            "time": "0000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: Open 24 hours",
+        "Tuesday: Open 24 hours",
+        "Wednesday: Open 24 hours",
+        "Thursday: Open 24 hours",
+        "Friday: Open 24 hours",
+        "Saturday: Open 24 hours",
+        "Sunday: Open 24 hours"
+      ]
+    },
+    "rating": 4,
+    "url": "https://maps.google.com/?cid=13148145580788093834",
+    "user_ratings_total": 2599,
+    "website": "https://www.hotelagora-moriguchi.com/"
+  },
+  "Dotonbori": {
+    "formatted_address": "Dotonbori, Chuo Ward, Osaka, 542-0071, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6686471,
+        "lng": 135.5030983
+      }
+    },
+    "name": "Dotonbori",
+    "url": "https://maps.google.com/?cid=16446419638008461065"
+  },
+  "Tombori River Cruise": {
+    "formatted_address": "7-13 Souemonchō, Chuo Ward, Osaka, 542-0084, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6691432,
+        "lng": 135.502709
+      }
+    },
+    "international_phone_number": "+81 50-1807-4118",
+    "name": "Tombori River Cruise (Tazaemon Bridge Pier)",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2100"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2100"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2100"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2100"
+          },
+          "open": {
+            "day": 3,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2100"
+          },
+          "open": {
+            "day": 4,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2100"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2100"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 9:00 PM",
+        "Tuesday: 11:00 AM – 9:00 PM",
+        "Wednesday: 11:00 AM – 9:00 PM",
+        "Thursday: 11:00 AM – 9:00 PM",
+        "Friday: 11:00 AM – 9:00 PM",
+        "Saturday: 11:00 AM – 9:00 PM",
+        "Sunday: 11:00 AM – 9:00 PM"
+      ]
+    },
+    "rating": 4.4,
+    "url": "https://maps.google.com/?cid=11944000788392540382",
+    "user_ratings_total": 1813,
+    "website": "http://www.ipponmatsu.co.jp/cruise/tombori.html"
+  },
+  "Mizuno": {
+    "formatted_address": "1-chōme-4-15 Dōtonbori, Chuo Ward, Osaka, 542-0071, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6683548,
+        "lng": 135.5032226
+      }
+    },
+    "international_phone_number": "+81 6-6212-6360",
+    "name": "Okonomiyaki Mizuno",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2100"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2100"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2100"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2100"
+          },
+          "open": {
+            "day": 3,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2100"
+          },
+          "open": {
+            "day": 4,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2100"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2100"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 9:00 PM",
+        "Tuesday: 11:00 AM – 9:00 PM",
+        "Wednesday: 11:00 AM – 9:00 PM",
+        "Thursday: 11:00 AM – 9:00 PM",
+        "Friday: 11:00 AM – 9:00 PM",
+        "Saturday: 11:00 AM – 9:00 PM",
+        "Sunday: 11:00 AM – 9:00 PM"
+      ]
+    },
+    "rating": 3.8,
+    "url": "https://maps.google.com/?cid=14993068628475195202",
+    "user_ratings_total": 2948,
+    "website": "https://mizuno.gorp.jp/"
+  },
+  "Hozenji Yokocho": {
+    "formatted_address": "1 Chome-7 Namba, Chuo Ward, Osaka, 542-0076, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.668208,
+        "lng": 135.5026287
+      }
+    },
+    "name": "Hozenji Yokocho",
+    "rating": 4.3,
+    "url": "https://maps.google.com/?cid=1940503935653472466",
+    "user_ratings_total": 320
+  },
+  "Brooklyn Roasting Company Kitahama": {
+    "formatted_address": "Japan, 〒541-0041 Osaka, Chuo Ward, Kitahama, 1-chōme−1−９ ハウザー 北浜ビル 1F",
+    "geometry": {
+      "location": {
+        "lat": 34.6910465,
+        "lng": 135.5091563
+      }
+    },
+    "international_phone_number": "+81 6-6125-5740",
+    "name": "Brooklyn Roasting Company Kitahama",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1900"
+          },
+          "open": {
+            "day": 0,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2000"
+          },
+          "open": {
+            "day": 1,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2000"
+          },
+          "open": {
+            "day": 2,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2000"
+          },
+          "open": {
+            "day": 3,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2000"
+          },
+          "open": {
+            "day": 4,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2000"
+          },
+          "open": {
+            "day": 5,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1900"
+          },
+          "open": {
+            "day": 6,
+            "time": "0800"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 8:00 AM – 8:00 PM",
+        "Tuesday: 8:00 AM – 8:00 PM",
+        "Wednesday: 8:00 AM – 8:00 PM",
+        "Thursday: 8:00 AM – 8:00 PM",
+        "Friday: 8:00 AM – 8:00 PM",
+        "Saturday: 8:00 AM – 7:00 PM",
+        "Sunday: 8:00 AM – 7:00 PM"
+      ]
+    },
+    "rating": 4.4,
+    "url": "https://maps.google.com/?cid=3143396422888168986",
+    "user_ratings_total": 1747,
+    "website": "http://brooklynroasting.jp/"
+  },
+  "Shinsaibashi-suji Shopping Street": {
+    "formatted_address": "2-chōme-2-22 Shinsaibashisuji, Chuo Ward, Osaka, 542-0085, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6710169,
+        "lng": 135.5013394
+      }
+    },
+    "international_phone_number": "+81 6-6211-1114",
+    "name": "Shinsaibashi-Suji Shopping Street",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2000"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2000"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2000"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2000"
+          },
+          "open": {
+            "day": 3,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2000"
+          },
+          "open": {
+            "day": 4,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2000"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2000"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 8:00 PM",
+        "Tuesday: 11:00 AM – 8:00 PM",
+        "Wednesday: 11:00 AM – 8:00 PM",
+        "Thursday: 11:00 AM – 8:00 PM",
+        "Friday: 11:00 AM – 8:00 PM",
+        "Saturday: 11:00 AM – 8:00 PM",
+        "Sunday: 11:00 AM – 8:00 PM"
+      ]
+    },
+    "rating": 4.3,
+    "url": "https://maps.google.com/?cid=7087755665176380195",
+    "user_ratings_total": 19750,
+    "website": "https://www.shinsaibashi.or.jp/"
+  },
+  "Kuromon Ichiba Market": {
+    "formatted_address": "2 Chome-21 Nipponbashi, Chuo Ward, Osaka, 542-0073, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6653529,
+        "lng": 135.5062406
+      }
+    },
+    "name": "Kuromon Market",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1800"
+          },
+          "open": {
+            "day": 0,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1800"
+          },
+          "open": {
+            "day": 1,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1800"
+          },
+          "open": {
+            "day": 2,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1800"
+          },
+          "open": {
+            "day": 3,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1800"
+          },
+          "open": {
+            "day": 4,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1800"
+          },
+          "open": {
+            "day": 5,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1800"
+          },
+          "open": {
+            "day": 6,
+            "time": "0900"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 9:00 AM – 6:00 PM",
+        "Tuesday: 9:00 AM – 6:00 PM",
+        "Wednesday: 9:00 AM – 6:00 PM",
+        "Thursday: 9:00 AM – 6:00 PM",
+        "Friday: 9:00 AM – 6:00 PM",
+        "Saturday: 9:00 AM – 6:00 PM",
+        "Sunday: 9:00 AM – 6:00 PM"
+      ]
+    },
+    "rating": 4.1,
+    "url": "https://maps.google.com/?cid=12402117845945925953",
+    "user_ratings_total": 19224,
+    "website": "https://kuromon.com/jp/"
+  },
+  "Namba Yasaka Shrine": {
+    "formatted_address": "2-chōme-9-19 Motomachi, Naniwa Ward, Osaka, 556-0016, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.66155920000001,
+        "lng": 135.4967039
+      }
+    },
+    "international_phone_number": "+81 6-6641-1149",
+    "name": "Namba Yasaka Jinja",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1700"
+          },
+          "open": {
+            "day": 0,
+            "time": "0630"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1700"
+          },
+          "open": {
+            "day": 1,
+            "time": "0630"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1700"
+          },
+          "open": {
+            "day": 2,
+            "time": "0630"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1700"
+          },
+          "open": {
+            "day": 3,
+            "time": "0630"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1700"
+          },
+          "open": {
+            "day": 4,
+            "time": "0630"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1700"
+          },
+          "open": {
+            "day": 5,
+            "time": "0630"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1700"
+          },
+          "open": {
+            "day": 6,
+            "time": "0630"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 6:30 AM – 5:00 PM",
+        "Tuesday: 6:30 AM – 5:00 PM",
+        "Wednesday: 6:30 AM – 5:00 PM",
+        "Thursday: 6:30 AM – 5:00 PM",
+        "Friday: 6:30 AM – 5:00 PM",
+        "Saturday: 6:30 AM – 5:00 PM",
+        "Sunday: 6:30 AM – 5:00 PM"
+      ]
+    },
+    "rating": 4.4,
+    "url": "https://maps.google.com/?cid=9278387310004857503",
+    "user_ratings_total": 12235,
+    "website": "https://nambayasaka.jp/"
+  },
+  "teamLab Botanical Garden Osaka": {
+    "formatted_address": "1-23 Nagaikōen, Higashisumiyoshi Ward, Osaka, 546-0034, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6110004,
+        "lng": 135.5204213
+      }
+    },
+    "international_phone_number": "+81 6-6699-5120",
+    "name": "teamLab Botanical Garden Osaka",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2130"
+          },
+          "open": {
+            "day": 0,
+            "time": "1830"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2130"
+          },
+          "open": {
+            "day": 1,
+            "time": "1830"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2130"
+          },
+          "open": {
+            "day": 2,
+            "time": "1830"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2130"
+          },
+          "open": {
+            "day": 3,
+            "time": "1830"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2130"
+          },
+          "open": {
+            "day": 4,
+            "time": "1830"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2130"
+          },
+          "open": {
+            "day": 5,
+            "time": "1830"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2130"
+          },
+          "open": {
+            "day": 6,
+            "time": "1830"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 6:30 – 9:30 PM",
+        "Tuesday: 6:30 – 9:30 PM",
+        "Wednesday: 6:30 – 9:30 PM",
+        "Thursday: 6:30 – 9:30 PM",
+        "Friday: 6:30 – 9:30 PM",
+        "Saturday: 6:30 – 9:30 PM",
+        "Sunday: 6:30 – 9:30 PM"
+      ]
+    },
+    "rating": 3.9,
+    "url": "https://maps.google.com/?cid=4949594704093356283",
+    "user_ratings_total": 2109,
+    "website": "https://www.teamlab.art/jp/e/botanicalgarden/"
+  },
+  "Arashiyama Bamboo Grove": {
+    "formatted_address": "Sagaogurayama Tabuchiyamacho, Ukyo Ward, Kyoto, 616-8394, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0168187,
+        "lng": 135.6713013
+      }
+    },
+    "international_phone_number": "+81 75-343-0548",
+    "name": "Arashiyama Bamboo Forest",
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "open": {
+            "day": 0,
+            "time": "0000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: Open 24 hours",
+        "Tuesday: Open 24 hours",
+        "Wednesday: Open 24 hours",
+        "Thursday: Open 24 hours",
+        "Friday: Open 24 hours",
+        "Saturday: Open 24 hours",
+        "Sunday: Open 24 hours"
+      ]
+    },
+    "rating": 4.4,
+    "url": "https://maps.google.com/?cid=18131488233213033693",
+    "user_ratings_total": 17629,
+    "website": "https://ja.kyoto.travel/tourism/single01.php?category_id=8&tourism_id=2683"
+  },
+  "Tenryu-ji Temple": {
+    "formatted_address": "Japan, 〒616-8385 京都府京都市右京区嵯峨天龍寺芒ノ馬場町６８",
+    "geometry": {
+      "location": {
+        "lat": 35.0158379,
+        "lng": 135.6737654
+      }
+    },
+    "international_phone_number": "+81 75-881-1235",
+    "name": "Tenryu-ji",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1700"
+          },
+          "open": {
+            "day": 0,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1700"
+          },
+          "open": {
+            "day": 1,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1700"
+          },
+          "open": {
+            "day": 2,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1700"
+          },
+          "open": {
+            "day": 3,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1700"
+          },
+          "open": {
+            "day": 4,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1700"
+          },
+          "open": {
+            "day": 5,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1700"
+          },
+          "open": {
+            "day": 6,
+            "time": "0830"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 8:30 AM – 5:00 PM",
+        "Tuesday: 8:30 AM – 5:00 PM",
+        "Wednesday: 8:30 AM – 5:00 PM",
+        "Thursday: 8:30 AM – 5:00 PM",
+        "Friday: 8:30 AM – 5:00 PM",
+        "Saturday: 8:30 AM – 5:00 PM",
+        "Sunday: 8:30 AM – 5:00 PM"
+      ]
+    },
+    "rating": 4.4,
+    "url": "https://maps.google.com/?cid=14815785984447432896",
+    "user_ratings_total": 15128,
+    "website": "https://www.tenryuji.com/"
+  },
+  "Arashiyama Yoshimura": {
+    "formatted_address": "Japan, 〒616-8385 京都府京都市右京区嵯峨天龍寺芒ノ馬場町３",
+    "geometry": {
+      "location": {
+        "lat": 35.0136474,
+        "lng": 135.6772645
+      }
+    },
+    "international_phone_number": "+81 75-863-5700",
+    "name": "Arashiyama Yoshimura",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1700"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1600"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1600"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1600"
+          },
+          "open": {
+            "day": 3,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1600"
+          },
+          "open": {
+            "day": 4,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1600"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1700"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 4:00 PM",
+        "Tuesday: 11:00 AM – 4:00 PM",
+        "Wednesday: 11:00 AM – 4:00 PM",
+        "Thursday: 11:00 AM – 4:00 PM",
+        "Friday: 11:00 AM – 4:00 PM",
+        "Saturday: 11:00 AM – 5:00 PM",
+        "Sunday: 11:00 AM – 5:00 PM"
+      ]
+    },
+    "rating": 4.2,
+    "url": "https://maps.google.com/?cid=14941654592724285625",
+    "user_ratings_total": 2441,
+    "website": "https://yoshimura-gr.com/arashiyama/"
+  },
+  "Kimono Forest": {
+    "formatted_address": "20-2 Sagatenryūji Tsukurimichichō, Ukyo Ward, Kyoto, 616-8384, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0152682,
+        "lng": 135.6783695
+      }
+    },
+    "international_phone_number": "+81 75-882-5110",
+    "name": "Kimono Forest",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2100"
+          },
+          "open": {
+            "day": 0,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2100"
+          },
+          "open": {
+            "day": 1,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2100"
+          },
+          "open": {
+            "day": 2,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2100"
+          },
+          "open": {
+            "day": 3,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2100"
+          },
+          "open": {
+            "day": 4,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2100"
+          },
+          "open": {
+            "day": 5,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2100"
+          },
+          "open": {
+            "day": 6,
+            "time": "1700"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 5:00 – 9:00 PM",
+        "Tuesday: 5:00 – 9:00 PM",
+        "Wednesday: 5:00 – 9:00 PM",
+        "Thursday: 5:00 – 9:00 PM",
+        "Friday: 5:00 – 9:00 PM",
+        "Saturday: 5:00 – 9:00 PM",
+        "Sunday: 5:00 – 9:00 PM"
+      ]
+    },
+    "rating": 4.2,
+    "url": "https://maps.google.com/?cid=14328627673236365801",
+    "user_ratings_total": 1914,
+    "website": "http://www.kyotoarashiyama.jp/about"
+  },
+  "Fushimi Inari Taisha": {
+    "formatted_address": "68 Fukakusa Yabunouchichō, Fushimi Ward, Kyoto, 612-0882, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.9676945,
+        "lng": 135.7791876
+      }
+    },
+    "international_phone_number": "+81 75-641-7331",
+    "name": "Fushimi Inari Taisha",
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "open": {
+            "day": 0,
+            "time": "0000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: Open 24 hours",
+        "Tuesday: Open 24 hours",
+        "Wednesday: Open 24 hours",
+        "Thursday: Open 24 hours",
+        "Friday: Open 24 hours",
+        "Saturday: Open 24 hours",
+        "Sunday: Open 24 hours"
+      ]
+    },
+    "rating": 4.6,
+    "url": "https://maps.google.com/?cid=8870624639634301673",
+    "user_ratings_total": 80845,
+    "website": "https://inari.jp/"
+  },
+  "Gekkeikan Okura Sake Museum": {
+    "formatted_address": "247 Minamihamachō, Fushimi Ward, Kyoto, 612-8660, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.929136,
+        "lng": 135.76161
+      }
+    },
+    "international_phone_number": "+81 75-623-2056",
+    "name": "Gekkeikan Ōkura Sake Museum",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1630"
+          },
+          "open": {
+            "day": 0,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1630"
+          },
+          "open": {
+            "day": 1,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1630"
+          },
+          "open": {
+            "day": 2,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1630"
+          },
+          "open": {
+            "day": 3,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1630"
+          },
+          "open": {
+            "day": 4,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1630"
+          },
+          "open": {
+            "day": 5,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1630"
+          },
+          "open": {
+            "day": 6,
+            "time": "0930"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 9:30 AM – 4:30 PM",
+        "Tuesday: 9:30 AM – 4:30 PM",
+        "Wednesday: 9:30 AM – 4:30 PM",
+        "Thursday: 9:30 AM – 4:30 PM",
+        "Friday: 9:30 AM – 4:30 PM",
+        "Saturday: 9:30 AM – 4:30 PM",
+        "Sunday: 9:30 AM – 4:30 PM"
+      ]
+    },
+    "rating": 4.2,
+    "url": "https://maps.google.com/?cid=9137465178982848979",
+    "user_ratings_total": 4341,
+    "website": "https://www.gekkeikan.co.jp/enjoy/museum/"
+  },
+  "Todai-ji": {
+    "formatted_address": "406-1 Zōshichō, Nara, 630-8587, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6889851,
+        "lng": 135.8398158
+      }
+    },
+    "international_phone_number": "+81 742-22-5511",
+    "name": "Tōdai-ji",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1730"
+          },
+          "open": {
+            "day": 0,
+            "time": "0730"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1730"
+          },
+          "open": {
+            "day": 1,
+            "time": "0730"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1730"
+          },
+          "open": {
+            "day": 2,
+            "time": "0730"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1730"
+          },
+          "open": {
+            "day": 3,
+            "time": "0730"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1730"
+          },
+          "open": {
+            "day": 4,
+            "time": "0730"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1730"
+          },
+          "open": {
+            "day": 5,
+            "time": "0730"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1730"
+          },
+          "open": {
+            "day": 6,
+            "time": "0730"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 7:30 AM – 5:30 PM",
+        "Tuesday: 7:30 AM – 5:30 PM",
+        "Wednesday: 7:30 AM – 5:30 PM",
+        "Thursday: 7:30 AM – 5:30 PM",
+        "Friday: 7:30 AM – 5:30 PM",
+        "Saturday: 7:30 AM – 5:30 PM",
+        "Sunday: 7:30 AM – 5:30 PM"
+      ]
+    },
+    "rating": 4.6,
+    "url": "https://maps.google.com/?cid=17911005107283377295",
+    "user_ratings_total": 28507,
+    "website": "https://www.todaiji.or.jp/"
+  },
+  "Nara Park": {
+    "formatted_address": "Nara, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.685047,
+        "lng": 135.843012
+      }
+    },
+    "international_phone_number": "+81 742-22-0375",
+    "name": "Nara Park",
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "open": {
+            "day": 0,
+            "time": "0000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: Open 24 hours",
+        "Tuesday: Open 24 hours",
+        "Wednesday: Open 24 hours",
+        "Thursday: Open 24 hours",
+        "Friday: Open 24 hours",
+        "Saturday: Open 24 hours",
+        "Sunday: Open 24 hours"
+      ]
+    },
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=17972930374069941334",
+    "user_ratings_total": 67869,
+    "website": "https://www3.pref.nara.jp/park/"
+  },
+  "Nakatanidou": {
+    "formatted_address": "29 Hashimotochō, Nara, 630-8217, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.681943,
+        "lng": 135.8288995
+      }
+    },
+    "international_phone_number": "+81 742-23-0141",
+    "name": "Nakatanidou",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1900"
+          },
+          "open": {
+            "day": 0,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1900"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1900"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1900"
+          },
+          "open": {
+            "day": 4,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1900"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1900"
+          },
+          "open": {
+            "day": 6,
+            "time": "1000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 7:00 PM",
+        "Tuesday: Closed",
+        "Wednesday: 10:00 AM – 7:00 PM",
+        "Thursday: 10:00 AM – 7:00 PM",
+        "Friday: 10:00 AM – 7:00 PM",
+        "Saturday: 10:00 AM – 7:00 PM",
+        "Sunday: 10:00 AM – 7:00 PM"
+      ]
+    },
+    "rating": 4.3,
+    "url": "https://maps.google.com/?cid=14561917136571056776",
+    "user_ratings_total": 5426,
+    "website": "http://www.nakatanidou.jp/"
+  },
+  "Byodoin": {
+    "formatted_address": "Renge-116 Uji, Kyoto 611-0021, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.8892908,
+        "lng": 135.8076783
+      }
+    },
+    "international_phone_number": "+81 774-21-2861",
+    "name": "Byodo-in Temple",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1730"
+          },
+          "open": {
+            "day": 0,
+            "time": "0845"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1730"
+          },
+          "open": {
+            "day": 1,
+            "time": "0845"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1730"
+          },
+          "open": {
+            "day": 2,
+            "time": "0845"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1730"
+          },
+          "open": {
+            "day": 3,
+            "time": "0845"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1730"
+          },
+          "open": {
+            "day": 4,
+            "time": "0845"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1730"
+          },
+          "open": {
+            "day": 5,
+            "time": "0845"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1730"
+          },
+          "open": {
+            "day": 6,
+            "time": "0845"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 8:45 AM – 5:30 PM",
+        "Tuesday: 8:45 AM – 5:30 PM",
+        "Wednesday: 8:45 AM – 5:30 PM",
+        "Thursday: 8:45 AM – 5:30 PM",
+        "Friday: 8:45 AM – 5:30 PM",
+        "Saturday: 8:45 AM – 5:30 PM",
+        "Sunday: 8:45 AM – 5:30 PM"
+      ]
+    },
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=6954706348575164324",
+    "user_ratings_total": 20470,
+    "website": "https://www.byodoin.or.jp/"
+  },
+  "Tsuen Tea": {
+    "formatted_address": "Higashiuchi-1 Uji, Kyoto 611-0021, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.89329,
+        "lng": 135.8072759
+      }
+    },
+    "international_phone_number": "+81 774-21-2243",
+    "name": "Tsuen Main Branch",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1730"
+          },
+          "open": {
+            "day": 0,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1730"
+          },
+          "open": {
+            "day": 1,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1730"
+          },
+          "open": {
+            "day": 2,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1730"
+          },
+          "open": {
+            "day": 3,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1730"
+          },
+          "open": {
+            "day": 4,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1730"
+          },
+          "open": {
+            "day": 5,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1730"
+          },
+          "open": {
+            "day": 6,
+            "time": "1030"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:30 AM – 5:30 PM",
+        "Tuesday: 10:30 AM – 5:30 PM",
+        "Wednesday: 10:30 AM – 5:30 PM",
+        "Thursday: 10:30 AM – 5:30 PM",
+        "Friday: 10:30 AM – 5:30 PM",
+        "Saturday: 10:30 AM – 5:30 PM",
+        "Sunday: 10:30 AM – 5:30 PM"
+      ]
+    },
+    "rating": 4.3,
+    "url": "https://maps.google.com/?cid=2102438674156082753",
+    "user_ratings_total": 1052,
+    "website": "http://www.tsuentea.com/"
+  },
+  "Hirakata T-SITE": {
+    "formatted_address": "12-２ Okahigashichō, Hirakata, Osaka 573-0032, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.8158936,
+        "lng": 135.6497036
+      }
+    },
+    "international_phone_number": "+81 72-844-9000",
+    "name": "Hirakata T-SITE",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2200"
+          },
+          "open": {
+            "day": 0,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2200"
+          },
+          "open": {
+            "day": 1,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2200"
+          },
+          "open": {
+            "day": 2,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2200"
+          },
+          "open": {
+            "day": 3,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2200"
+          },
+          "open": {
+            "day": 4,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2200"
+          },
+          "open": {
+            "day": 5,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2200"
+          },
+          "open": {
+            "day": 6,
+            "time": "0700"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 7:00 AM – 10:00 PM",
+        "Tuesday: 7:00 AM – 10:00 PM",
+        "Wednesday: 7:00 AM – 10:00 PM",
+        "Thursday: 7:00 AM – 10:00 PM",
+        "Friday: 7:00 AM – 10:00 PM",
+        "Saturday: 7:00 AM – 10:00 PM",
+        "Sunday: 7:00 AM – 10:00 PM"
+      ]
+    },
+    "rating": 3.9,
+    "url": "https://maps.google.com/?cid=17127482803001824153",
+    "user_ratings_total": 6056,
+    "website": "https://store.tsite.jp/hirakata/"
+  },
+  "Café & Meal MUJI Hirakata T-SITE": {
+    "formatted_address": "12-２ Okahigashichō, Hirakata, Osaka 573-0032, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.8158936,
+        "lng": 135.6497036
+      }
+    },
+    "international_phone_number": "+81 72-844-9000",
+    "name": "Hirakata T-SITE",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2200"
+          },
+          "open": {
+            "day": 0,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2200"
+          },
+          "open": {
+            "day": 1,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2200"
+          },
+          "open": {
+            "day": 2,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2200"
+          },
+          "open": {
+            "day": 3,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2200"
+          },
+          "open": {
+            "day": 4,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2200"
+          },
+          "open": {
+            "day": 5,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2200"
+          },
+          "open": {
+            "day": 6,
+            "time": "0700"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 7:00 AM – 10:00 PM",
+        "Tuesday: 7:00 AM – 10:00 PM",
+        "Wednesday: 7:00 AM – 10:00 PM",
+        "Thursday: 7:00 AM – 10:00 PM",
+        "Friday: 7:00 AM – 10:00 PM",
+        "Saturday: 7:00 AM – 10:00 PM",
+        "Sunday: 7:00 AM – 10:00 PM"
+      ]
+    },
+    "rating": 3.9,
+    "url": "https://maps.google.com/?cid=17127482803001824153",
+    "user_ratings_total": 6056,
+    "website": "https://store.tsite.jp/hirakata/"
+  },
+  "Gokurakuyu Hirakata": {
+    "formatted_address": "3-chōme-8-1 Shōdaitajika, Hirakata, Osaka 573-1132, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.8472568,
+        "lng": 135.693945
+      }
+    },
+    "international_phone_number": "+81 72-867-4126",
+    "name": "Gokuraku-yu Hirakata",
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "close": {
+            "day": 1,
+            "time": "0200"
+          },
+          "open": {
+            "day": 0,
+            "time": "0600"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "0200"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "0200"
+          },
+          "open": {
+            "day": 2,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "0200"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "0200"
+          },
+          "open": {
+            "day": 4,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "0200"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 0,
+            "time": "0200"
+          },
+          "open": {
+            "day": 6,
+            "time": "0600"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 2:00 AM",
+        "Tuesday: 10:00 AM – 2:00 AM",
+        "Wednesday: 10:00 AM – 2:00 AM",
+        "Thursday: 10:00 AM – 2:00 AM",
+        "Friday: 10:00 AM – 2:00 AM",
+        "Saturday: 6:00 AM – 2:00 AM",
+        "Sunday: 6:00 AM – 2:00 AM"
+      ]
+    },
+    "rating": 3.8,
+    "url": "https://maps.google.com/?cid=7875082954910224352",
+    "user_ratings_total": 1657,
+    "website": "https://www.gokurakuyu.com/hirakata/hirakata.html"
+  },
+  "Kushikatsu Tanaka Hirakata": {
+    "formatted_address": "19-1 Okahigashichō, Hirakata, Osaka 573-0032, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.8170855,
+        "lng": 135.6504186
+      }
+    },
+    "international_phone_number": "+81 72-896-9450",
+    "name": "Kushikatsu Tanaka",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2300"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2300"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2300"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2300"
+          },
+          "open": {
+            "day": 3,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2300"
+          },
+          "open": {
+            "day": 4,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2300"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2300"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 11:00 PM",
+        "Tuesday: 11:00 AM – 11:00 PM",
+        "Wednesday: 11:00 AM – 11:00 PM",
+        "Thursday: 11:00 AM – 11:00 PM",
+        "Friday: 11:00 AM – 11:00 PM",
+        "Saturday: 11:00 AM – 11:00 PM",
+        "Sunday: 11:00 AM – 11:00 PM"
+      ]
+    },
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=12975794440701677436",
+    "user_ratings_total": 1335,
+    "website": "https://kushi-tanaka.com/restaurant/detail/hirakata-mall?utm_source=google&utm_medium=maps&utm_campaign=gmb"
+  },
+  "Kinkaku-ji": {
+    "formatted_address": "1 Kinkakujichō, Kita Ward, Kyoto, 603-8361, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.03937,
+        "lng": 135.7292431
+      }
+    },
+    "international_phone_number": "+81 75-461-0013",
+    "name": "Kinkaku-ji",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1700"
+          },
+          "open": {
+            "day": 0,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1700"
+          },
+          "open": {
+            "day": 1,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1700"
+          },
+          "open": {
+            "day": 2,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1700"
+          },
+          "open": {
+            "day": 3,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1700"
+          },
+          "open": {
+            "day": 4,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1700"
+          },
+          "open": {
+            "day": 5,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1700"
+          },
+          "open": {
+            "day": 6,
+            "time": "0900"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 9:00 AM – 5:00 PM",
+        "Tuesday: 9:00 AM – 5:00 PM",
+        "Wednesday: 9:00 AM – 5:00 PM",
+        "Thursday: 9:00 AM – 5:00 PM",
+        "Friday: 9:00 AM – 5:00 PM",
+        "Saturday: 9:00 AM – 5:00 PM",
+        "Sunday: 9:00 AM – 5:00 PM"
+      ]
+    },
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=1073025677330113631",
+    "user_ratings_total": 61939,
+    "website": "https://www.shokoku-ji.jp/kinkakuji/"
+  },
+  "Ryoan-ji Temple": {
+    "formatted_address": "13 Ryōanji Goryōnoshitachō, Ukyo Ward, Kyoto, 616-8001, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0344943,
+        "lng": 135.7182634
+      }
+    },
+    "international_phone_number": "+81 75-463-2216",
+    "name": "Ryōan-ji",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1700"
+          },
+          "open": {
+            "day": 0,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1700"
+          },
+          "open": {
+            "day": 1,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1700"
+          },
+          "open": {
+            "day": 2,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1700"
+          },
+          "open": {
+            "day": 3,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1700"
+          },
+          "open": {
+            "day": 4,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1700"
+          },
+          "open": {
+            "day": 5,
+            "time": "0800"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1700"
+          },
+          "open": {
+            "day": 6,
+            "time": "0800"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 8:00 AM – 5:00 PM",
+        "Tuesday: 8:00 AM – 5:00 PM",
+        "Wednesday: 8:00 AM – 5:00 PM",
+        "Thursday: 8:00 AM – 5:00 PM",
+        "Friday: 8:00 AM – 5:00 PM",
+        "Saturday: 8:00 AM – 5:00 PM",
+        "Sunday: 8:00 AM – 5:00 PM"
+      ]
+    },
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=16261116435795248450",
+    "user_ratings_total": 10281,
+    "website": "http://www.ryoanji.jp/"
+  },
+  "Camellia GARDEN": {
+    "formatted_address": "18 Ryōanji Ikenoshitachō, Ukyo Ward, Kyoto, 616-8003, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0316667,
+        "lng": 135.7194474
+      }
+    },
+    "international_phone_number": "+81 70-5656-7808",
+    "name": "Tea Ceremony Camellia GARDEN",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 1,
+            "time": "1800"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1800"
+          },
+          "open": {
+            "day": 2,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1800"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1800"
+          },
+          "open": {
+            "day": 4,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1800"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1800"
+          },
+          "open": {
+            "day": 6,
+            "time": "1000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 6:00 PM",
+        "Tuesday: 10:00 AM – 6:00 PM",
+        "Wednesday: 10:00 AM – 6:00 PM",
+        "Thursday: 10:00 AM – 6:00 PM",
+        "Friday: 10:00 AM – 6:00 PM",
+        "Saturday: 10:00 AM – 6:00 PM",
+        "Sunday: Closed"
+      ]
+    },
+    "rating": 4.9,
+    "url": "https://maps.google.com/?cid=9161111180576021376",
+    "user_ratings_total": 149,
+    "website": "http://www.tea-kyoto.com/"
+  },
+  "Honke Owariya Main Branch": {
+    "formatted_address": "322 Niōmontsukinukechō, Nakagyo Ward, Kyoto, 604-0841, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0127635,
+        "lng": 135.7601488
+      }
+    },
+    "international_phone_number": "+81 75-231-3446",
+    "name": "Honke Owariya Main Branch",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1500"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1500"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1500"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1500"
+          },
+          "open": {
+            "day": 3,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1500"
+          },
+          "open": {
+            "day": 4,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1500"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1500"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 3:00 PM",
+        "Tuesday: 11:00 AM – 3:00 PM",
+        "Wednesday: 11:00 AM – 3:00 PM",
+        "Thursday: 11:00 AM – 3:00 PM",
+        "Friday: 11:00 AM – 3:00 PM",
+        "Saturday: 11:00 AM – 3:00 PM",
+        "Sunday: 11:00 AM – 3:00 PM"
+      ]
+    },
+    "rating": 4.3,
+    "url": "https://maps.google.com/?cid=16359369336265180348",
+    "user_ratings_total": 2271,
+    "website": "http://honke-owariya.co.jp/"
+  },
+  "Kyomachiya Ryokan Sakura Urushitei": {
+    "formatted_address": "425 Kichimonjichō, Shimogyo Ward, Kyoto, 600-8069, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0000557,
+        "lng": 135.7643635
+      }
+    },
+    "international_phone_number": "+81 75-343-0003",
+    "name": "Kyomachiya Ryokan Sakura Urushitei",
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=3664127484669648848",
+    "user_ratings_total": 630,
+    "website": "https://www.kyoto-ryokan-sakura.com/urushi/home_jp/"
+  },
+  "Hanamikoji Street": {
+    "formatted_address": "Hanamikoji-dori, Higashiyama Ward, Kyoto, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0054928,
+        "lng": 135.7752402
+      }
+    },
+    "name": "Hanamikoji-dori",
+    "url": "https://maps.google.com/?cid=17005749363295018432"
+  },
+  "Kiyomizu-dera": {
+    "formatted_address": "1-chōme-294 Kiyomizu, Higashiyama Ward, Kyoto, 605-0862, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.9946662,
+        "lng": 135.784661
+      }
+    },
+    "international_phone_number": "+81 75-551-1234",
+    "name": "Kiyomizu-dera",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1800"
+          },
+          "open": {
+            "day": 0,
+            "time": "0600"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1800"
+          },
+          "open": {
+            "day": 1,
+            "time": "0600"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1800"
+          },
+          "open": {
+            "day": 2,
+            "time": "0600"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1800"
+          },
+          "open": {
+            "day": 3,
+            "time": "0600"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1800"
+          },
+          "open": {
+            "day": 4,
+            "time": "0600"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1800"
+          },
+          "open": {
+            "day": 5,
+            "time": "0600"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1800"
+          },
+          "open": {
+            "day": 6,
+            "time": "0600"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 6:00 AM – 6:00 PM",
+        "Tuesday: 6:00 AM – 6:00 PM",
+        "Wednesday: 6:00 AM – 6:00 PM",
+        "Thursday: 6:00 AM – 6:00 PM",
+        "Friday: 6:00 AM – 6:00 PM",
+        "Saturday: 6:00 AM – 6:00 PM",
+        "Sunday: 6:00 AM – 6:00 PM"
+      ]
+    },
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=7111013964196361402",
+    "user_ratings_total": 62527,
+    "website": "https://www.kiyomizudera.or.jp/"
+  },
+  "Sannenzaka": {
+    "formatted_address": "2-chōme-211 Kiyomizu, Higashiyama Ward, Kyoto, 605-0862, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.9966644,
+        "lng": 135.781008
+      }
+    },
+    "name": "Sannenzaka",
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "open": {
+            "day": 0,
+            "time": "0000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: Open 24 hours",
+        "Tuesday: Open 24 hours",
+        "Wednesday: Open 24 hours",
+        "Thursday: Open 24 hours",
+        "Friday: Open 24 hours",
+        "Saturday: Open 24 hours",
+        "Sunday: Open 24 hours"
+      ]
+    },
+    "rating": 4.4,
+    "url": "https://maps.google.com/?cid=11767990651930696711",
+    "user_ratings_total": 15276
+  },
+  "Kyoto Yakiniku Hiro Shijo Kiyamachi": {
+    "formatted_address": "674-2 Kamiyachō, Nakagyo Ward, Kyoto, 600-8001, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0043578,
+        "lng": 135.7704222
+      }
+    },
+    "international_phone_number": "+81 75-251-1129",
+    "name": "Yakiniku Hiro Shijo Kiyamachi",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2300"
+          },
+          "open": {
+            "day": 0,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2300"
+          },
+          "open": {
+            "day": 1,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2300"
+          },
+          "open": {
+            "day": 2,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2300"
+          },
+          "open": {
+            "day": 3,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2300"
+          },
+          "open": {
+            "day": 4,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2300"
+          },
+          "open": {
+            "day": 5,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2300"
+          },
+          "open": {
+            "day": 6,
+            "time": "1700"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 5:00 – 11:00 PM",
+        "Tuesday: 5:00 – 11:00 PM",
+        "Wednesday: 5:00 – 11:00 PM",
+        "Thursday: 5:00 – 11:00 PM",
+        "Friday: 5:00 – 11:00 PM",
+        "Saturday: 5:00 – 11:00 PM",
+        "Sunday: 5:00 – 11:00 PM"
+      ]
+    },
+    "rating": 4.2,
+    "url": "https://maps.google.com/?cid=3280333615075260841",
+    "user_ratings_total": 490,
+    "website": "https://www.instagram.com/yakinikuhiro/"
+  },
+  "Kyoto Station": {
+    "formatted_address": "Higashishiokoji Kamadonocho, Shimogyo Ward, Kyoto, 600-8216, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.985849,
+        "lng": 135.7587667
+      }
+    },
+    "name": "Kyoto Station",
+    "rating": 4.3,
+    "url": "https://maps.google.com/?cid=13121875705491233800",
+    "user_ratings_total": 8358,
+    "website": "https://www.jr-odekake.net/eki/top.php?id=0610116"
+  },
+  "OMO7 Osaka by Hoshino Resorts": {
+    "formatted_address": "3-chōme-16-30 Ebisunishi, Naniwa Ward, Osaka, 556-0003, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6508135,
+        "lng": 135.5018895
+      }
+    },
+    "international_phone_number": "+81 50-3134-8095",
+    "name": "OMO7 Osaka by Hoshino Resorts",
+    "rating": 4.2,
+    "url": "https://maps.google.com/?cid=10904178204825139386",
+    "user_ratings_total": 1842,
+    "website": "https://hoshinoresorts.com/ja/hotels/omo7osaka/?utm_source=google&utm_medium=mybusiness"
+  },
+  "Umeda Sky Building": {
+    "formatted_address": "1-chōme-1-88 Ōyodonaka, Kita Ward, Osaka, 531-6023, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.7052872,
+        "lng": 135.4896527
+      }
+    },
+    "name": "Umeda Sky Building",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2200"
+          },
+          "open": {
+            "day": 0,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2200"
+          },
+          "open": {
+            "day": 1,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2200"
+          },
+          "open": {
+            "day": 2,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2200"
+          },
+          "open": {
+            "day": 3,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2200"
+          },
+          "open": {
+            "day": 4,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2200"
+          },
+          "open": {
+            "day": 5,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2200"
+          },
+          "open": {
+            "day": 6,
+            "time": "0930"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 9:30 AM – 10:00 PM",
+        "Tuesday: 9:30 AM – 10:00 PM",
+        "Wednesday: 9:30 AM – 10:00 PM",
+        "Thursday: 9:30 AM – 10:00 PM",
+        "Friday: 9:30 AM – 10:00 PM",
+        "Saturday: 9:30 AM – 10:00 PM",
+        "Sunday: 9:30 AM – 10:00 PM"
+      ]
+    },
+    "rating": 4.4,
+    "url": "https://maps.google.com/?cid=6323866581023509245",
+    "user_ratings_total": 36888,
+    "website": "https://www.skybldg.co.jp/en/"
+  },
+  "Hirakata Park": {
+    "formatted_address": "1-1 Hirakatakōenchō, Hirakata, Osaka 573-0054, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.8059896,
+        "lng": 135.6392002
+      }
+    },
+    "name": "Hirakata Park",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1700"
+          },
+          "open": {
+            "day": 0,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1700"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1700"
+          },
+          "open": {
+            "day": 2,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1700"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1700"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1700"
+          },
+          "open": {
+            "day": 6,
+            "time": "1000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 5:00 PM",
+        "Tuesday: 10:00 AM – 5:00 PM",
+        "Wednesday: 10:00 AM – 5:00 PM",
+        "Thursday: Closed",
+        "Friday: 10:00 AM – 5:00 PM",
+        "Saturday: 10:00 AM – 5:00 PM",
+        "Sunday: 10:00 AM – 5:00 PM"
+      ]
+    },
+    "rating": 4.3,
+    "url": "https://maps.google.com/?cid=6647979896880488689",
+    "user_ratings_total": 8973,
+    "website": "http://www.hirakatapark.co.jp/"
+  },
+  "Torisei Hirakata": {
+    "formatted_address": "19-1 Okahigashichō, Hirakata, Osaka 573-0032, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.8175934,
+        "lng": 135.6504183
+      }
+    },
+    "international_phone_number": "+81 72-807-8884",
+    "name": "鳥せい 枚方モール店",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2300"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2300"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2300"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2300"
+          },
+          "open": {
+            "day": 3,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2300"
+          },
+          "open": {
+            "day": 4,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2300"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2300"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 11:00 PM",
+        "Tuesday: 11:00 AM – 11:00 PM",
+        "Wednesday: 11:00 AM – 11:00 PM",
+        "Thursday: 11:00 AM – 11:00 PM",
+        "Friday: 11:00 AM – 11:00 PM",
+        "Saturday: 11:00 AM – 11:00 PM",
+        "Sunday: 11:00 AM – 11:00 PM"
+      ]
+    },
+    "rating": 3.2,
+    "url": "https://maps.google.com/?cid=2157355754970212496",
+    "user_ratings_total": 51,
+    "website": "https://akr2875411535.owst.jp/"
+  },
+  "Kuzuha Mall": {
+    "formatted_address": "15-1 Kuzuhahanazonochō, Hirakata, Osaka 573-1121, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.8615018,
+        "lng": 135.6773988
+      }
+    },
+    "international_phone_number": "+81 72-866-3300",
+    "name": "Kuzuha Mall",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2100"
+          },
+          "open": {
+            "day": 0,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2000"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2000"
+          },
+          "open": {
+            "day": 2,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2000"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2000"
+          },
+          "open": {
+            "day": 4,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2000"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2100"
+          },
+          "open": {
+            "day": 6,
+            "time": "1000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 8:00 PM",
+        "Tuesday: 10:00 AM – 8:00 PM",
+        "Wednesday: 10:00 AM – 8:00 PM",
+        "Thursday: 10:00 AM – 8:00 PM",
+        "Friday: 10:00 AM – 8:00 PM",
+        "Saturday: 10:00 AM – 9:00 PM",
+        "Sunday: 10:00 AM – 9:00 PM"
+      ]
+    },
+    "rating": 3.9,
+    "url": "https://maps.google.com/?cid=18201673667111364488",
+    "user_ratings_total": 6325,
+    "website": "http://kuzuha-mall.com/"
+  },
+  "sequence MIYASHITA PARK": {
+    "formatted_address": "MIYASHITA PARK North, 6-chōme-20-10 Jingūmae, Shibuya, Tokyo 150-0001, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.6622585,
+        "lng": 139.7019016
+      }
+    },
+    "international_phone_number": "+81 3-5468-6131",
+    "name": "Sequence Miyashita Park",
+    "rating": 3.9,
+    "url": "https://maps.google.com/?cid=9510849312829855018",
+    "user_ratings_total": 809,
+    "website": "https://www.sequencehotels.com/miyashita-park/?utm_source=googlebusinessprofile&utm_medium=google&utm_campaign=maps"
+  },
+  "Afuri Harajuku": {
+    "formatted_address": "Japan, 〒151-0051 Tokyo, Shibuya, Sendagaya, 3-chōme−63−１ グランデフォレスタ原宿 1F",
+    "geometry": {
+      "location": {
+        "lat": 35.6730053,
+        "lng": 139.7038019
+      }
+    },
+    "name": "AFURI Harajuku",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2300"
+          },
+          "open": {
+            "day": 0,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2300"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2300"
+          },
+          "open": {
+            "day": 2,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2300"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2300"
+          },
+          "open": {
+            "day": 4,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2300"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2300"
+          },
+          "open": {
+            "day": 6,
+            "time": "1000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 11:00 PM",
+        "Tuesday: 10:00 AM – 11:00 PM",
+        "Wednesday: 10:00 AM – 11:00 PM",
+        "Thursday: 10:00 AM – 11:00 PM",
+        "Friday: 10:00 AM – 11:00 PM",
+        "Saturday: 10:00 AM – 11:00 PM",
+        "Sunday: 10:00 AM – 11:00 PM"
+      ]
+    },
+    "rating": 4.4,
+    "url": "https://maps.google.com/?cid=14658399961265590294",
+    "user_ratings_total": 4205,
+    "website": "https://afuri.com/"
+  },
+  "Takeshita Street": {
+    "formatted_address": "Takeshita St, 1-chōme Jingūmae, Shibuya, Tokyo 150-0001, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.6710335,
+        "lng": 139.7051821
+      }
+    },
+    "name": "Takeshita Street",
+    "url": "https://maps.google.com/?cid=14032878377351675573"
+  },
+  "SHIBUYA SKY": {
+    "formatted_address": "Japan, 〒150-6145 Tokyo, Shibuya, 2-chōme−24−１２ スクランブルスクエア 14階・45階 46階・屋上",
+    "geometry": {
+      "location": {
+        "lat": 35.6586719,
+        "lng": 139.7019848
+      }
+    },
+    "international_phone_number": "+81 3-4221-0229",
+    "name": "Shibuya Sky",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2230"
+          },
+          "open": {
+            "day": 0,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2230"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2230"
+          },
+          "open": {
+            "day": 2,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2230"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2230"
+          },
+          "open": {
+            "day": 4,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2230"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2230"
+          },
+          "open": {
+            "day": 6,
+            "time": "1000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 10:30 PM",
+        "Tuesday: 10:00 AM – 10:30 PM",
+        "Wednesday: 10:00 AM – 10:30 PM",
+        "Thursday: 10:00 AM – 10:30 PM",
+        "Friday: 10:00 AM – 10:30 PM",
+        "Saturday: 10:00 AM – 10:30 PM",
+        "Sunday: 10:00 AM – 10:30 PM"
+      ]
+    },
+    "rating": 4.6,
+    "url": "https://maps.google.com/?cid=8067212359343678579",
+    "user_ratings_total": 20819,
+    "website": "https://www.shibuya-scramble-square.com/sky/"
+  },
+  "Gonpachi Shibuya": {
+    "formatted_address": "Japan, 〒150-0044 Tokyo, Shibuya, Maruyamachō, 3−６ E-Space Tower, １４Ｆ フロアA",
+    "geometry": {
+      "location": {
+        "lat": 35.6574935,
+        "lng": 139.6955514
+      }
+    },
+    "international_phone_number": "+81 50-5443-0489",
+    "name": "Gonpachi Shibuya",
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "close": {
+            "day": 1,
+            "time": "0330"
+          },
+          "open": {
+            "day": 0,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "0330"
+          },
+          "open": {
+            "day": 1,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "0330"
+          },
+          "open": {
+            "day": 2,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "0330"
+          },
+          "open": {
+            "day": 3,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "0330"
+          },
+          "open": {
+            "day": 4,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "0330"
+          },
+          "open": {
+            "day": 5,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 0,
+            "time": "0330"
+          },
+          "open": {
+            "day": 6,
+            "time": "1130"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:30 AM – 3:30 AM",
+        "Tuesday: 11:30 AM – 3:30 AM",
+        "Wednesday: 11:30 AM – 3:30 AM",
+        "Thursday: 11:30 AM – 3:30 AM",
+        "Friday: 11:30 AM – 3:30 AM",
+        "Saturday: 11:30 AM – 3:30 AM",
+        "Sunday: 11:30 AM – 3:30 AM"
+      ]
+    },
+    "rating": 4.1,
+    "url": "https://maps.google.com/?cid=5535728105966142773",
+    "user_ratings_total": 1856,
+    "website": "https://gonpachi.jp/shibuya/"
+  },
+  "teamLab Planets TOKYO": {
+    "formatted_address": "6-chōme-1-16 Toyosu, Koto City, Tokyo 135-0061, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.6491207,
+        "lng": 139.7897739
+      }
+    },
+    "name": "teamLab Planets TOKYO DMM",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2200"
+          },
+          "open": {
+            "day": 0,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2200"
+          },
+          "open": {
+            "day": 1,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2200"
+          },
+          "open": {
+            "day": 2,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2200"
+          },
+          "open": {
+            "day": 3,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2200"
+          },
+          "open": {
+            "day": 4,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2200"
+          },
+          "open": {
+            "day": 5,
+            "time": "0830"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2200"
+          },
+          "open": {
+            "day": 6,
+            "time": "0830"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 8:30 AM – 10:00 PM",
+        "Tuesday: 8:30 AM – 10:00 PM",
+        "Wednesday: 8:30 AM – 10:00 PM",
+        "Thursday: 8:30 AM – 10:00 PM",
+        "Friday: 8:30 AM – 10:00 PM",
+        "Saturday: 8:30 AM – 10:00 PM",
+        "Sunday: 8:30 AM – 10:00 PM"
+      ]
+    },
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=7918542870314997282",
+    "user_ratings_total": 44313,
+    "website": "https://www.teamlab.art/jp/e/planets/"
+  },
+  "Pokémon Café Nihonbashi": {
+    "formatted_address": "Japan, 〒103-0027 Tokyo, Chuo City, Nihonbashi, 2-chōme−11−２ 髙島屋S.C.東館 ５階",
+    "geometry": {
+      "location": {
+        "lat": 35.6806385,
+        "lng": 139.7744332
+      }
+    },
+    "international_phone_number": "+81 3-6262-3439",
+    "name": "Pokemon Cafe Tokyo Nihombashi",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2130"
+          },
+          "open": {
+            "day": 0,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2130"
+          },
+          "open": {
+            "day": 1,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2130"
+          },
+          "open": {
+            "day": 2,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2130"
+          },
+          "open": {
+            "day": 3,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2130"
+          },
+          "open": {
+            "day": 4,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2130"
+          },
+          "open": {
+            "day": 5,
+            "time": "1030"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2130"
+          },
+          "open": {
+            "day": 6,
+            "time": "1030"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:30 AM – 9:30 PM",
+        "Tuesday: 10:30 AM – 9:30 PM",
+        "Wednesday: 10:30 AM – 9:30 PM",
+        "Thursday: 10:30 AM – 9:30 PM",
+        "Friday: 10:30 AM – 9:30 PM",
+        "Saturday: 10:30 AM – 9:30 PM",
+        "Sunday: 10:30 AM – 9:30 PM"
+      ]
+    },
+    "rating": 4.2,
+    "url": "https://maps.google.com/?cid=4725603843889793061",
+    "user_ratings_total": 2747,
+    "website": "https://www.pokemon-cafe.jp/ja/cafe/"
+  },
+  "MIMARU Tokyo Shinjuku West": {
+    "formatted_address": "3-chōme-3-11 Nishishinjuku, Shinjuku City, Tokyo 160-0023, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.6860556,
+        "lng": 139.6929722
+      }
+    },
+    "international_phone_number": "+81 3-6258-1512",
+    "name": "MIMARU TOKYO SHINJUKU WEST",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2200"
+          },
+          "open": {
+            "day": 0,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2200"
+          },
+          "open": {
+            "day": 1,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2200"
+          },
+          "open": {
+            "day": 2,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2200"
+          },
+          "open": {
+            "day": 3,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2200"
+          },
+          "open": {
+            "day": 4,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2200"
+          },
+          "open": {
+            "day": 5,
+            "time": "0700"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2200"
+          },
+          "open": {
+            "day": 6,
+            "time": "0700"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 7:00 AM – 10:00 PM",
+        "Tuesday: 7:00 AM – 10:00 PM",
+        "Wednesday: 7:00 AM – 10:00 PM",
+        "Thursday: 7:00 AM – 10:00 PM",
+        "Friday: 7:00 AM – 10:00 PM",
+        "Saturday: 7:00 AM – 10:00 PM",
+        "Sunday: 7:00 AM – 10:00 PM"
+      ]
+    },
+    "rating": 4.7,
+    "url": "https://maps.google.com/?cid=15607418906888136225",
+    "user_ratings_total": 441,
+    "website": "https://mimaruhotels.com/ja/hotel/shinjuku-west/?utm_source=google&utm_medium=map&utm_campaign=shinjuku"
+  },
+  "Karaoke Kan Shibuya": {
+    "formatted_address": "Japan, 〒150-0042 Tokyo, Shibuya, Udagawachō, 30−８ K&F ビル",
+    "geometry": {
+      "location": {
+        "lat": 35.6608934,
+        "lng": 139.6981704
+      }
+    },
+    "international_phone_number": "+81 3-3462-0785",
+    "name": "Karaoke Kan Shibuya",
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "close": {
+            "day": 1,
+            "time": "0500"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "0500"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "0500"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "0500"
+          },
+          "open": {
+            "day": 3,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "0500"
+          },
+          "open": {
+            "day": 4,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "0600"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 0,
+            "time": "0600"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 5:00 AM",
+        "Tuesday: 11:00 AM – 5:00 AM",
+        "Wednesday: 11:00 AM – 5:00 AM",
+        "Thursday: 11:00 AM – 5:00 AM",
+        "Friday: 11:00 AM – 6:00 AM",
+        "Saturday: 11:00 AM – 6:00 AM",
+        "Sunday: 11:00 AM – 5:00 AM"
+      ]
+    },
+    "rating": 3.5,
+    "url": "https://maps.google.com/?cid=7596898140513591090",
+    "user_ratings_total": 138,
+    "website": "https://karaokekan.jp/shop/detail/30"
+  },
+  "Tokyo DisneySea": {
+    "formatted_address": "1-13 Maihama, Urayasu, Chiba 279-8511, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.6267108,
+        "lng": 139.8850779
+      }
+    },
+    "international_phone_number": "+81 45-330-5211",
+    "name": "Tokyo DisneySea",
+    "rating": 4.6,
+    "url": "https://maps.google.com/?cid=4703760703938833701",
+    "user_ratings_total": 98975,
+    "website": "https://www.tokyodisneyresort.jp/tds/"
+  },
+  "Disney Ambassador Hotel": {
+    "formatted_address": "2-11 Maihama, Urayasu, Chiba 279-8522, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.6332807,
+        "lng": 139.8877219
+      }
+    },
+    "international_phone_number": "+81 47-305-1111",
+    "name": "Disney Ambassador Hotel",
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=6044710685353048397",
+    "user_ratings_total": 5989,
+    "website": "https://www.tokyodisneyresort.jp/hotel/dah/"
+  },
+  "Tokyo Station": {
+    "formatted_address": "1 Chome-9 Marunouchi, Chiyoda City, Tokyo 100-0005, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.6812996,
+        "lng": 139.7670658
+      }
+    },
+    "name": "Tokyo Station",
+    "rating": 4.3,
+    "url": "https://maps.google.com/?cid=11114180190203192",
+    "user_ratings_total": 14010,
+    "website": "https://www.tokyoinfo.com/"
+  },
+  "Osaka Museum of Housing and Living": {
+    "formatted_address": "Japan, 〒530-0041 Osaka, Kita Ward, Tenjinbashi, 6-chōme−4−２０ 大阪市立住まい情報センタービル 8F",
+    "geometry": {
+      "location": {
+        "lat": 34.71034059999999,
+        "lng": 135.5113276
+      }
+    },
+    "international_phone_number": "+81 6-6242-1170",
+    "name": "Osaka Municipal Housing Museum \"Osaka Museum of Housing and Living\"",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1700"
+          },
+          "open": {
+            "day": 0,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1700"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1700"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1700"
+          },
+          "open": {
+            "day": 4,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1700"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1700"
+          },
+          "open": {
+            "day": 6,
+            "time": "1000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 5:00 PM",
+        "Tuesday: Closed",
+        "Wednesday: 10:00 AM – 5:00 PM",
+        "Thursday: 10:00 AM – 5:00 PM",
+        "Friday: 10:00 AM – 5:00 PM",
+        "Saturday: 10:00 AM – 5:00 PM",
+        "Sunday: 10:00 AM – 5:00 PM"
+      ]
+    },
+    "rating": 4.2,
+    "url": "https://maps.google.com/?cid=10674462834411964257",
+    "user_ratings_total": 7776,
+    "website": "https://www.osaka-angenet.jp/konjyakukan/"
+  },
+  "Torame Yokocho": {
+    "formatted_address": "2-chōme-3-15 Sennichimae, Chuo Ward, 大阪市中央区 Osaka 542-0074, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6655521,
+        "lng": 135.5047441
+      }
+    },
+    "international_phone_number": "+81 6-6636-4510",
+    "name": "Uranamba Torame Yokocho",
+    "rating": 4,
+    "url": "https://maps.google.com/?cid=6273016228902860999",
+    "user_ratings_total": 699,
+    "website": "http://www.虎目横丁.com/"
+  },
+  "Kobe Nunobiki Herb Gardens": {
+    "formatted_address": "1-chōme-4-3 Kitanochō, Chuo Ward, Kobe, Hyogo 650-0002, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.70442750000001,
+        "lng": 135.1938755
+      }
+    },
+    "international_phone_number": "+81 78-271-1160",
+    "name": "Kobe Nunobiki Herb Gardens & Ropeway",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2030"
+          },
+          "open": {
+            "day": 0,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1700"
+          },
+          "open": {
+            "day": 1,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1700"
+          },
+          "open": {
+            "day": 2,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1700"
+          },
+          "open": {
+            "day": 3,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1700"
+          },
+          "open": {
+            "day": 4,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1700"
+          },
+          "open": {
+            "day": 5,
+            "time": "0930"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2030"
+          },
+          "open": {
+            "day": 6,
+            "time": "0930"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 9:30 AM – 5:00 PM",
+        "Tuesday: 9:30 AM – 5:00 PM",
+        "Wednesday: 9:30 AM – 5:00 PM",
+        "Thursday: 9:30 AM – 5:00 PM",
+        "Friday: 9:30 AM – 5:00 PM",
+        "Saturday: 9:30 AM – 8:30 PM",
+        "Sunday: 9:30 AM – 8:30 PM"
+      ]
+    },
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=9393563791333494613",
+    "user_ratings_total": 5426,
+    "website": "https://www.kobeherb.com/"
+  },
+  "Steakland Kobe": {
+    "formatted_address": "Japan, 〒650-1112 Hyogo, Kobe, Chuo Ward, Kitanagasadōri, 1-chōme−9−１７ 三宮興業ビル ６階",
+    "geometry": {
+      "location": {
+        "lat": 34.6930016,
+        "lng": 135.1917353
+      }
+    },
+    "international_phone_number": "+81 78-332-2900",
+    "name": "Steakland Kobe-kan",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1400"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 0,
+            "time": "2100"
+          },
+          "open": {
+            "day": 0,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1400"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2100"
+          },
+          "open": {
+            "day": 1,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1400"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2100"
+          },
+          "open": {
+            "day": 2,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1400"
+          },
+          "open": {
+            "day": 3,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2100"
+          },
+          "open": {
+            "day": 3,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1400"
+          },
+          "open": {
+            "day": 4,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2100"
+          },
+          "open": {
+            "day": 4,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1400"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2100"
+          },
+          "open": {
+            "day": 5,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1400"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2100"
+          },
+          "open": {
+            "day": 6,
+            "time": "1700"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 2:00 PM, 5:00 – 9:00 PM",
+        "Tuesday: 11:00 AM – 2:00 PM, 5:00 – 9:00 PM",
+        "Wednesday: 11:00 AM – 2:00 PM, 5:00 – 9:00 PM",
+        "Thursday: 11:00 AM – 2:00 PM, 5:00 – 9:00 PM",
+        "Friday: 11:00 AM – 2:00 PM, 5:00 – 9:00 PM",
+        "Saturday: 11:00 AM – 2:00 PM, 5:00 – 9:00 PM",
+        "Sunday: 11:00 AM – 2:00 PM, 5:00 – 9:00 PM"
+      ]
+    },
+    "rating": 4,
+    "url": "https://maps.google.com/?cid=4268193972152431843",
+    "user_ratings_total": 8710,
+    "website": "https://steakland-kobe.jp/"
+  },
+  "Arima Onsen Taiko-no-yu": {
+    "formatted_address": "池の尻-292-2 Arimachō, Kita Ward, Kobe, Hyogo 651-1401, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.7979027,
+        "lng": 135.2512053
+      }
+    },
+    "international_phone_number": "+81 78-904-2291",
+    "name": "Taikou-no-Yu Hot Spring",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2200"
+          },
+          "open": {
+            "day": 0,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2200"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2200"
+          },
+          "open": {
+            "day": 2,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2200"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2200"
+          },
+          "open": {
+            "day": 4,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2200"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2200"
+          },
+          "open": {
+            "day": 6,
+            "time": "1000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 10:00 PM",
+        "Tuesday: 10:00 AM – 10:00 PM",
+        "Wednesday: 10:00 AM – 10:00 PM",
+        "Thursday: 10:00 AM – 10:00 PM",
+        "Friday: 10:00 AM – 10:00 PM",
+        "Saturday: 10:00 AM – 10:00 PM",
+        "Sunday: 10:00 AM – 10:00 PM"
+      ]
+    },
+    "rating": 3.7,
+    "url": "https://maps.google.com/?cid=16499097178660564879",
+    "user_ratings_total": 2448,
+    "website": "http://www.taikounoyu.com/"
+  },
+  "Kobe Harborland": {
+    "formatted_address": "1 Chome-7 Higashikawasakicho, Chuo Ward, Kobe, Hyogo 650-0044, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6800711,
+        "lng": 135.1835143
+      }
+    },
+    "international_phone_number": "+81 78-360-3639",
+    "name": "Kobe Harborland",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2100"
+          },
+          "open": {
+            "day": 0,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2100"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2100"
+          },
+          "open": {
+            "day": 2,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2100"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2100"
+          },
+          "open": {
+            "day": 4,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2100"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2100"
+          },
+          "open": {
+            "day": 6,
+            "time": "1000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 9:00 PM",
+        "Tuesday: 10:00 AM – 9:00 PM",
+        "Wednesday: 10:00 AM – 9:00 PM",
+        "Thursday: 10:00 AM – 9:00 PM",
+        "Friday: 10:00 AM – 9:00 PM",
+        "Saturday: 10:00 AM – 9:00 PM",
+        "Sunday: 10:00 AM – 9:00 PM"
+      ]
+    },
+    "rating": 4.2,
+    "url": "https://maps.google.com/?cid=12749193704110128037",
+    "user_ratings_total": 10038,
+    "website": "https://www.harborland.co.jp/"
+  },
+  "Universal Studios Japan": {
+    "formatted_address": "2-chōme-1-33 Sakurajima, Konohana Ward, Osaka, 554-0031, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6656768,
+        "lng": 135.4323185
+      }
+    },
+    "international_phone_number": "+81 570-200-606",
+    "name": "Universal Studios Japan",
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=3892796888607511210",
+    "user_ratings_total": 140422,
+    "website": "https://www.usj.co.jp/web/ja/jp"
+  },
+  "W Osaka": {
+    "formatted_address": "4-chōme-1-3 Minamisenba, Chuo Ward, Osaka, 542-0081, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6778348,
+        "lng": 135.5000826
+      }
+    },
+    "international_phone_number": "+81 6-6484-5355",
+    "name": "W Osaka",
+    "rating": 4.2,
+    "url": "https://maps.google.com/?cid=2705746213831136029",
+    "user_ratings_total": 1662,
+    "website": "https://www.marriott.com/en-us/hotels/osaow-w-osaka/overview/?scid=f2ae0541-1279-4f24-b197-a979c79310b0"
+  },
+  "MYDO Teppanyaki": {
+    "formatted_address": "4-chōme-1-9 Minamisenba, Chuo Ward, Osaka, 542-0081, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.6776398,
+        "lng": 135.4998937
+      }
+    },
+    "international_phone_number": "+81 6-6484-5812",
+    "name": "Mydo",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1500"
+          },
+          "open": {
+            "day": 0,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 0,
+            "time": "2200"
+          },
+          "open": {
+            "day": 0,
+            "time": "1730"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1500"
+          },
+          "open": {
+            "day": 1,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2200"
+          },
+          "open": {
+            "day": 1,
+            "time": "1730"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1500"
+          },
+          "open": {
+            "day": 2,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2200"
+          },
+          "open": {
+            "day": 2,
+            "time": "1730"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1500"
+          },
+          "open": {
+            "day": 3,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2200"
+          },
+          "open": {
+            "day": 3,
+            "time": "1730"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1500"
+          },
+          "open": {
+            "day": 4,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2200"
+          },
+          "open": {
+            "day": 4,
+            "time": "1730"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1500"
+          },
+          "open": {
+            "day": 5,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2200"
+          },
+          "open": {
+            "day": 5,
+            "time": "1730"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1500"
+          },
+          "open": {
+            "day": 6,
+            "time": "1130"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2200"
+          },
+          "open": {
+            "day": 6,
+            "time": "1730"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:30 AM – 3:00 PM, 5:30 – 10:00 PM",
+        "Tuesday: 11:30 AM – 3:00 PM, 5:30 – 10:00 PM",
+        "Wednesday: 11:30 AM – 3:00 PM, 5:30 – 10:00 PM",
+        "Thursday: 11:30 AM – 3:00 PM, 5:30 – 10:00 PM",
+        "Friday: 11:30 AM – 3:00 PM, 5:30 – 10:00 PM",
+        "Saturday: 11:30 AM – 3:00 PM, 5:30 – 10:00 PM",
+        "Sunday: 11:30 AM – 3:00 PM, 5:30 – 10:00 PM"
+      ]
+    },
+    "rating": 4.3,
+    "url": "https://maps.google.com/?cid=4258381221987283802",
+    "user_ratings_total": 91,
+    "website": "https://mydo.wosaka.com/"
+  },
+  "Karaoke Kan Shinsaibashi 2-chome": {
+    "formatted_address": "Japan, 〒542-0076 Osaka, Chuo Ward, Namba, 1-chōme−5−１６ 大阪B&Vビル",
+    "geometry": {
+      "location": {
+        "lat": 34.6678073,
+        "lng": 135.5014099
+      }
+    },
+    "international_phone_number": "+81 6-4708-1061",
+    "name": "Karaokekan Namba-ebisubashi honten",
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "close": {
+            "day": 1,
+            "time": "0600"
+          },
+          "open": {
+            "day": 0,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "0600"
+          },
+          "open": {
+            "day": 1,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "0600"
+          },
+          "open": {
+            "day": 2,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "0600"
+          },
+          "open": {
+            "day": 3,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "0600"
+          },
+          "open": {
+            "day": 4,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "0700"
+          },
+          "open": {
+            "day": 5,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 0,
+            "time": "0700"
+          },
+          "open": {
+            "day": 6,
+            "time": "0900"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 9:00 AM – 6:00 AM",
+        "Tuesday: 9:00 AM – 6:00 AM",
+        "Wednesday: 9:00 AM – 6:00 AM",
+        "Thursday: 9:00 AM – 6:00 AM",
+        "Friday: 9:00 AM – 7:00 AM",
+        "Saturday: 9:00 AM – 7:00 AM",
+        "Sunday: 9:00 AM – 6:00 AM"
+      ]
+    },
+    "rating": 3.6,
+    "url": "https://maps.google.com/?cid=2046130830251139311",
+    "user_ratings_total": 204,
+    "website": "https://karaokekan.jp/shop/detail/182"
+  },
+  "Bar Nayuta": {
+    "formatted_address": "Japan, 〒542-0086 Osaka, Chuo Ward, Nishishinsaibashi, 1-chōme−6−１７ マリオビル5F",
+    "geometry": {
+      "location": {
+        "lat": 34.672034,
+        "lng": 135.498379
+      }
+    },
+    "international_phone_number": "+81 6-6210-3615",
+    "name": "Bar Nayuta",
+    "opening_hours": {
+      "open_now": true,
+      "periods": [
+        {
+          "close": {
+            "day": 1,
+            "time": "0300"
+          },
+          "open": {
+            "day": 0,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "0300"
+          },
+          "open": {
+            "day": 1,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "0300"
+          },
+          "open": {
+            "day": 2,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "0300"
+          },
+          "open": {
+            "day": 3,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "0300"
+          },
+          "open": {
+            "day": 4,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "0300"
+          },
+          "open": {
+            "day": 5,
+            "time": "1700"
+          }
+        },
+        {
+          "close": {
+            "day": 0,
+            "time": "0300"
+          },
+          "open": {
+            "day": 6,
+            "time": "1700"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 5:00 PM – 3:00 AM",
+        "Tuesday: 5:00 PM – 3:00 AM",
+        "Wednesday: 5:00 PM – 3:00 AM",
+        "Thursday: 5:00 PM – 3:00 AM",
+        "Friday: 5:00 PM – 3:00 AM",
+        "Saturday: 5:00 PM – 3:00 AM",
+        "Sunday: 5:00 PM – 3:00 AM"
+      ]
+    },
+    "rating": 4.7,
+    "url": "https://maps.google.com/?cid=8702241179377055165",
+    "user_ratings_total": 1212,
+    "website": "http://bar-nayuta.com/"
+  },
+  "Eikan-do Zenrin-ji": {
+    "formatted_address": "48 Eikandōchō, Sakyo Ward, Kyoto, 606-8445, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0148543,
+        "lng": 135.7941588
+      }
+    },
+    "international_phone_number": "+81 75-761-0007",
+    "name": "Eikandō Temple",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1600"
+          },
+          "open": {
+            "day": 0,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1600"
+          },
+          "open": {
+            "day": 1,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1600"
+          },
+          "open": {
+            "day": 2,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1600"
+          },
+          "open": {
+            "day": 3,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1600"
+          },
+          "open": {
+            "day": 4,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1600"
+          },
+          "open": {
+            "day": 5,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1600"
+          },
+          "open": {
+            "day": 6,
+            "time": "0900"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 9:00 AM – 4:00 PM",
+        "Tuesday: 9:00 AM – 4:00 PM",
+        "Wednesday: 9:00 AM – 4:00 PM",
+        "Thursday: 9:00 AM – 4:00 PM",
+        "Friday: 9:00 AM – 4:00 PM",
+        "Saturday: 9:00 AM – 4:00 PM",
+        "Sunday: 9:00 AM – 4:00 PM"
+      ]
+    },
+    "rating": 4.6,
+    "url": "https://maps.google.com/?cid=2060121541776026964",
+    "user_ratings_total": 8800,
+    "website": "http://www.eikando.or.jp/"
+  },
+  "Philosopher’s Path": {
+    "formatted_address": "Tetsugaku No Michi, Sakyo Ward, Kyoto, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0214532,
+        "lng": 135.7942948
+      }
+    },
+    "name": "Tetsugaku No Michi",
+    "url": "https://maps.google.com/?cid=13093296689021343783"
+  },
+  "Okutan Nanzenji": {
+    "formatted_address": "86-30 Nanzenji Fukuchichō, Sakyo Ward, Kyoto, 606-8435, Japan",
+    "geometry": {
+      "location": {
+        "lat": 35.0122585,
+        "lng": 135.7930363
+      }
+    },
+    "international_phone_number": "+81 75-771-8709",
+    "name": "Okutan Nanzenji",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1400"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1400"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1400"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1400"
+          },
+          "open": {
+            "day": 3,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1400"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1400"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 2:00 PM",
+        "Tuesday: 11:00 AM – 2:00 PM",
+        "Wednesday: 11:00 AM – 2:00 PM",
+        "Thursday: Closed",
+        "Friday: 11:00 AM – 2:00 PM",
+        "Saturday: 11:00 AM – 2:00 PM",
+        "Sunday: 11:00 AM – 2:00 PM"
+      ]
+    },
+    "rating": 4.1,
+    "url": "https://maps.google.com/?cid=737529368844235860",
+    "user_ratings_total": 285
+  },
+  "Tofuku-ji Temple": {
+    "formatted_address": "15-chōme-778 Honmachi, Higashiyama Ward, Kyoto, 605-0981, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.976025,
+        "lng": 135.7737627
+      }
+    },
+    "international_phone_number": "+81 75-561-0087",
+    "name": "Tōfuku-ji Temple",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1630"
+          },
+          "open": {
+            "day": 0,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1630"
+          },
+          "open": {
+            "day": 1,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1630"
+          },
+          "open": {
+            "day": 2,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1630"
+          },
+          "open": {
+            "day": 3,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1630"
+          },
+          "open": {
+            "day": 4,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1630"
+          },
+          "open": {
+            "day": 5,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1630"
+          },
+          "open": {
+            "day": 6,
+            "time": "0900"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 9:00 AM – 4:30 PM",
+        "Tuesday: 9:00 AM – 4:30 PM",
+        "Wednesday: 9:00 AM – 4:30 PM",
+        "Thursday: 9:00 AM – 4:30 PM",
+        "Friday: 9:00 AM – 4:30 PM",
+        "Saturday: 9:00 AM – 4:30 PM",
+        "Sunday: 9:00 AM – 4:30 PM"
+      ]
+    },
+    "rating": 4.5,
+    "url": "https://maps.google.com/?cid=7117677159742707137",
+    "user_ratings_total": 10246,
+    "website": "https://tofukuji.jp/"
+  },
+  "Kodaiji Temple": {
+    "formatted_address": "Japan, 〒605-0825 Kyoto, Higashiyama Ward, Shimokawarachō, 高台寺下河原町５２６",
+    "geometry": {
+      "location": {
+        "lat": 35.0007687,
+        "lng": 135.7812718
+      }
+    },
+    "international_phone_number": "+81 75-561-9966",
+    "name": "Kōdaiji Temple",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1700"
+          },
+          "open": {
+            "day": 0,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1700"
+          },
+          "open": {
+            "day": 1,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1700"
+          },
+          "open": {
+            "day": 2,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "1700"
+          },
+          "open": {
+            "day": 3,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1700"
+          },
+          "open": {
+            "day": 4,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1700"
+          },
+          "open": {
+            "day": 5,
+            "time": "0900"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1700"
+          },
+          "open": {
+            "day": 6,
+            "time": "0900"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 9:00 AM – 5:00 PM",
+        "Tuesday: 9:00 AM – 5:00 PM",
+        "Wednesday: 9:00 AM – 5:00 PM",
+        "Thursday: 9:00 AM – 5:00 PM",
+        "Friday: 9:00 AM – 5:00 PM",
+        "Saturday: 9:00 AM – 5:00 PM",
+        "Sunday: 9:00 AM – 5:00 PM"
+      ]
+    },
+    "rating": 4.4,
+    "url": "https://maps.google.com/?cid=2616919559259342976",
+    "user_ratings_total": 9204,
+    "website": "https://www.kodaiji.com/"
+  },
+  "Takamura Wine & Coffee Roasters": {
+    "formatted_address": "2-chōme-2-18 Edobori, Nishi Ward, Osaka, 550-0002, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.687283,
+        "lng": 135.491105
+      }
+    },
+    "international_phone_number": "+81 6-6443-3519",
+    "name": "Takamura Wine & Coffee Roasters",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "1930"
+          },
+          "open": {
+            "day": 0,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "1930"
+          },
+          "open": {
+            "day": 1,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "1930"
+          },
+          "open": {
+            "day": 2,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "1930"
+          },
+          "open": {
+            "day": 4,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "1930"
+          },
+          "open": {
+            "day": 5,
+            "time": "1100"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "1930"
+          },
+          "open": {
+            "day": 6,
+            "time": "1100"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 11:00 AM – 7:30 PM",
+        "Tuesday: 11:00 AM – 7:30 PM",
+        "Wednesday: Closed",
+        "Thursday: 11:00 AM – 7:30 PM",
+        "Friday: 11:00 AM – 7:30 PM",
+        "Saturday: 11:00 AM – 7:30 PM",
+        "Sunday: 11:00 AM – 7:30 PM"
+      ]
+    },
+    "rating": 4.4,
+    "url": "https://maps.google.com/?cid=18436798584987103295",
+    "user_ratings_total": 1678,
+    "website": "http://takamuranet.com/"
+  },
+  "Rinku Premium Outlets": {
+    "formatted_address": "3-28 Rinkūōraiminami, Izumisano, Osaka 598-8508, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.4064643,
+        "lng": 135.2954403
+      }
+    },
+    "international_phone_number": "+81 50-1721-5234",
+    "name": "りんくうプレミアム・アウトレット",
+    "opening_hours": {
+      "open_now": false,
+      "periods": [
+        {
+          "close": {
+            "day": 0,
+            "time": "2000"
+          },
+          "open": {
+            "day": 0,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 1,
+            "time": "2000"
+          },
+          "open": {
+            "day": 1,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 2,
+            "time": "2000"
+          },
+          "open": {
+            "day": 2,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 3,
+            "time": "2000"
+          },
+          "open": {
+            "day": 3,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 4,
+            "time": "2000"
+          },
+          "open": {
+            "day": 4,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 5,
+            "time": "2000"
+          },
+          "open": {
+            "day": 5,
+            "time": "1000"
+          }
+        },
+        {
+          "close": {
+            "day": 6,
+            "time": "2000"
+          },
+          "open": {
+            "day": 6,
+            "time": "1000"
+          }
+        }
+      ],
+      "weekday_text": [
+        "Monday: 10:00 AM – 8:00 PM",
+        "Tuesday: 10:00 AM – 8:00 PM",
+        "Wednesday: 10:00 AM – 8:00 PM",
+        "Thursday: 10:00 AM – 8:00 PM",
+        "Friday: 10:00 AM – 8:00 PM",
+        "Saturday: 10:00 AM – 8:00 PM",
+        "Sunday: 10:00 AM – 8:00 PM"
+      ]
+    },
+    "rating": 4.1,
+    "url": "https://maps.google.com/?cid=14141131390446530690",
+    "user_ratings_total": 14913,
+    "website": "https://www.premiumoutlets.co.jp/rinku/"
+  },
+  "Kansai International Airport": {
+    "formatted_address": "Terminal 1, Osaka, Japan",
+    "geometry": {
+      "location": {
+        "lat": 34.4348282,
+        "lng": 135.2446195
+      }
+    },
+    "name": "Terminal 1",
+    "url": "https://maps.google.com/?cid=12104414214768042484"
+  }
+}
