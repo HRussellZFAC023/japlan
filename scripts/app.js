@@ -74,6 +74,7 @@ const mapModeState = new Map();
 let mapDirectionsData = null;
 const DEFAULT_DEPARTURE_MINUTES = 9 * 60;
 let routingKeyPromptActive = false;
+let googleRoutingKeyPromptActive = false;
 let wizardState = null;
 let tripLibraryConfirm = null;
 let uniqueIdCounter = 0;
@@ -100,42 +101,213 @@ const MODE_COLORS = {
 
 const VALID_ROUTING_PROFILES = new Set(Object.values(MODE_TO_PROFILE));
 
-const RAIL_FALLBACKS = {
-  "act-transfer-kix-hirakata": {
-    summary: {
-      route: "Kansai Airport → Hirakata",
-      services: "JR Haruka Limited Express → JR Katamachi Line",
-      keyStops: "Kansai Airport · Tennoji · Shin-Osaka · Hirakatashi",
-      duration: "85 min",
-      durationMinutes: 85,
-      cost: 2200,
-      pass: "JR Pass fully covered",
-    },
-    legs: [
-      {
-        kind: "transit",
-        line: "JR Haruka Limited Express",
-        info: "Kansai Airport → Tennoji → Shin-Osaka",
-        durationMinutes: 50,
-        color: "#2563eb",
-      },
-      {
-        kind: "transit",
-        line: "JR Katamachi Line",
-        info: "Shin-Osaka → Hirakatashi",
-        durationMinutes: 35,
-        color: "#16a34a",
-      },
-      {
-        kind: "walk",
-        line: "Walk",
-        info: "Hirakatashi Station → Candeo Hotels Hirakata",
-        durationMinutes: 5,
-        color: "#0f766e",
-      },
-    ],
-  },
+const DEFAULT_ROUTING_PROVIDER = "openrouteservice";
+const HYBRID_ROUTING_PROVIDER = "hybrid-routing";
+
+const ROUTING_PROVIDER_LABELS = {
+  "openrouteservice": "OpenRouteService",
+  "google-directions": "Google Directions",
 };
+
+const SUPPORTED_ROUTING_PROVIDERS = new Set([
+  "openrouteservice",
+  "google-directions",
+  "auto",
+]);
+
+const EMBEDDED_KEY_PREFIXES = {
+  google: "gapi:",
+};
+
+function getGlobalScope() {
+  if (typeof globalThis !== "undefined") {
+    return globalThis;
+  }
+  if (typeof window !== "undefined") {
+    return window;
+  }
+  if (typeof self !== "undefined") {
+    return self;
+  }
+  if (typeof global !== "undefined") {
+    return global;
+  }
+  return null;
+}
+
+function decodeBase64Value(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+  try {
+    const scope = getGlobalScope();
+    if (scope) {
+      if (typeof scope.atob === "function") {
+        return scope.atob(trimmed);
+      }
+      if (
+        typeof scope.Buffer === "function" &&
+        typeof scope.Buffer.from === "function"
+      ) {
+        return scope.Buffer.from(trimmed, "base64").toString("utf-8");
+      }
+    }
+  } catch (error) {
+    console.warn("Failed to decode base64 value.", error);
+  }
+  return "";
+}
+
+function encodeBase64Value(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+  try {
+    const scope = getGlobalScope();
+    if (scope) {
+      if (typeof scope.btoa === "function") {
+        return scope.btoa(trimmed);
+      }
+      if (
+        typeof scope.Buffer === "function" &&
+        typeof scope.Buffer.from === "function"
+      ) {
+        return scope.Buffer.from(trimmed, "utf-8").toString("base64");
+      }
+    }
+  } catch (error) {
+    console.warn("Failed to encode base64 value.", error);
+  }
+  return "";
+}
+
+function revealEmbeddedApiKey(raw) {
+  if (typeof raw !== "string") {
+    return "";
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return "";
+  }
+  const googlePrefix = EMBEDDED_KEY_PREFIXES.google;
+  if (googlePrefix && trimmed.startsWith(googlePrefix)) {
+    const payload = trimmed
+      .slice(googlePrefix.length)
+      .replace(/[^A-Za-z0-9+/=]/g, "");
+    if (!payload) {
+      return "";
+    }
+    const decoded = decodeBase64Value(payload);
+    return decoded || "";
+  }
+  return trimmed;
+}
+
+function encodeGoogleApiKeyForStorage(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+  const googlePrefix = EMBEDDED_KEY_PREFIXES.google;
+  if (googlePrefix && trimmed.startsWith(googlePrefix)) {
+    return trimmed;
+  }
+  const encoded = encodeBase64Value(trimmed);
+  if (!encoded) {
+    return trimmed;
+  }
+  const chunkSize = 12;
+  const chunks = [];
+  for (let index = 0; index < encoded.length; index += chunkSize) {
+    chunks.push(encoded.slice(index, index + chunkSize));
+  }
+  return `${googlePrefix}${chunks.join(".")}`;
+}
+
+function normalizeRoutingProvider(value, { allowAuto = false } = {}) {
+  if (typeof value !== "string") {
+    return allowAuto ? "auto" : DEFAULT_ROUTING_PROVIDER;
+  }
+  const normalized = value.trim().toLowerCase();
+  if (allowAuto) {
+    if (!normalized || normalized === "auto" || normalized === "hybrid") {
+      return "auto";
+    }
+  } else if (!normalized) {
+    return DEFAULT_ROUTING_PROVIDER;
+  }
+  switch (normalized) {
+    case "ors":
+    case "openroute":
+    case "openrouteservice":
+      return "openrouteservice";
+    case "google":
+    case "google_directions":
+    case "googledirections":
+    case "google-directions":
+      return "google-directions";
+    case "auto":
+      return allowAuto ? "auto" : DEFAULT_ROUTING_PROVIDER;
+    default:
+      return SUPPORTED_ROUTING_PROVIDERS.has(normalized)
+        ? normalized
+        : DEFAULT_ROUTING_PROVIDER;
+  }
+}
+
+function resolveRoutingProviders(routing = {}) {
+  const baseRaw = normalizeRoutingProvider(routing.provider, { allowAuto: true });
+  const base = baseRaw === "auto" ? DEFAULT_ROUTING_PROVIDER : baseRaw;
+  const drivingRaw = normalizeRoutingProvider(routing.drivingProvider, {
+    allowAuto: true,
+  });
+  const walkingRaw = normalizeRoutingProvider(routing.walkingProvider, {
+    allowAuto: true,
+  });
+  let transit = normalizeRoutingProvider(routing.transitProvider, {
+    allowAuto: true,
+  });
+  const driving = drivingRaw === "auto" ? base : drivingRaw || base;
+  const walking = walkingRaw === "auto" ? base : walkingRaw || base;
+  if (transit === "auto") {
+    const googleKey = revealEmbeddedApiKey(routing.googleApiKey);
+    if (googleKey) {
+      transit = "google-directions";
+    } else if (baseRaw !== "auto") {
+      transit = base;
+    } else {
+      transit = DEFAULT_ROUTING_PROVIDER;
+    }
+  }
+  return { base, driving, walking, transit };
+}
+
+function providerNeedsOpenRoute(provider) {
+  return normalizeRoutingProvider(provider) === "openrouteservice";
+}
+
+function providerNeedsGoogle(provider) {
+  return normalizeRoutingProvider(provider) === "google-directions";
+}
+
+function getRoutingProviderDisplayName(provider) {
+  const key = normalizeRoutingProvider(provider, { allowAuto: true });
+  if (key === "auto") {
+    return "routing";
+  }
+  return ROUTING_PROVIDER_LABELS[key] || key;
+}
 
 const JAPAN_RAIL_REFERENCE = [
   {
@@ -664,6 +836,38 @@ function normalizeConfig(rawConfig) {
     ...(rawConfig.mapCoordinates || {}),
   };
 
+  const rawRouting = rawConfig.routing || {};
+  const templateRouting = template.routing || {};
+  const baseProviderRaw =
+    rawRouting.provider ||
+    templateRouting.provider ||
+    DEFAULT_ROUTING_PROVIDER;
+  const normalizedBase = normalizeRoutingProvider(baseProviderRaw, {
+    allowAuto: true,
+  });
+  const fallbackBase =
+    normalizedBase === "auto" ? DEFAULT_ROUTING_PROVIDER : normalizedBase;
+  const drivingProviderRaw =
+    rawRouting.drivingProvider ||
+    templateRouting.drivingProvider ||
+    baseProviderRaw;
+  const walkingProviderRaw =
+    rawRouting.walkingProvider ||
+    templateRouting.walkingProvider ||
+    baseProviderRaw;
+  const transitProviderRaw =
+    rawRouting.transitProvider ||
+    templateRouting.transitProvider ||
+    "auto";
+  const normalizedDriving = normalizeRoutingProvider(drivingProviderRaw, {
+    allowAuto: true,
+  });
+  const normalizedWalking = normalizeRoutingProvider(walkingProviderRaw, {
+    allowAuto: true,
+  });
+  const normalizedTransit = normalizeRoutingProvider(transitProviderRaw, {
+    allowAuto: true,
+  });
   const config = {
     tripName: rawConfig.tripName || template.tripName || "Trip Planner",
     range: { start: fallbackStart, end: fallbackEnd },
@@ -677,14 +881,24 @@ function normalizeConfig(rawConfig) {
       : template.mapDefaults || null,
     mapCoordinates: deepClone(mergedCoordinates),
     routing: {
-      provider:
-        rawConfig.routing?.provider ||
-        template.routing?.provider ||
-        "openrouteservice",
+      provider: normalizedBase,
+      drivingProvider:
+        normalizedDriving === "auto" ? fallbackBase : normalizedDriving,
+      walkingProvider:
+        normalizedWalking === "auto" ? fallbackBase : normalizedWalking,
+      transitProvider: normalizedTransit,
       openRouteApiKey:
-        rawConfig.routing?.openRouteApiKey ||
-        template.routing?.openRouteApiKey ||
-        "",
+        typeof rawRouting.openRouteApiKey === "string"
+          ? rawRouting.openRouteApiKey.trim()
+          : typeof templateRouting.openRouteApiKey === "string"
+          ? templateRouting.openRouteApiKey.trim()
+          : "",
+      googleApiKey:
+        typeof rawRouting.googleApiKey === "string"
+          ? rawRouting.googleApiKey.trim()
+          : typeof templateRouting.googleApiKey === "string"
+          ? templateRouting.googleApiKey.trim()
+          : "",
     },
     catalog: {
       activity: Array.isArray(rawConfig.catalog?.activity)
@@ -1152,6 +1366,69 @@ function buildLineStringFromPoints(points) {
   };
 }
 
+function decodePolyline(encoded) {
+  if (typeof encoded !== "string" || !encoded.length) return [];
+  const coordinates = [];
+  let index = 0;
+  let lat = 0;
+  let lng = 0;
+
+  while (index < encoded.length) {
+    let shift = 0;
+    let result = 0;
+    let byte;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20 && index < encoded.length);
+    const deltaLat = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+    lat += deltaLat;
+
+    shift = 0;
+    result = 0;
+    do {
+      byte = encoded.charCodeAt(index++) - 63;
+      result |= (byte & 0x1f) << shift;
+      shift += 5;
+    } while (byte >= 0x20 && index < encoded.length);
+    const deltaLng = (result & 1) !== 0 ? ~(result >> 1) : result >> 1;
+    lng += deltaLng;
+
+    coordinates.push([lat / 1e5, lng / 1e5]);
+  }
+
+  return coordinates;
+}
+
+function appendPath(target, segment) {
+  if (!Array.isArray(target) || !Array.isArray(segment)) return;
+  segment.forEach((point, index) => {
+    if (!Array.isArray(point) || point.length !== 2) return;
+    const lat = Number(point[0]);
+    const lon = Number(point[1]);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+    if (target.length) {
+      const last = target[target.length - 1];
+      if (coordsEqual(last, [lat, lon]) && index === 0) {
+        return;
+      }
+    }
+    target.push([lat, lon]);
+  });
+}
+
+function stripHtml(input) {
+  if (typeof input !== "string") return "";
+  if (typeof window !== "undefined" && window.document) {
+    const div = window.document.createElement("div");
+    div.innerHTML = input;
+    const text = div.textContent || div.innerText || "";
+    return text.replace(/\s+/g, " ").trim();
+  }
+  return input.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+}
+
 function haversineDistance(a, b) {
   if (!Array.isArray(a) || !Array.isArray(b)) return 0;
   const toRad = (value) => (value * Math.PI) / 180;
@@ -1270,6 +1547,26 @@ function getPreferredDepartureMinutes(day) {
   return DEFAULT_DEPARTURE_MINUTES;
 }
 
+function formatMissingRoutingKeyMessage(travel, fallback = "Add routing API keys to calculate travel time.") {
+  const providers = Array.isArray(travel?.missingProviders)
+    ? travel.missingProviders
+        .map((name) => (typeof name === "string" ? name.trim() : ""))
+        .filter(Boolean)
+    : [];
+  if (!providers.length) {
+    return fallback;
+  }
+  if (providers.length === 1) {
+    return `Add your ${providers[0]} API key to calculate travel time.`;
+  }
+  if (providers.length === 2) {
+    return `Add your ${providers[0]} and ${providers[1]} API keys to calculate travel time.`;
+  }
+  const leading = providers.slice(0, -1).join(", ");
+  const last = providers[providers.length - 1];
+  return `Add your ${leading}, and ${last} API keys to calculate travel time.`;
+}
+
 function buildTravelDisplay(plan) {
   const travel = plan.travel;
   if (!plan.stay) {
@@ -1369,9 +1666,7 @@ function buildTravelDisplay(plan) {
       return {
         text: "Travel: add API key",
         state: "warning",
-        title: routeLabel
-          ? `Add your OpenRouteService API key to calculate travel time for ${routeLabel}.`
-          : "Add your OpenRouteService API key to calculate travel time.",
+        title: formatMissingRoutingKeyMessage(travel),
       };
     case "missing-stay":
       return {
@@ -1444,75 +1739,6 @@ function applyTravelChipState(chip, plan) {
   } else {
     chip.removeAttribute("title");
   }
-}
-
-function getFallbackRailTravel(itinerary, context) {
-  if (!itinerary || !Array.isArray(itinerary.activities)) return null;
-  const match = itinerary.activities.find(
-    (activity) => RAIL_FALLBACKS[activity.id]
-  );
-  if (!match) return null;
-  const fallback = RAIL_FALLBACKS[match.id];
-  if (!fallback) return null;
-
-  const coords =
-    itinerary.routePoints && itinerary.routePoints.length
-      ? itinerary.routePoints
-      : context?.points || [];
-  const geometry = buildLineStringFromPoints(coords);
-  const durationSeconds = (fallback.summary.durationMinutes || 0) * 60;
-  const transitLegs = fallback.legs.map((leg) => ({
-    kind: leg.kind || "transit",
-    mode: leg.line,
-    line: leg.line,
-    info: leg.info,
-    durationSeconds: (leg.durationMinutes || 0) * 60,
-    distanceMeters: 0,
-    color: leg.color || MODE_COLORS.transit,
-  }));
-  const transitDetails = {
-    status: "ready",
-    durationSeconds,
-    distanceMeters: 0,
-    legs: transitLegs,
-    lines: transitLegs.map((leg) => leg.line).filter(Boolean),
-    transfers: Math.max(
-      0,
-      transitLegs.filter((leg) => leg.kind === "transit").length - 1
-    ),
-    metadata: {
-      cost: fallback.summary.cost,
-      pass: fallback.summary.pass,
-      services: fallback.summary.services,
-    },
-    geometry,
-    path: geometryToLatLngs(geometry),
-  };
-
-  return {
-    status: "ready",
-    provider: "japan-rail-guide",
-    profile: MODE_TO_PROFILE.transit,
-    mode: "transit",
-    signature: "rail-fallback",
-    durationSeconds,
-    distanceMeters: 0,
-    fetchedAt: Date.now(),
-    skipped: itinerary.skipped || [],
-    geometry,
-    originStay: context.originSnapshot || null,
-    destinationStay: context.destinationSnapshot || null,
-    stops: context.stopSnapshots || [],
-    modes: {
-      transit: transitDetails,
-      walking: { status: "unavailable" },
-      driving: { status: "unavailable" },
-    },
-    transit: transitDetails,
-    walking: { status: "unavailable" },
-    driving: { status: "unavailable" },
-    meta: fallback.summary,
-  };
 }
 
 function refreshTravelChip(dateKey) {
@@ -1643,7 +1869,7 @@ function applyTravelSummary(summaryEl, plan, dateKey) {
         break;
       case "missing-key":
         state = "warning";
-        caption = "Add your OpenRouteService API key to calculate travel time.";
+        caption = formatMissingRoutingKeyMessage(travel);
         break;
       case "missing-stay":
         state = "warning";
@@ -1915,7 +2141,8 @@ function scheduleTravelCalculation(dateKey, { interactive = false } = {}) {
 }
 
 async function computeTravelForDay(dateKey, { interactive = false } = {}) {
-  const provider = "openrouteservice";
+  const routingConfig = planState.config.routing || {};
+  const providers = resolveRoutingProviders(routingConfig);
   const drivingProfile = MODE_TO_PROFILE.driving;
   const transitProfile = MODE_TO_PROFILE.transit;
   const walkingProfile = MODE_TO_PROFILE.walking;
@@ -1924,7 +2151,8 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
 
   const skipped = Array.isArray(itinerary.skipped) ? itinerary.skipped : [];
   const signatureBase = itinerary.signature || "";
-  const signature = `${provider}:${drivingProfile}:${signatureBase}`;
+  const providerSignature = `${providers.driving}:${providers.walking}:${providers.transit}`;
+  const signature = `${HYBRID_ROUTING_PROVIDER}:${providerSignature}:${signatureBase}`;
   const originSnapshot = serializeStay(itinerary.originStay);
   const destinationSnapshot = serializeStay(itinerary.stay);
   const stopSnapshots = serializeActivities(itinerary.activities);
@@ -1932,7 +2160,7 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
 
   const composeTravel = (status, extra = {}) => ({
     status,
-    provider,
+    provider: HYBRID_ROUTING_PROVIDER,
     profile: transitProfile,
     mode: "transit",
     signature,
@@ -1940,6 +2168,7 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     originStay: originSnapshot,
     destinationStay: destinationSnapshot,
     stops: stopSnapshots,
+    providers,
     ...extra,
   });
 
@@ -1975,9 +2204,10 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
           geometry: null,
           legs: [],
           path: [],
+          provider: providers.driving,
         },
-        walking: { status: "unavailable" },
-        transit: { status: "unavailable" },
+        walking: { status: "unavailable", provider: providers.walking },
+        transit: { status: "unavailable", provider: providers.transit },
       },
       driving: {
         status: "ready",
@@ -1988,9 +2218,10 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
         geometry: null,
         legs: [],
         path: [],
+        provider: providers.driving,
       },
-      walking: { status: "unavailable" },
-      transit: { status: "unavailable" },
+      walking: { status: "unavailable", provider: providers.walking },
+      transit: { status: "unavailable", provider: providers.transit },
     });
     setDayTravel(dateKey, travelData);
     return travelData;
@@ -2000,15 +2231,48 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     !Array.isArray(itinerary.routePoints) ||
     itinerary.routePoints.length < 2
   ) {
-    setDayTravel(dateKey, composeTravel("insufficient-data"), {
-      persist: false,
-    });
+    setDayTravel(dateKey, composeTravel("insufficient-data"), { persist: false });
     return null;
   }
 
-  const apiKey = getRoutingApiKey({ interactive });
-  if (!apiKey) {
-    setDayTravel(dateKey, composeTravel("missing-key"), { persist: false });
+  const needsOpenRoute = [
+    providers.driving,
+    providers.walking,
+    providers.transit,
+  ].some(providerNeedsOpenRoute);
+  const needsGoogle = [
+    providers.driving,
+    providers.walking,
+    providers.transit,
+  ].some(providerNeedsGoogle);
+
+  let openRouteApiKey = null;
+  let googleApiKey = null;
+
+  if (needsOpenRoute) {
+    openRouteApiKey = getRoutingApiKey({ interactive });
+  }
+  if (needsGoogle) {
+    googleApiKey = getGoogleRoutingApiKey({ interactive });
+  }
+
+  const missingProviders = [];
+  if (needsOpenRoute && !openRouteApiKey) {
+    missingProviders.push(getRoutingProviderDisplayName("openrouteservice"));
+  }
+  if (needsGoogle && !googleApiKey) {
+    missingProviders.push(getRoutingProviderDisplayName("google-directions"));
+  }
+
+  if (missingProviders.length) {
+    setDayTravel(
+      dateKey,
+      composeTravel("missing-key", {
+        missingProviders,
+        fetchedAt: Date.now(),
+      }),
+      { persist: false }
+    );
     return null;
   }
 
@@ -2021,45 +2285,62 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   );
 
   try {
-    const drivingPromise = VALID_ROUTING_PROFILES.has(drivingProfile)
-      ? requestOpenRouteRoute(itinerary.routePoints, apiKey, drivingProfile)
-      : Promise.resolve(null);
-
+    const departureMinutes = getPreferredDepartureMinutes(day);
+    const baseDate = dateKey ? new Date(`${dateKey}T00:00:00`) : new Date();
+    const departureTimestamp = baseDate.getTime() + departureMinutes * 60000;
     const routeDistanceEstimate = estimateRouteDistance(itinerary.routePoints);
-    let walkingOutcome = null;
-    if (
-      VALID_ROUTING_PROFILES.has(walkingProfile) &&
-      routeDistanceEstimate <= 30000
-    ) {
-      walkingOutcome = await requestOpenRouteRoute(
-        itinerary.routePoints,
-        apiKey,
-        walkingProfile
-      ).then(
-        (route) => route,
-        (error) => ({ error })
-      );
-    }
 
-    const drivingRoute = await drivingPromise;
-
-    let walkingRoute = null;
-    let walkingError = null;
-    if (walkingOutcome && walkingOutcome.error) {
-      walkingError = walkingOutcome.error;
-      console.warn("Walking routing unavailable", walkingError);
-    } else if (walkingOutcome && !walkingOutcome.error) {
-      walkingRoute = walkingOutcome;
-    }
-
-    let transitDetails = null;
+    let drivingDetails;
     try {
-      const transitRoute = await requestOpenRouteRoute(
-        itinerary.routePoints,
-        apiKey,
-        transitProfile
-      );
-      transitDetails = buildTransitDetails(transitRoute);
+      drivingDetails = await fetchDrivingRouteDetails(itinerary.routePoints, {
+        provider: providers.driving,
+        openRouteApiKey,
+        googleApiKey,
+        departureTime: departureTimestamp,
+      });
+    } catch (drivingError) {
+      console.warn("Driving routing unavailable", drivingError);
+      drivingDetails = {
+        status: "error",
+        error: drivingError?.message || "Driving route unavailable.",
+      };
+    }
+    drivingDetails =
+      drivingDetails && typeof drivingDetails === "object"
+        ? { ...drivingDetails, provider: providers.driving }
+        : { status: "unavailable", provider: providers.driving };
+
+    let walkingDetails = null;
+    if (routeDistanceEstimate <= 30000) {
+      try {
+        walkingDetails = await fetchWalkingRouteDetails(itinerary.routePoints, {
+          provider: providers.walking,
+          openRouteApiKey,
+          googleApiKey,
+        });
+      } catch (walkingError) {
+        console.warn("Walking routing unavailable", walkingError);
+        walkingDetails = {
+          status: "error",
+          error: walkingError?.message || "Walking route unavailable.",
+        };
+      }
+    } else {
+      walkingDetails = { status: "unavailable" };
+    }
+    walkingDetails =
+      walkingDetails && typeof walkingDetails === "object"
+        ? { ...walkingDetails, provider: providers.walking }
+        : { status: "unavailable", provider: providers.walking };
+
+    let transitDetails;
+    try {
+      transitDetails = await fetchTransitRouteDetails(itinerary.routePoints, {
+        provider: providers.transit,
+        openRouteApiKey,
+        googleApiKey,
+        departureTime: departureTimestamp,
+      });
     } catch (transitError) {
       console.warn("Transit routing unavailable", transitError);
       transitDetails = {
@@ -2067,40 +2348,14 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
         error: transitError?.message || "Transit route unavailable.",
       };
     }
-
-    const drivingDetails = buildRouteDetails(drivingRoute, drivingProfile, {
-      defaultKind: "drive",
-    }) || {
-      status: "ready",
-      profile: drivingProfile,
-      mode: "driving",
-      durationSeconds: Number(drivingRoute.summary?.duration ?? 0) || 0,
-      distanceMeters: Number(drivingRoute.summary?.distance ?? 0) || 0,
-      geometry: drivingRoute.geometry || null,
-      legs: [],
-      path: geometryToLatLngs(drivingRoute.geometry),
-    };
-
-    let walkingDetails = null;
-    if (walkingRoute) {
-      walkingDetails = buildRouteDetails(walkingRoute, walkingProfile, {
-        defaultKind: "walk",
-      }) || {
-        status: "ready",
-        profile: walkingProfile,
-        mode: "walking",
-        durationSeconds: Number(walkingRoute.summary?.duration ?? 0) || 0,
-        distanceMeters: Number(walkingRoute.summary?.distance ?? 0) || 0,
-        geometry: walkingRoute.geometry || null,
-        legs: [],
-        path: geometryToLatLngs(walkingRoute.geometry),
-      };
-    } else if (walkingError) {
-      walkingDetails = {
-        status: "error",
-        error: walkingError?.message || "Walking route unavailable.",
-      };
-    }
+    transitDetails =
+      transitDetails && typeof transitDetails === "object"
+        ? { ...transitDetails, provider: providers.transit }
+        : {
+            status: "error",
+            error: "Transit route unavailable.",
+            provider: providers.transit,
+          };
 
     const transitReady = isModeReady(transitDetails);
     const walkingReady = isModeReady(walkingDetails);
@@ -2125,28 +2380,17 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     const primaryDistance = Number(primaryDetails?.distanceMeters) || 0;
     const geometry =
       primaryDetails?.geometry ||
-      drivingDetails?.geometry ||
       transitDetails?.geometry ||
+      walkingDetails?.geometry ||
+      drivingDetails?.geometry ||
+      buildLineStringFromPoints(itinerary.routePoints) ||
       null;
 
     const modes = {
-      driving: drivingDetails || { status: "unavailable" },
-      walking: walkingDetails || { status: "unavailable" },
-      transit: transitDetails || { status: "unavailable" },
+      driving: drivingDetails || { status: "unavailable", provider: providers.driving },
+      walking: walkingDetails || { status: "unavailable", provider: providers.walking },
+      transit: transitDetails || { status: "unavailable", provider: providers.transit },
     };
-
-    if (primaryMode === "driving") {
-      const fallback = getFallbackRailTravel(itinerary, {
-        originSnapshot,
-        destinationSnapshot,
-        stopSnapshots,
-        points: itinerary.routePoints,
-      });
-      if (fallback) {
-        setDayTravel(dateKey, fallback);
-        return fallback;
-      }
-    }
 
     const travelData = composeTravel("ready", {
       profile: primaryProfile,
@@ -2154,7 +2398,7 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
       durationSeconds: primaryDuration,
       distanceMeters: primaryDistance,
       fetchedAt: Date.now(),
-      geometry: geometry || null,
+      geometry,
       modes,
       driving: modes.driving,
       walking: modes.walking,
@@ -2164,16 +2408,6 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     return travelData;
   } catch (error) {
     console.error("Routing request failed", error);
-    const fallback = getFallbackRailTravel(itinerary, {
-      originSnapshot,
-      destinationSnapshot,
-      stopSnapshots,
-      points: itinerary.routePoints,
-    });
-    if (fallback) {
-      setDayTravel(dateKey, fallback);
-      return fallback;
-    }
     setDayTravel(
       dateKey,
       composeTravel("error", {
@@ -2216,6 +2450,46 @@ function getRoutingApiKey({ interactive = false } = {}) {
     return normalized;
   } finally {
     routingKeyPromptActive = false;
+  }
+}
+
+function getGoogleRoutingApiKey({ interactive = false } = {}) {
+  const current = planState.config.routing?.googleApiKey;
+  const revealed = revealEmbeddedApiKey(current);
+  if (revealed) {
+    return revealed;
+  }
+  if (!interactive || googleRoutingKeyPromptActive) {
+    return null;
+  }
+
+  googleRoutingKeyPromptActive = true;
+  try {
+    const input = window.prompt(
+      "Enter your Google Maps Directions API key to enable public transit routing"
+    );
+    if (!input) {
+      return null;
+    }
+    const normalized = input.trim();
+    if (!normalized) {
+      return null;
+    }
+    const storedValue = encodeGoogleApiKeyForStorage(normalized);
+    const nextRouting = {
+      ...(planState.config.routing || {}),
+      googleApiKey: storedValue,
+    };
+    if (!nextRouting.transitProvider) {
+      nextRouting.transitProvider = "auto";
+    }
+    planState.config.routing = nextRouting;
+    persistState();
+    return storedValue.startsWith(EMBEDDED_KEY_PREFIXES.google)
+      ? revealEmbeddedApiKey(storedValue)
+      : storedValue;
+  } finally {
+    googleRoutingKeyPromptActive = false;
   }
 }
 
@@ -2285,6 +2559,478 @@ async function requestOpenRouteRoute(
       warnings: properties.warnings,
     },
   };
+}
+
+async function requestGoogleDirectionsRoute({
+  points,
+  apiKey,
+  mode = "driving",
+  departureTime = null,
+  transitMode = "rail|subway|train|tram|bus",
+  language = "en",
+  region = "jp",
+  avoid = null,
+  alternatives = false,
+} = {}) {
+  if (!apiKey) {
+    throw new Error("Google Directions API key is required for this request.");
+  }
+  const coords = normalizeRoutePoints(points);
+  if (!Array.isArray(coords) || coords.length < 2) {
+    throw new Error("At least two coordinates are required for routing.");
+  }
+  const origin = coords[0];
+  const destination = coords[coords.length - 1];
+  const waypointList = coords.slice(1, -1);
+  const params = new URLSearchParams();
+  params.set("origin", `${origin[0]},${origin[1]}`);
+  params.set("destination", `${destination[0]},${destination[1]}`);
+  params.set("mode", mode);
+  params.set("units", "metric");
+  params.set("key", apiKey);
+  if (language) params.set("language", language);
+  if (region) params.set("region", region);
+  if (waypointList.length) {
+    const encoded = waypointList
+      .map((coord) => `via:${coord[0]},${coord[1]}`)
+      .join("|");
+    params.set("waypoints", encoded);
+  }
+  if (typeof departureTime === "number" && Number.isFinite(departureTime)) {
+    params.set("departure_time", Math.floor(departureTime / 1000).toString());
+  } else if (mode === "transit") {
+    params.set("departure_time", Math.floor(Date.now() / 1000).toString());
+  }
+  if (mode === "transit" && transitMode) {
+    params.set("transit_mode", transitMode);
+  }
+  if (alternatives) {
+    params.set("alternatives", "true");
+  }
+  if (Array.isArray(avoid) && avoid.length) {
+    params.set("avoid", avoid.join("|"));
+  }
+
+  const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
+  }
+  const data = await response.json();
+  if (!data || data.status !== "OK") {
+    const message = data?.error_message || data?.status || "Directions request failed.";
+    throw new Error(message);
+  }
+  const route = Array.isArray(data.routes) && data.routes.length ? data.routes[0] : null;
+  if (!route) {
+    throw new Error("No route found for the selected stops.");
+  }
+  return route;
+}
+
+function convertGoogleStepsToLegs(steps, { defaultKind = "drive", modeKey = "driving" } = {}) {
+  if (!Array.isArray(steps)) return [];
+  const results = [];
+  steps.forEach((step) => {
+    results.push(...convertGoogleStep(step, { defaultKind, modeKey }));
+  });
+  return results;
+}
+
+function convertGoogleStep(step, { defaultKind = "drive", modeKey = "driving" } = {}) {
+  if (!step) return [];
+  const travelMode = (step.travel_mode || step.travelMode || "").toUpperCase();
+  let kind = defaultKind;
+  if (travelMode === "WALKING") {
+    kind = "walk";
+  } else if (travelMode === "BICYCLING") {
+    kind = "cycle";
+  } else if (travelMode === "TRANSIT") {
+    kind = "transit";
+  } else if (travelMode === "DRIVING") {
+    kind = "drive";
+  }
+
+  if (travelMode !== "TRANSIT" && Array.isArray(step.steps) && step.steps.length) {
+    const nested = [];
+    step.steps.forEach((sub) => {
+      nested.push(...convertGoogleStep(sub, { defaultKind: kind, modeKey }));
+    });
+    if (nested.length) {
+      return nested;
+    }
+  }
+
+  const durationSeconds = Number(
+    step.duration?.value || step.duration_in_traffic?.value || 0
+  ) || 0;
+  const distanceMeters = Number(step.distance?.value || 0) || 0;
+  const path = decodePolyline(step.polyline?.points || "");
+  let modeLabel = step.travel_mode || step.mode || "";
+  if (!modeLabel) {
+    modeLabel =
+      kind === "walk"
+        ? "Walk"
+        : kind === "drive"
+        ? "Drive"
+        : kind === "cycle"
+        ? "Cycle"
+        : modeKey;
+  }
+  let info = stripHtml(step.html_instructions || step.instruction || "");
+  if (!info && step.maneuver) {
+    info = step.maneuver.replace(/_/g, " ");
+  }
+  const leg = {
+    kind,
+    mode: modeLabel,
+    info,
+    durationSeconds,
+    distanceMeters,
+    path,
+  };
+  if (!info) {
+    if (kind === "walk") {
+      leg.info = "Walk";
+    } else if (kind === "drive") {
+      leg.info = "Drive";
+    } else if (kind === "cycle") {
+      leg.info = "Cycle";
+    } else {
+      leg.info = modeLabel || "Move";
+    }
+  }
+
+  if (travelMode === "TRANSIT") {
+    const details = step.transit_details || {};
+    const line = details.line || {};
+    const agencies = Array.isArray(line.agencies) ? line.agencies : [];
+    const agency = agencies.find((item) => typeof item?.name === "string")?.name;
+    const vehicleName =
+      (line.vehicle && (line.vehicle.name || line.vehicle.type)) ||
+      modeLabel ||
+      "Transit";
+    const lineName =
+      line.short_name ||
+      line.name ||
+      vehicleName ||
+      agency ||
+      "Transit";
+    const headsign = details.headsign || "";
+    const stopsText = Number.isInteger(details.num_stops)
+      ? `${details.num_stops} stop${details.num_stops === 1 ? "" : "s"}`
+      : "";
+    const infoParts = [
+      lineName,
+      headsign ? `to ${headsign}` : "",
+      agency ? `(${agency})` : "",
+      stopsText,
+    ].filter(Boolean);
+    leg.kind = "transit";
+    leg.mode = vehicleName;
+    leg.line = lineName;
+    leg.from = details.departure_stop?.name || null;
+    leg.to = details.arrival_stop?.name || null;
+    leg.info = infoParts.join(" ") || leg.info || "Transit";
+    if (line.color && typeof line.color === "string") {
+      const color = line.color.startsWith("#") ? line.color : `#${line.color}`;
+      leg.color = color;
+    }
+    if (details.departure_time?.value) {
+      leg.departureTimestamp = Number(details.departure_time.value) * 1000;
+    }
+    if (details.arrival_time?.value) {
+      leg.arrivalTimestamp = Number(details.arrival_time.value) * 1000;
+    }
+  }
+
+  return [leg];
+}
+
+function buildGoogleRouteDetails(
+  route,
+  { modeKey = "driving", defaultKind = "drive", includeTransitMetadata = false } = {}
+) {
+  if (!route) return null;
+  const legs = Array.isArray(route.legs) ? route.legs : [];
+  if (!legs.length) return null;
+
+  const detailLegs = [];
+  const path = [];
+  let totalDuration = 0;
+  let totalDistance = 0;
+  let earliestDeparture = null;
+  let latestArrival = null;
+
+  legs.forEach((leg) => {
+    totalDuration += Number(leg.duration?.value || 0) || 0;
+    totalDistance += Number(leg.distance?.value || 0) || 0;
+    if (leg.departure_time?.value && !earliestDeparture) {
+      earliestDeparture = Number(leg.departure_time.value) * 1000;
+    }
+    if (leg.arrival_time?.value) {
+      latestArrival = Number(leg.arrival_time.value) * 1000;
+    }
+    const segments = convertGoogleStepsToLegs(leg.steps || [], {
+      defaultKind,
+      modeKey,
+    });
+    segments.forEach((segment) => {
+      detailLegs.push(segment);
+      if (Array.isArray(segment.path)) {
+        appendPath(path, segment.path);
+      }
+    });
+  });
+
+  if (!path.length) {
+    const overview = decodePolyline(route.overview_polyline?.points || "");
+    if (overview.length) {
+      appendPath(path, overview);
+    }
+  }
+
+  const geometry = path.length >= 2 ? buildLineStringFromPoints(path) : null;
+
+  const result = {
+    status: "ready",
+    profile: MODE_TO_PROFILE[modeKey] || null,
+    mode: modeKey,
+    durationSeconds: totalDuration,
+    distanceMeters: totalDistance,
+    geometry,
+    legs: detailLegs,
+    path: path.slice(),
+  };
+
+  if (includeTransitMetadata) {
+    const transitLegs = detailLegs.filter((leg) => leg.kind === "transit");
+    result.transfers = Math.max(0, transitLegs.length - 1);
+    result.lines = uniqueOrdered(
+      transitLegs.map((leg) => leg.line || leg.mode).filter(Boolean)
+    );
+    result.departureTimestamp = earliestDeparture || null;
+    result.arrivalTimestamp = latestArrival || null;
+  }
+
+  return result;
+}
+
+async function requestGoogleTransitItinerary(points, { apiKey, departureTime = null } = {}) {
+  const coords = normalizeRoutePoints(points);
+  if (!Array.isArray(coords) || coords.length < 2) {
+    throw new Error("At least two coordinates are required for transit routing.");
+  }
+  let currentDeparture =
+    typeof departureTime === "number" && Number.isFinite(departureTime)
+      ? departureTime
+      : Date.now();
+  const legs = [];
+  const path = [];
+  let totalDuration = 0;
+  let totalDistance = 0;
+  let earliestDeparture = null;
+  let latestArrival = null;
+
+  for (let i = 1; i < coords.length; i += 1) {
+    const origin = coords[i - 1];
+    const destination = coords[i];
+    if (coordsEqual(origin, destination)) {
+      continue;
+    }
+    const route = await requestGoogleDirectionsRoute({
+      points: [origin, destination],
+      apiKey,
+      mode: "transit",
+      departureTime: currentDeparture,
+    });
+    const details = buildGoogleRouteDetails(route, {
+      modeKey: "transit",
+      defaultKind: "transit",
+      includeTransitMetadata: true,
+    });
+    if (!details) {
+      throw new Error("Transit route unavailable.");
+    }
+    totalDuration += Number(details.durationSeconds) || 0;
+    totalDistance += Number(details.distanceMeters) || 0;
+    details.legs.forEach((segment) => {
+      legs.push(segment);
+      if (Array.isArray(segment.path)) {
+        appendPath(path, segment.path);
+      }
+    });
+    if (details.departureTimestamp && !earliestDeparture) {
+      earliestDeparture = details.departureTimestamp;
+    }
+    if (details.arrivalTimestamp) {
+      latestArrival = details.arrivalTimestamp;
+      currentDeparture = details.arrivalTimestamp + 60000;
+    } else {
+      currentDeparture += Number(details.durationSeconds || 0) * 1000;
+    }
+  }
+
+  if (!legs.length) {
+    throw new Error("Transit route unavailable.");
+  }
+
+  const transitLegs = legs.filter((leg) => leg.kind === "transit");
+  const lines = uniqueOrdered(
+    transitLegs.map((leg) => leg.line || leg.mode).filter(Boolean)
+  );
+  const transfers = Math.max(0, transitLegs.length - 1);
+
+  const geometry =
+    path.length >= 2
+      ? buildLineStringFromPoints(path)
+      : buildLineStringFromPoints(coords);
+
+  return {
+    status: "ready",
+    profile: MODE_TO_PROFILE.transit,
+    mode: "transit",
+    durationSeconds: totalDuration,
+    distanceMeters: totalDistance,
+    legs,
+    lines,
+    transfers,
+    geometry,
+    path: path.length ? path : coords,
+    provider: "google-directions",
+    departureTimestamp: earliestDeparture || null,
+    arrivalTimestamp: latestArrival || null,
+  };
+}
+
+async function fetchDrivingRouteDetails(
+  routePoints,
+  { provider, openRouteApiKey, googleApiKey, departureTime = null } = {}
+) {
+  if (!Array.isArray(routePoints) || routePoints.length < 2) {
+    return { status: "unavailable" };
+  }
+  const providerKey = normalizeRoutingProvider(provider);
+  if (providerKey === "google-directions") {
+    if (!googleApiKey) {
+      throw new Error("Google Directions API key required for driving routes.");
+    }
+    const route = await requestGoogleDirectionsRoute({
+      points: routePoints,
+      apiKey: googleApiKey,
+      mode: "driving",
+      departureTime,
+    });
+    const details = buildGoogleRouteDetails(route, {
+      modeKey: "driving",
+      defaultKind: "drive",
+    });
+    if (!details) {
+      throw new Error("Driving route unavailable.");
+    }
+    return details;
+  }
+  if (!openRouteApiKey) {
+    throw new Error("OpenRouteService API key required for driving routes.");
+  }
+  const route = await requestOpenRouteRoute(
+    routePoints,
+    openRouteApiKey,
+    MODE_TO_PROFILE.driving
+  );
+  return (
+    buildRouteDetails(route, MODE_TO_PROFILE.driving, { defaultKind: "drive" }) || {
+      status: "ready",
+      profile: MODE_TO_PROFILE.driving,
+      mode: "driving",
+      durationSeconds: Number(route?.summary?.duration ?? 0) || 0,
+      distanceMeters: Number(route?.summary?.distance ?? 0) || 0,
+      geometry: route?.geometry || null,
+      legs: [],
+      path: geometryToLatLngs(route?.geometry),
+    }
+  );
+}
+
+async function fetchWalkingRouteDetails(
+  routePoints,
+  { provider, openRouteApiKey, googleApiKey } = {}
+) {
+  if (!Array.isArray(routePoints) || routePoints.length < 2) {
+    return { status: "unavailable" };
+  }
+  const providerKey = normalizeRoutingProvider(provider);
+  if (providerKey === "google-directions") {
+    if (!googleApiKey) {
+      throw new Error("Google Directions API key required for walking routes.");
+    }
+    const route = await requestGoogleDirectionsRoute({
+      points: routePoints,
+      apiKey: googleApiKey,
+      mode: "walking",
+    });
+    const details = buildGoogleRouteDetails(route, {
+      modeKey: "walking",
+      defaultKind: "walk",
+    });
+    if (!details) {
+      throw new Error("Walking route unavailable.");
+    }
+    return details;
+  }
+  if (!openRouteApiKey) {
+    throw new Error("OpenRouteService API key required for walking routes.");
+  }
+  const route = await requestOpenRouteRoute(
+    routePoints,
+    openRouteApiKey,
+    MODE_TO_PROFILE.walking
+  );
+  return (
+    buildRouteDetails(route, MODE_TO_PROFILE.walking, { defaultKind: "walk" }) || {
+      status: "ready",
+      profile: MODE_TO_PROFILE.walking,
+      mode: "walking",
+      durationSeconds: Number(route?.summary?.duration ?? 0) || 0,
+      distanceMeters: Number(route?.summary?.distance ?? 0) || 0,
+      geometry: route?.geometry || null,
+      legs: [],
+      path: geometryToLatLngs(route?.geometry),
+    }
+  );
+}
+
+async function fetchTransitRouteDetails(
+  routePoints,
+  { provider, openRouteApiKey, googleApiKey, departureTime = null } = {}
+) {
+  if (!Array.isArray(routePoints) || routePoints.length < 2) {
+    return { status: "unavailable" };
+  }
+  const providerKey = normalizeRoutingProvider(provider);
+  if (providerKey === "google-directions") {
+    if (!googleApiKey) {
+      throw new Error("Google Directions API key required for transit routes.");
+    }
+    return requestGoogleTransitItinerary(routePoints, {
+      apiKey: googleApiKey,
+      departureTime,
+    });
+  }
+  if (!openRouteApiKey) {
+    throw new Error("OpenRouteService API key required for transit routes.");
+  }
+  const route = await requestOpenRouteRoute(
+    routePoints,
+    openRouteApiKey,
+    MODE_TO_PROFILE.transit
+  );
+  return (
+    buildTransitDetails(route) || {
+      status: "error",
+      error: "Transit route unavailable.",
+    }
+  );
 }
 
 function uniqueOrdered(values) {
@@ -2750,7 +3496,7 @@ function updateMapDirections(
           : "Calculating travel time…";
         break;
       case "missing-key":
-        message = "Add your OpenRouteService API key to calculate travel time.";
+        message = formatMissingRoutingKeyMessage(travel);
         break;
       case "missing-stay":
         message = "Select a stay with coordinates to calculate travel time.";
@@ -3064,7 +3810,7 @@ function updateMapSummary(dateKey) {
     }
     message = parts.join(" · ") || "Route ready.";
   } else if (travel.status === "missing-key") {
-    message = "Add your OpenRouteService API key to calculate travel time.";
+    message = formatMissingRoutingKeyMessage(travel);
   } else if (travel.status === "missing-stay") {
     message = "Pick a stay with map coordinates to calculate travel time.";
   } else if (travel.status === "no-activities") {
@@ -5974,7 +6720,14 @@ function buildConfigFromWizardData(data) {
     mapCoordinates: resetDays ? {} : previousConfig?.mapCoordinates || {},
     routing: previousConfig?.routing
       ? { ...previousConfig.routing }
-      : { provider: "openrouteservice", openRouteApiKey: "" },
+      : {
+          provider: DEFAULT_ROUTING_PROVIDER,
+          drivingProvider: DEFAULT_ROUTING_PROVIDER,
+          walkingProvider: DEFAULT_ROUTING_PROVIDER,
+          transitProvider: "auto",
+          openRouteApiKey: "",
+          googleApiKey: "",
+        },
     catalog,
   };
 }
