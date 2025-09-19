@@ -49,7 +49,7 @@ Everything the planner renders is driven by `scripts/data.js`. Update a few keys
 - **Trip metadata** – Rename `tripName`, adjust the `range`, and swap out `friends` for your travel party.
 - **Color palette** – Tailor `locations` and `friendColors` to personalize chips, legends, and map pins.
 - **Catalog content** – Populate `catalog.activity`, `catalog.stay`, and `catalog.booking` with the spots you care about; each item can include coordinates for the map overlay.
-- **Routing** – Supply an OpenRouteService API key via `routing.openRouteApiKey` if you want Japlan to draw actual travel paths between stops.
+- **Routing** – Supply an OpenRouteService API key via `routing.openRouteApiKey` to unlock detailed driving and walking paths, and add a Google Directions API key via `routing.googleApiKey` for live public transit routing.
 
 Because the state is normalized at load time, you can remove locations, change date ranges, or even ship the planner with a blank slate.
 

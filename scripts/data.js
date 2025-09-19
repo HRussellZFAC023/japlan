@@ -83,7 +83,11 @@ export const DEFAULT_TRIP_TEMPLATE = {
   },
   routing: {
     provider: 'openrouteservice',
+    drivingProvider: 'openrouteservice',
+    walkingProvider: 'openrouteservice',
+    transitProvider: 'auto',
     openRouteApiKey: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjEwNmFkNDY2ZWRmOTRkMDI4OWI3NWM5NmE1ZGU5YTNkIiwiaCI6Im11cm11cjY0In0=',
+    googleApiKey: 'gapi:QUl6YVN5QkpB.Rmg0Mi15MF9p.czAtTnUteVNQ.UE5NUFptU01D.YnFN',
   },
   catalog: {
     activity: [
