@@ -75,7 +75,8 @@ const travelExpansionState = new Map();
 const mapModeState = new Map();
 let mapDirectionsData = null;
 let googleMapsScriptPromise = null;
-let googlePlacesService = null;
+let googleMapsCorePromise = null;
+let googleMarkerLibraryPromise = null;
 const placeDetailCache = new Map();
 const placeQueryCache = new Map();
 const DEFAULT_DEPARTURE_MINUTES = 9 * 60;
@@ -112,7 +113,7 @@ const HYBRID_ROUTING_PROVIDER = "hybrid-routing";
 
 const ROUTING_PROVIDER_LABELS = {
   "openrouteservice": "OpenRouteService",
-  "google-directions": "Google Directions",
+  "google-directions": "Google Routes",
 };
 
 const SUPPORTED_ROUTING_PROVIDERS = new Set([
@@ -295,7 +296,7 @@ function loadGoogleMapsScript(apiKey) {
     const script = document.createElement("script");
     script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
       apiKey
-    )}&libraries=places&v=weekly&callback=${callbackName}`;
+    )}&libraries=places&v=weekly&loading=async&callback=${callbackName}`;
     script.async = true;
     script.defer = true;
     script.dataset.googleMapsScript = "true";
@@ -316,23 +317,30 @@ async function ensureGoogleMaps({ interactive = false } = {}) {
     return null;
   }
   try {
-    return await loadGoogleMapsScript(apiKey);
+    const google = await loadGoogleMapsScript(apiKey);
+    if (!google?.maps?.importLibrary) {
+      return google;
+    }
+    if (!googleMapsCorePromise) {
+      googleMapsCorePromise = google.maps.importLibrary("maps");
+    }
+    await googleMapsCorePromise;
+    return google;
   } catch (error) {
     console.warn("Google Maps unavailable", error);
     return null;
   }
 }
 
-async function ensureGooglePlacesService({ interactive = false } = {}) {
-  const google = await ensureGoogleMaps({ interactive });
-  if (!google?.maps?.places) {
+async function ensureGoogleMarkerLibrary() {
+  const google = await ensureGoogleMaps({ interactive: true });
+  if (!google?.maps?.importLibrary) {
     return null;
   }
-  if (!googlePlacesService) {
-    const container = document.createElement("div");
-    googlePlacesService = new google.maps.places.PlacesService(container);
+  if (!googleMarkerLibraryPromise) {
+    googleMarkerLibraryPromise = google.maps.importLibrary("marker");
   }
-  return googlePlacesService;
+  return await googleMarkerLibraryPromise;
 }
 
 function normalizePlaceLookup(raw) {
@@ -402,6 +410,27 @@ function getPlaceCacheKey(reference) {
   return null;
 }
 
+function getGoogleMapsLinkForItem(item) {
+  if (!item) return "";
+  const reference = getPlaceReferenceForItem(item);
+  if (reference?.placeId) {
+    return `https://www.google.com/maps/place/?q=place_id:${reference.placeId}`;
+  }
+  if (reference?.query) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      reference.query
+    )}`;
+  }
+  const coords = resolveItemCoordinates(item);
+  if (Array.isArray(coords) && coords.length >= 2) {
+    const [lat, lng] = coords;
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    }
+  }
+  return "";
+}
+
 async function fetchPlaceDetailsForContext(context, { interactive = false } = {}) {
   if (!context || !context.reference) {
     return null;
@@ -425,9 +454,8 @@ async function loadPlaceDetails(reference, { interactive = false, coords = null 
   }
 
   const promise = (async () => {
-    const service = await ensureGooglePlacesService({ interactive });
-    const google = window.google;
-    if (!service || !google?.maps?.places) {
+    const apiKey = getGoogleRoutingApiKey({ interactive });
+    if (!apiKey) {
       return null;
     }
 
@@ -437,7 +465,10 @@ async function loadPlaceDetails(reference, { interactive = false, coords = null 
       if (placeQueryCache.has(normalizedQuery)) {
         placeId = placeQueryCache.get(normalizedQuery);
       } else {
-        placeId = await findPlaceId(service, google, lookup.query, coords);
+        placeId = await searchPlaceIdByText(lookup.query, {
+          apiKey,
+          coords,
+        });
         if (placeId) {
           placeQueryCache.set(normalizedQuery, placeId);
         }
@@ -448,7 +479,7 @@ async function loadPlaceDetails(reference, { interactive = false, coords = null 
       return null;
     }
 
-    const details = await getPlaceDetailsById(service, google, placeId);
+    const details = await fetchPlaceDetailsById({ placeId, apiKey });
     if (!details) {
       return null;
     }
@@ -469,147 +500,158 @@ async function loadPlaceDetails(reference, { interactive = false, coords = null 
   return promise;
 }
 
-function findPlaceId(service, google, query, coords) {
-  return new Promise((resolve, reject) => {
-    if (!query) {
-      resolve(null);
-      return;
+async function searchPlaceIdByText(query, { apiKey, coords = null, language = "en", region = "JP" } = {}) {
+  if (!query || !apiKey) {
+    return null;
+  }
+  const body = { textQuery: query, languageCode: language };
+  if (region) {
+    body.regionCode = region.toUpperCase();
+  }
+  if (Array.isArray(coords) && coords.length >= 2) {
+    const [lat, lng] = coords.map(Number);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      body.locationBias = {
+        circle: {
+          center: { latitude: lat, longitude: lng },
+          radius: 5000,
+        },
+      };
     }
-    const request = {
-      query,
-      fields: ["place_id"],
-    };
-    if (Array.isArray(coords) && coords.length >= 2) {
-      const [lat, lng] = coords.map(Number);
-      if (Number.isFinite(lat) && Number.isFinite(lng)) {
-        request.locationBias = { lat, lng };
-      }
-    }
-    service.findPlaceFromQuery(request, (results, status) => {
-      if (
-        status === google.maps.places.PlacesServiceStatus.OK &&
-        Array.isArray(results) &&
-        results.length
-      ) {
-        resolve(results[0].place_id || null);
-        return;
-      }
-      if (
-        status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS ||
-        status === google.maps.places.PlacesServiceStatus.INVALID_REQUEST
-      ) {
-        resolve(null);
-      } else {
-        reject(new Error(`Places search failed: ${status}`));
-      }
-    });
-  });
-}
+  }
 
-function getPlaceDetailsById(service, google, placeId) {
-  return new Promise((resolve, reject) => {
-    service.getDetails(
-      {
-        placeId,
-        fields: [
-          "place_id",
-          "name",
-          "formatted_address",
-          "geometry.location",
-          "rating",
-          "user_ratings_total",
-          "photos",
-          "url",
-          "website",
-          "price_level",
-          "opening_hours",
-          "international_phone_number",
-          "business_status",
-          "editorial_summary",
-          "types",
-        ],
+  try {
+    const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": "places.id",
       },
-      (place, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && place) {
-          resolve(normalizePlaceDetails(place));
-        } else if (
-          status === google.maps.places.PlacesServiceStatus.ZERO_RESULTS
-        ) {
-          resolve(null);
-        } else {
-          reject(new Error(`Place details failed: ${status}`));
-        }
-      }
-    );
-  });
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    const place = Array.isArray(data?.places) && data.places.length ? data.places[0] : null;
+    return place?.id || null;
+  } catch (error) {
+    console.warn("Places text search failed", error);
+    return null;
+  }
 }
 
-function normalizePlaceDetails(place) {
+async function fetchPlaceDetailsById({
+  placeId,
+  apiKey,
+  language = "en",
+  region = "JP",
+} = {}) {
+  if (!placeId || !apiKey) {
+    return null;
+  }
+  const params = new URLSearchParams();
+  params.set(
+    "fields",
+    [
+      "id",
+      "displayName",
+      "formattedAddress",
+      "location",
+      "rating",
+      "userRatingCount",
+      "priceLevel",
+      "websiteUri",
+      "googleMapsUri",
+      "internationalPhoneNumber",
+      "nationalPhoneNumber",
+      "businessStatus",
+      "editorialSummary",
+      "types",
+      "regularOpeningHours.weekdayDescriptions",
+      "currentOpeningHours.weekdayDescriptions",
+      "currentOpeningHours.openNow",
+      "photos.name",
+      "photos.widthPx",
+      "photos.heightPx",
+      "photos.authorAttributions.displayName",
+      "photos.authorAttributions.uri",
+    ].join(",")
+  );
+  params.set("languageCode", language);
+  if (region) {
+    params.set("regionCode", region.toUpperCase());
+  }
+
+  const url = `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?${params.toString()}`;
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "X-Goog-Api-Key": apiKey,
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    return normalizePlaceDetails(data, { apiKey });
+  } catch (error) {
+    console.warn("Places detail lookup failed", error);
+    return null;
+  }
+}
+
+function normalizePlaceDetails(place, { apiKey } = {}) {
   if (!place) return null;
   const details = {
-    id: place.place_id || null,
-    name: place.name || "",
-    address: place.formatted_address || place.vicinity || "",
+    id: place.id || null,
+    name: place.displayName?.text || place.displayName || "",
+    address: place.formattedAddress || "",
     rating:
       typeof place.rating === "number" && Number.isFinite(place.rating)
         ? place.rating
         : null,
     userRatingsTotal:
-      typeof place.user_ratings_total === "number"
-        ? place.user_ratings_total
+      typeof place.userRatingCount === "number"
+        ? place.userRatingCount
         : null,
-    priceLevel:
-      typeof place.price_level === "number"
-        ? place.price_level
-        : null,
-    website: place.website || null,
+    priceLevel: normalizePlacePriceLevel(place.priceLevel),
+    website: place.websiteUri || null,
     googleMapsUri:
-      place.url ||
-      (place.place_id
-        ? `https://www.google.com/maps/place/?q=place_id:${place.place_id}`
-        : null),
-    phone:
-      place.international_phone_number || place.formatted_phone_number || null,
-    businessStatus: place.business_status || null,
-    editorialSummary: place.editorial_summary?.overview || "",
+      place.googleMapsUri ||
+      (place.id ? `https://www.google.com/maps/place/?q=place_id:${place.id}` : null),
+    phone: place.internationalPhoneNumber || place.nationalPhoneNumber || null,
+    businessStatus: place.businessStatus || null,
+    editorialSummary: place.editorialSummary?.text || "",
     types: Array.isArray(place.types) ? [...place.types] : [],
-    openingHours: Array.isArray(place.opening_hours?.weekday_text)
-      ? [...place.opening_hours.weekday_text]
+    openingHours: Array.isArray(place.regularOpeningHours?.weekdayDescriptions)
+      ? [...place.regularOpeningHours.weekdayDescriptions]
+      : Array.isArray(place.currentOpeningHours?.weekdayDescriptions)
+      ? [...place.currentOpeningHours.weekdayDescriptions]
       : [],
     isOpenNow:
-      typeof place.opening_hours?.isOpen === "function"
-        ? place.opening_hours.isOpen()
-        : typeof place.opening_hours?.open_now === "boolean"
-        ? place.opening_hours.open_now
+      typeof place.currentOpeningHours?.openNow === "boolean"
+        ? place.currentOpeningHours.openNow
         : null,
-    location:
-      place.geometry?.location &&
-      typeof place.geometry.location.lat === "function" &&
-      typeof place.geometry.location.lng === "function"
-        ? [
-            place.geometry.location.lat(),
-            place.geometry.location.lng(),
-          ]
-        : null,
+    location: extractLatLng(place.location),
   };
 
   const photos = Array.isArray(place.photos)
     ? place.photos
         .map((photo) => {
-          try {
-            const url = photo.getUrl({ maxWidth: 1600, maxHeight: 1200 });
-            if (!url) return null;
-            return {
-              url,
-              width: photo.width || null,
-              height: photo.height || null,
-              attributions: Array.isArray(photo.html_attributions)
-                ? [...photo.html_attributions]
-                : [],
-            };
-          } catch (error) {
+          if (!photo?.name || !apiKey) {
             return null;
           }
+          const url =
+            `https://places.googleapis.com/v1/${encodeURIComponent(photo.name)}/media?` +
+            `maxHeightPx=1200&maxWidthPx=1600&key=${encodeURIComponent(apiKey)}`;
+          return {
+            url,
+            width: photo.widthPx || null,
+            height: photo.heightPx || null,
+            attributions: formatPhotoAttributions(photo.authorAttributions),
+          };
         })
         .filter(Boolean)
     : [];
@@ -617,6 +659,95 @@ function normalizePlaceDetails(place) {
   details.photos = photos;
   details.primaryPhoto = photos.length ? photos[0] : null;
   return details;
+}
+
+function extractLatLng(location) {
+  if (!location) return null;
+  if (Array.isArray(location) && location.length >= 2) {
+    const lat = Number(location[0]);
+    const lng = Number(location[1]);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return [lat, lng];
+    }
+    return null;
+  }
+  const source = location.latLng || location;
+  const lat = Number(source?.latitude ?? source?.lat ?? source?.y);
+  const lng = Number(source?.longitude ?? source?.lng ?? source?.x);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return [lat, lng];
+  }
+  return null;
+}
+
+function normalizePlacePriceLevel(level) {
+  if (typeof level === "number" && Number.isFinite(level)) {
+    return Math.max(0, Math.min(4, Math.round(level)));
+  }
+  if (typeof level !== "string") {
+    return null;
+  }
+  const map = {
+    PRICE_LEVEL_FREE: 0,
+    PRICE_LEVEL_INEXPENSIVE: 1,
+    PRICE_LEVEL_MODERATE: 2,
+    PRICE_LEVEL_EXPENSIVE: 3,
+    PRICE_LEVEL_VERY_EXPENSIVE: 4,
+  };
+  const key = level.toUpperCase();
+  return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : null;
+}
+
+function formatPhotoAttributions(attributions) {
+  if (!Array.isArray(attributions) || !attributions.length) {
+    return [];
+  }
+  return attributions
+    .map((attr) => {
+      if (!attr) return null;
+      const name = typeof attr.displayName === "string" ? attr.displayName : "";
+      const uri = sanitizeAttributionUrl(attr.uri);
+      if (uri) {
+        const label = escapeHtml(name || uri);
+        return `<a href="${uri}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+      }
+      if (name) {
+        return escapeHtml(name);
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
+function sanitizeAttributionUrl(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
+    return "";
+  }
+  return trimmed.replace(/"/g, "&quot;");
+}
+
+function escapeHtml(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value.replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#39;";
+      default:
+        return char;
+    }
+  });
 }
 
 function updateMediaImage(mediaEl, { url, alt, attributions = [], source = "" } = {}) {
@@ -633,6 +764,18 @@ function updateMediaImage(mediaEl, { url, alt, attributions = [], source = "" } 
     }
     return;
   }
+  const handleError = () => {
+    img.removeAttribute("src");
+    mediaEl.hidden = true;
+    mediaEl.dataset.source = "";
+    const attributionEl = mediaEl.querySelector(".photo-attribution");
+    if (attributionEl) {
+      attributionEl.innerHTML = "";
+      attributionEl.hidden = true;
+    }
+  };
+  img.onerror = handleError;
+  img.decoding = "async";
   img.src = url;
   img.alt = alt || "";
   mediaEl.hidden = false;
@@ -664,6 +807,16 @@ function updateItemDetailMedia({ url, alt, attributions = [] } = {}) {
     }
     return;
   }
+  itemDetailImage.onerror = () => {
+    itemDetailImage.src = "";
+    itemDetailMedia.hidden = true;
+    itemDetailMedia.classList.add("is-hidden");
+    if (itemDetailAttribution) {
+      itemDetailAttribution.innerHTML = "";
+      itemDetailAttribution.style.display = "none";
+    }
+  };
+  itemDetailImage.decoding = "async";
   itemDetailImage.src = url;
   itemDetailImage.alt = alt || "";
   itemDetailMedia.hidden = false;
@@ -1464,6 +1617,24 @@ function refreshCatalogLookups() {
   BOOKING_MAP = new Map(
     (planState.config.catalog.booking || []).map((item) => [item.id, item])
   );
+  [
+    planState.config.catalog.activity,
+    planState.config.catalog.stay,
+    planState.config.catalog.booking,
+  ]
+    .filter(Array.isArray)
+    .forEach((list) => {
+      list.forEach((entry) => {
+        const mapUrl = getGoogleMapsLinkForItem(entry);
+        if (mapUrl) {
+          entry.mapUrl = mapUrl;
+          entry.url = mapUrl;
+        } else {
+          entry.mapUrl = "";
+          entry.url = "";
+        }
+      });
+    });
 }
 
 function deepClone(value) {
@@ -2998,7 +3169,7 @@ function getGoogleRoutingApiKey({ interactive = false } = {}) {
   googleRoutingKeyPromptActive = true;
   try {
     const input = window.prompt(
-      "Enter your Google Maps Directions API key to enable public transit routing"
+      "Enter your Google Maps Routes API key to enable public transit routing"
     );
     if (!input) {
       return null;
@@ -3105,7 +3276,7 @@ async function requestGoogleDirectionsRoute({
   alternatives = false,
 } = {}) {
   if (!apiKey) {
-    throw new Error("Google Directions API key is required for this request.");
+    throw new Error("Google Routes API key is required for this request.");
   }
   const coords = normalizeRoutePoints(points);
   if (!Array.isArray(coords) || coords.length < 2) {
@@ -3114,50 +3285,246 @@ async function requestGoogleDirectionsRoute({
   const origin = coords[0];
   const destination = coords[coords.length - 1];
   const waypointList = coords.slice(1, -1);
-  const params = new URLSearchParams();
-  params.set("origin", `${origin[0]},${origin[1]}`);
-  params.set("destination", `${destination[0]},${destination[1]}`);
-  params.set("mode", mode);
-  params.set("units", "metric");
-  params.set("key", apiKey);
-  if (language) params.set("language", language);
-  if (region) params.set("region", region);
+  const body = {
+    origin: { location: { latLng: buildLatLng(origin) } },
+    destination: { location: { latLng: buildLatLng(destination) } },
+    travelMode: mapRouteTravelMode(mode),
+    routingPreference: "ROUTING_PREFERENCE_UNSPECIFIED",
+    computeAlternativeRoutes: Boolean(alternatives),
+    languageCode: language || "en",
+    units: "METRIC",
+  };
+  if (region) {
+    body.regionCode = region.toUpperCase();
+  }
   if (waypointList.length) {
-    const encoded = waypointList
-      .map((coord) => `via:${coord[0]},${coord[1]}`)
-      .join("|");
-    params.set("waypoints", encoded);
+    body.intermediates = waypointList.map((coord) => ({
+      location: { latLng: buildLatLng(coord) },
+    }));
   }
-  if (typeof departureTime === "number" && Number.isFinite(departureTime)) {
-    params.set("departure_time", Math.floor(departureTime / 1000).toString());
-  } else if (mode === "transit") {
-    params.set("departure_time", Math.floor(Date.now() / 1000).toString());
-  }
-  if (mode === "transit" && transitMode) {
-    params.set("transit_mode", transitMode);
-  }
-  if (alternatives) {
-    params.set("alternatives", "true");
+  if (mode === "transit") {
+    body.transitPreferences = buildTransitPreferences(transitMode);
   }
   if (Array.isArray(avoid) && avoid.length) {
-    params.set("avoid", avoid.join("|"));
+    body.routeModifiers = buildRouteModifiers(avoid);
+  }
+  if (typeof departureTime === "number" && Number.isFinite(departureTime)) {
+    body.departureTime = new Date(departureTime).toISOString();
+  } else if (mode === "transit") {
+    body.departureTime = new Date().toISOString();
   }
 
-  const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`;
-  const response = await fetch(url);
+  const fieldMask = [
+    "routes.distanceMeters",
+    "routes.duration",
+    "routes.polyline.encodedPolyline",
+    "routes.legs.distanceMeters",
+    "routes.legs.duration",
+    "routes.legs.polyline.encodedPolyline",
+    "routes.legs.steps.distanceMeters",
+    "routes.legs.steps.duration",
+    "routes.legs.steps.staticDuration",
+    "routes.legs.steps.polyline.encodedPolyline",
+    "routes.legs.steps.navigationInstruction",
+    "routes.legs.steps.travelMode",
+    "routes.legs.steps.transitDetails",
+    "routes.legs.departureTime",
+    "routes.legs.arrivalTime",
+    "routes.travelAdvisory.transitFare",
+  ].join(",");
+
+  const response = await fetch(
+    "https://routes.googleapis.com/directions/v2:computeRoutes",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": fieldMask,
+      },
+      body: JSON.stringify(body),
+    }
+  );
   if (!response.ok) {
     throw new Error(`${response.status} ${response.statusText}`);
   }
   const data = await response.json();
-  if (!data || data.status !== "OK") {
-    const message = data?.error_message || data?.status || "Directions request failed.";
-    throw new Error(message);
-  }
-  const route = Array.isArray(data.routes) && data.routes.length ? data.routes[0] : null;
+  const route = Array.isArray(data?.routes) && data.routes.length ? data.routes[0] : null;
   if (!route) {
     throw new Error("No route found for the selected stops.");
   }
-  return route;
+  return transformRoutesRouteToLegacy(route);
+}
+
+function buildLatLng(coord) {
+  const lat = Number(coord?.[0]);
+  const lng = Number(coord?.[1]);
+  return { latitude: lat, longitude: lng };
+}
+
+function mapRouteTravelMode(mode) {
+  const normalized = String(mode || "").toLowerCase();
+  if (normalized === "walking") return "WALK";
+  if (normalized === "bicycling" || normalized === "cycling") return "BICYCLE";
+  if (normalized === "transit" || normalized === "public-transit") return "TRANSIT";
+  return "DRIVE";
+}
+
+function buildTransitPreferences(transitMode) {
+  return { routingPreference: "TRANSIT_ROUTING_PREFERENCE_UNSPECIFIED" };
+}
+
+function buildRouteModifiers(avoidList) {
+  const modifiers = {};
+  avoidList.forEach((value) => {
+    const token = String(value || "").toLowerCase();
+    if (token.includes("toll")) {
+      modifiers.avoidTolls = true;
+    }
+    if (token.includes("highway")) {
+      modifiers.avoidHighways = true;
+    }
+    if (token.includes("ferry")) {
+      modifiers.avoidFerries = true;
+    }
+  });
+  return Object.keys(modifiers).length ? modifiers : undefined;
+}
+
+function transformRoutesRouteToLegacy(route) {
+  const legs = Array.isArray(route.legs) ? route.legs.map(transformRoutesLegToLegacy) : [];
+  return {
+    legs,
+    overview_polyline: { points: route.polyline?.encodedPolyline || "" },
+  };
+}
+
+function transformRoutesLegToLegacy(leg) {
+  const steps = Array.isArray(leg.steps)
+    ? leg.steps.map(transformRoutesStepToLegacy).filter(Boolean)
+    : [];
+  const legacyLeg = {
+    duration: { value: durationStringToSeconds(leg.duration || leg.staticDuration) },
+    distance: { value: Number(leg.distanceMeters) || 0 },
+    steps,
+  };
+  const departure = parseTimestampToSeconds(leg.departureTime);
+  const arrival = parseTimestampToSeconds(leg.arrivalTime);
+  if (departure != null) {
+    legacyLeg.departure_time = { value: departure };
+  }
+  if (arrival != null) {
+    legacyLeg.arrival_time = { value: arrival };
+  }
+  if (leg.polyline?.encodedPolyline) {
+    legacyLeg.overview_polyline = { points: leg.polyline.encodedPolyline };
+  }
+  return legacyLeg;
+}
+
+function transformRoutesStepToLegacy(step) {
+  if (!step) return null;
+  const travelMode = String(step.travelMode || step.travel_mode || "").toUpperCase();
+  const legacyStep = {
+    travel_mode: travelMode,
+    duration: { value: durationStringToSeconds(step.duration || step.staticDuration) },
+    distance: { value: Number(step.distanceMeters) || 0 },
+    polyline: { points: step.polyline?.encodedPolyline || "" },
+    html_instructions: step.navigationInstruction?.instructions || "",
+    maneuver: step.navigationInstruction?.maneuver || "",
+  };
+  if (step.transitDetails) {
+    legacyStep.transit_details = transformTransitDetails(step.transitDetails);
+    legacyStep.travel_mode = "TRANSIT";
+  }
+  return legacyStep;
+}
+
+function transformTransitDetails(details) {
+  const line = details.transitLine || {};
+  const agencies = Array.isArray(line.agencies)
+    ? line.agencies
+        .map((agency) =>
+          agency?.name ? { name: agency.name } : null
+        )
+        .filter(Boolean)
+    : [];
+  const vehicle = line.vehicle || {};
+  const colorHex = rgbaColorToHex(line.color);
+  const shortName = line.shortName || line.nameShort || "";
+  const name = line.name || line.displayName || shortName || vehicle.name || vehicle.type || "";
+  const stopDetails = details.stopDetails || {};
+  const stops = Array.isArray(stopDetails.intermediateStopList)
+    ? stopDetails.intermediateStopList.length
+    : Number.isFinite(stopDetails.intermediateStopCount)
+    ? stopDetails.intermediateStopCount
+    : null;
+  const transformed = {
+    line: {
+      agencies,
+      short_name: shortName || undefined,
+      name,
+      color: colorHex || undefined,
+      vehicle: {
+        name: vehicle.name || vehicle.type || "",
+        type: vehicle.type || "",
+      },
+    },
+    headsign: details.headsign || "",
+    departure_stop: { name: stopDetails.departureStop?.name || "" },
+    arrival_stop: { name: stopDetails.arrivalStop?.name || "" },
+  };
+  if (stops != null) {
+    transformed.num_stops = stops;
+  }
+  const departureTime = parseTimestampToSeconds(details.estimatedDepartureTime);
+  if (departureTime != null) {
+    transformed.departure_time = { value: departureTime };
+  }
+  const arrivalTime = parseTimestampToSeconds(details.estimatedArrivalTime);
+  if (arrivalTime != null) {
+    transformed.arrival_time = { value: arrivalTime };
+  }
+  return transformed;
+}
+
+function durationStringToSeconds(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return 0;
+  }
+  const match = value.match(/([0-9.]+)s/);
+  if (!match) {
+    return 0;
+  }
+  const seconds = Number(match[1]);
+  return Number.isFinite(seconds) ? Math.round(seconds) : 0;
+}
+
+function parseTimestampToSeconds(value) {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? Math.floor(timestamp / 1000) : null;
+}
+
+function rgbaColorToHex(color) {
+  if (!color) return "";
+  const rgba = color.rgba || color;
+  const toChannel = (component) => {
+    if (typeof component !== "number" || Number.isNaN(component)) {
+      return 0;
+    }
+    const scaled = component > 1 ? component : component * 255;
+    return Math.max(0, Math.min(255, Math.round(scaled)));
+  };
+  const r = toChannel(rgba.red ?? rgba.r ?? 0);
+  const g = toChannel(rgba.green ?? rgba.g ?? 0);
+  const b = toChannel(rgba.blue ?? rgba.b ?? 0);
+  return [r, g, b]
+    .map((channel) => channel.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function convertGoogleStepsToLegs(steps, { defaultKind = "drive", modeKey = "driving" } = {}) {
@@ -3445,7 +3812,7 @@ async function fetchDrivingRouteDetails(
   const providerKey = normalizeRoutingProvider(provider);
   if (providerKey === "google-directions") {
     if (!googleApiKey) {
-      throw new Error("Google Directions API key required for driving routes.");
+    throw new Error("Google Routes API key required for driving routes.");
     }
     const route = await requestGoogleDirectionsRoute({
       points: routePoints,
@@ -3494,7 +3861,7 @@ async function fetchWalkingRouteDetails(
   const providerKey = normalizeRoutingProvider(provider);
   if (providerKey === "google-directions") {
     if (!googleApiKey) {
-      throw new Error("Google Directions API key required for walking routes.");
+    throw new Error("Google Routes API key required for walking routes.");
     }
     const route = await requestGoogleDirectionsRoute({
       points: routePoints,
@@ -3542,7 +3909,7 @@ async function fetchTransitRouteDetails(
   const providerKey = normalizeRoutingProvider(provider);
   if (providerKey === "google-directions") {
     if (!googleApiKey) {
-      throw new Error("Google Directions API key required for transit routes.");
+    throw new Error("Google Routes API key required for transit routes.");
     }
     return requestGoogleTransitItinerary(routePoints, {
       apiKey: googleApiKey,
@@ -4374,11 +4741,14 @@ function coordsToLatLngLiteral(coords) {
   return { lat, lng };
 }
 
-function renderMapMarkers(dateKey) {
+async function renderMapMarkers(dateKey) {
   if (!mapInstance || !window.google?.maps) return;
+  const markerLib = await ensureGoogleMarkerLibrary();
+  if (!markerLib) return;
+  const { AdvancedMarkerElement, PinElement } = markerLib;
   mapMarkers.forEach((marker) => {
-    if (marker && typeof marker.setMap === "function") {
-      marker.setMap(null);
+    if (marker) {
+      marker.map = null;
     }
   });
   mapMarkers = [];
@@ -4398,11 +4768,25 @@ function renderMapMarkers(dateKey) {
 
   const addMarker = (position, options = {}) => {
     if (!position || !mapInstance) return;
-    const marker = new google.maps.Marker({
+    const markerOptions = {
       map: mapInstance,
       position,
-      ...options,
-    });
+      title: options.title || "",
+    };
+    if (options.zIndex != null) {
+      markerOptions.zIndex = options.zIndex;
+    }
+    if (options.label || options.pinOptions) {
+      const pin = new PinElement({
+        glyph: options.label ? String(options.label) : "",
+        glyphColor: options.pinOptions?.glyphColor || "#1f2937",
+        background: options.pinOptions?.background || "#f8fafc",
+        borderColor: options.pinOptions?.borderColor || "#1f2937",
+        scale: options.pinOptions?.scale || 1,
+      });
+      markerOptions.content = pin.element;
+    }
+    const marker = new AdvancedMarkerElement(markerOptions);
     mapMarkers.push(marker);
     bounds.extend(position);
     if (options.infoContent) {
@@ -4425,13 +4809,11 @@ function renderMapMarkers(dateKey) {
     if (position) {
       addMarker(position, {
         title: `Start: ${itinerary.originStay.label || "Previous stay"}`,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 6,
-          fillColor: "#10b981",
-          fillOpacity: 0.85,
-          strokeColor: "#047857",
-          strokeWeight: 2,
+        label: "S",
+        pinOptions: {
+          background: "#10b981",
+          borderColor: "#047857",
+          glyphColor: "#ffffff",
         },
         infoContent: `Start: ${itinerary.originStay.label || "Previous stay"}`,
       });
@@ -4443,13 +4825,11 @@ function renderMapMarkers(dateKey) {
     if (position) {
       addMarker(position, {
         title: `Stay: ${itinerary.stay.label}`,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: 7,
-          fillColor: "#2563eb",
-          fillOpacity: 0.9,
-          strokeColor: "#1d4ed8",
-          strokeWeight: 2,
+        label: "H",
+        pinOptions: {
+          background: "#2563eb",
+          borderColor: "#1d4ed8",
+          glyphColor: "#ffffff",
         },
         infoContent: `Stay: ${itinerary.stay.label}`,
       });
@@ -4461,10 +4841,11 @@ function renderMapMarkers(dateKey) {
     if (!position) return;
     addMarker(position, {
       title: activity.label,
-      label: {
-        text: String(index + 1),
-        color: "#1f2937",
-        fontWeight: "600",
+      label: index + 1,
+      pinOptions: {
+        background: "#ffffff",
+        borderColor: "#1f2937",
+        glyphColor: "#1f2937",
       },
       infoContent: `${index + 1}. ${activity.label}`,
     });
@@ -4517,7 +4898,7 @@ async function initializeGoogleMap(dateKey) {
   } else {
     google.maps.event.trigger(mapInstance, "resize");
   }
-  renderMapMarkers(dateKey);
+  await renderMapMarkers(dateKey);
   renderMapRoute(dateKey, { mode: mapOverlayMode, fit: true });
 }
 
@@ -5513,14 +5894,15 @@ function createCatalogCard(type, item, options = {}) {
   detailBtn.addEventListener("click", () => openItemDetail(type, item.id));
   actions.appendChild(detailBtn);
 
-  if (item.url) {
-    const siteLink = document.createElement("a");
-    siteLink.href = item.url;
-    siteLink.target = "_blank";
-    siteLink.rel = "noreferrer noopener";
-    siteLink.className = "btn sheet-card__action";
-    siteLink.textContent = "Official site";
-    actions.appendChild(siteLink);
+  const primaryMapUrl = getGoogleMapsLinkForItem(item);
+  if (primaryMapUrl) {
+    const mapLink = document.createElement("a");
+    mapLink.href = primaryMapUrl;
+    mapLink.target = "_blank";
+    mapLink.rel = "noreferrer noopener";
+    mapLink.className = "btn sheet-card__action";
+    mapLink.textContent = "View in Google Maps";
+    actions.appendChild(mapLink);
   }
 
   const bookingLinks = getBookingLinks(item.bookingIds);
@@ -5633,13 +6015,14 @@ function createBookingCard(item) {
 
   const actions = document.createElement("div");
   actions.className = "sheet-card__actions";
-  if (item.url) {
+  const bookingMapUrl = getGoogleMapsLinkForItem(item);
+  if (bookingMapUrl) {
     const openLink = document.createElement("a");
-    openLink.href = item.url;
+    openLink.href = bookingMapUrl;
     openLink.target = "_blank";
     openLink.rel = "noreferrer noopener";
     openLink.className = "btn sheet-card__action";
-    openLink.textContent = "Open link";
+    openLink.textContent = "View in Google Maps";
     actions.appendChild(openLink);
   }
   if (actions.children.length) {
@@ -6167,15 +6550,17 @@ function openItemDetail(type, itemId) {
 
   if (itemDetailLinks) {
     itemDetailLinks.innerHTML = "";
-    if (item.url) {
-      const siteLink = document.createElement("a");
-      siteLink.href = item.url;
-      siteLink.target = "_blank";
-      siteLink.rel = "noreferrer noopener";
-      siteLink.className = "btn btn--primary";
-      siteLink.dataset.linkRole = "website";
-      siteLink.textContent = "Official site";
-      itemDetailLinks.appendChild(siteLink);
+    const baseMapUrl = getGoogleMapsLinkForItem(item);
+    if (baseMapUrl) {
+      const mapLink = document.createElement("a");
+      mapLink.href = baseMapUrl;
+      mapLink.target = "_blank";
+      mapLink.rel = "noreferrer noopener";
+      mapLink.className = "btn btn--primary";
+      mapLink.dataset.linkRole = "map";
+      mapLink.textContent = "View in Google Maps";
+      mapLink.hidden = false;
+      itemDetailLinks.appendChild(mapLink);
     }
     const bookingLinks = getBookingLinks(item.bookingIds);
     bookingLinks.forEach((booking) => {
@@ -6187,20 +6572,6 @@ function openItemDetail(type, itemId) {
       link.textContent = booking.label;
       itemDetailLinks.appendChild(link);
     });
-    const mapLink = document.createElement("a");
-    mapLink.className = "btn";
-    mapLink.target = "_blank";
-    mapLink.rel = "noreferrer noopener";
-    mapLink.dataset.linkRole = "map";
-    mapLink.textContent = "Open in Google Maps";
-    if (Array.isArray(coords)) {
-      const [lat, lng] = coords;
-      mapLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-      mapLink.hidden = false;
-    } else {
-      mapLink.hidden = true;
-    }
-    itemDetailLinks.appendChild(mapLink);
   }
 
   itemOverlay.classList.add("is-open");
@@ -6297,7 +6668,7 @@ function enhanceItemDetailWithPlace(type, item) {
 
       if (itemDetailLinks) {
         let siteLink = itemDetailLinks.querySelector("[data-link-role=\"website\"]");
-        if (!item.url && details.website) {
+        if (details.website) {
           if (!siteLink) {
             siteLink = document.createElement("a");
             siteLink.className = "btn";
@@ -6309,6 +6680,8 @@ function enhanceItemDetailWithPlace(type, item) {
           }
           siteLink.href = details.website;
           siteLink.hidden = false;
+        } else if (siteLink) {
+          siteLink.hidden = true;
         }
 
         const mapLink = itemDetailLinks.querySelector("[data-link-role=\"map\"]");
@@ -7161,10 +7534,10 @@ function renderCatalogSection(type, headingText) {
       row.appendChild(lockField.wrapper);
     } else {
       const { wrapper: urlField, input: urlInput } = createLabeledInput({
-        label: "Link (optional)",
+        label: "Google Maps link (optional)",
         type: "url",
         value: item.url || "",
-        placeholder: "https://…",
+        placeholder: "https://www.google.com/maps/…",
       });
       urlInput.addEventListener("input", (event) => {
         wizardState.data.catalog[type][index].url = event.target.value;
