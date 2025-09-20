@@ -860,6 +860,28 @@ button:disabled {
   color: var(--muted);
 }
 
+.sheet-card__rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.sheet-card__rating-icon {
+  color: #f59e0b;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.sheet-card__address {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
 .sheet-card__description {
   margin: 0;
   font-size: 0.82rem;
