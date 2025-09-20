@@ -1,4 +1,4 @@
-export const STORAGE_VERSION = 'v3';
+export const STORAGE_VERSION = 'v4';
 export const STORAGE_KEY = 'trip-canvas6-' + STORAGE_VERSION;
 
 export const COLOR_PALETTES = {
@@ -81,12 +81,140 @@ export const DEFAULT_TRIP_TEMPLATE = {
     'stay-disneyland-hotel': [35.6335, 139.8828],
     'stay-disney-celebration': [35.6498, 139.9068],
   },
+  mapPlaces: {
+    dotonbori: { query: 'Dotonbori, Osaka', language: 'en', region: 'JP' },
+    umedaSky: { query: 'Umeda Sky Building', language: 'en', region: 'JP' },
+    abenoHarukas: { query: 'Abeno Harukas 300', language: 'en', region: 'JP' },
+    midosujiIllumination: {
+      query: 'Midosuji Illumination',
+      language: 'en',
+      region: 'JP',
+    },
+    arashiyama: { query: 'Arashiyama Bamboo Grove', language: 'en', region: 'JP' },
+    kiyomizudera: { query: 'Kiyomizu-dera', language: 'en', region: 'JP' },
+    fushimiInari: { query: 'Fushimi Inari Taisha', language: 'en', region: 'JP' },
+    uji: { query: 'Byodoin Temple', language: 'en', region: 'JP' },
+    naraPark: { query: 'Nara Park', language: 'en', region: 'JP' },
+    okunoin: { query: 'Okunoin Cemetery', language: 'en', region: 'JP' },
+    eikando: { query: 'Eikando Zenrinji Temple', language: 'en', region: 'JP' },
+    rurikoin: { query: 'Rurikoin Temple', language: 'en', region: 'JP' },
+    arimaOnsen: { query: 'Arima Onsen', language: 'en', region: 'JP' },
+    harborland: { query: 'Kobe Harborland', language: 'en', region: 'JP' },
+    himejiCastle: { query: 'Himeji Castle', language: 'en', region: 'JP' },
+    disneyResort: { query: 'Tokyo Disney Resort', language: 'en', region: 'JP' },
+    teamlabPlanets: { query: 'teamLab Planets TOKYO', language: 'en', region: 'JP' },
+    ghibliMuseum: { query: 'Ghibli Museum', language: 'en', region: 'JP' },
+    shibuyaParco: { query: 'Shibuya PARCO', language: 'en', region: 'JP' },
+    takeshitaStreet: {
+      query: 'Takeshita Street Harajuku',
+      language: 'en',
+      region: 'JP',
+    },
+    sunshine60: {
+      query: 'Sunshine 60 Observatory',
+      language: 'en',
+      region: 'JP',
+    },
+    animateIkebukuro: {
+      query: 'Animate Ikebukuro Flagship Store',
+      language: 'en',
+      region: 'JP',
+    },
+    akihabara: { query: 'Akihabara', language: 'en', region: 'JP' },
+    harajukuVintage: {
+      query: 'Cat Street Harajuku',
+      language: 'en',
+      region: 'JP',
+    },
+    roppongiMidtown: { query: 'Tokyo Midtown', language: 'en', region: 'JP' },
+    dxbAirport: {
+      query: 'Dubai International Airport Terminal 3',
+      language: 'en',
+      region: 'AE',
+    },
+    kix: {
+      query: 'Kansai International Airport Terminal 1',
+      language: 'en',
+      region: 'JP',
+    },
+    hirakatashi: { query: 'Hirakatashi Station', language: 'en', region: 'JP' },
+    usj: { query: 'Universal Studios Japan', language: 'en', region: 'JP' },
+    'stay-candeo-hirakata': {
+      query: 'Candeo Hotels Osaka Kishibe',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-sunplaza-hirakata': {
+      query: 'Sun Plaza Hotel Osaka',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-cross-hotel-osaka': {
+      query: 'Cross Hotel Osaka',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-the-thousand-kyoto': {
+      query: 'THE THOUSAND KYOTO',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-hotel-granvia-kyoto': {
+      query: 'Hotel Granvia Kyoto',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-ekoin-koyasan': {
+      query: 'Ekoin Temple Koyasan',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-arima-grand': {
+      query: 'Arima Grand Hotel',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-la-suite-kobe': {
+      query: 'Hotel La Suite Kobe Harborland',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-mitsui-garden-otemachi': {
+      query: 'Mitsui Garden Hotel Otemachi',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-hotel-niwa-tokyo': {
+      query: 'Hotel Niwa Tokyo',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-airbnb-tokyo': {
+      query: 'Nihonbashi Tokyo',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-disney-ambassador': {
+      query: 'Disney Ambassador Hotel',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-disneyland-hotel': {
+      query: 'Tokyo Disneyland Hotel',
+      language: 'en',
+      region: 'JP',
+    },
+    'stay-disney-celebration': {
+      query: 'Tokyo Disney Celebration Hotel',
+      language: 'en',
+      region: 'JP',
+    },
+  },
   routing: {
-    provider: 'openrouteservice',
-    drivingProvider: 'openrouteservice',
-    walkingProvider: 'openrouteservice',
+    provider: 'google-directions',
+    drivingProvider: 'google-directions',
+    walkingProvider: 'google-directions',
     transitProvider: 'auto',
-    openRouteApiKey: 'eyJvcmciOiI1YjNjZTM1OTc4NTExMTAwMDFjZjYyNDgiLCJpZCI6IjEwNmFkNDY2ZWRmOTRkMDI4OWI3NWM5NmE1ZGU5YTNkIiwiaCI6Im11cm11cjY0In0=',
     googleApiKey: 'gapi:QUl6YVN5QkpB.Rmg0Mi15MF9p.czAtTnUteVNQ.UE5NUFptU01D.YnFN',
   },
   catalog: {
@@ -98,6 +226,11 @@ export const DEFAULT_TRIP_TEMPLATE = {
         locked: true,
         url: 'https://www.dubaiairports.ae/',
         image: 'https://www.dubaiairports.ae/images/passengerslibraries/home-page/hero-slider/hero-slider-02.png',
+        place: {
+          query: 'Dubai International Airport Terminal 3',
+          language: 'en',
+          region: 'AE',
+        },
         description:
           "Land in Dubai International Airport's bright Terminal 3 to begin the long-haul connection toward Japan. Use the brief layover to stretch, refuel, and make note of the departure gates for the overnight Emirates sector.",
       },
