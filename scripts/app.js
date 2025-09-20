@@ -24,6 +24,7 @@ const itemDetailMedia = document.getElementById("itemDetailMedia");
 const itemDetailImage = document.getElementById("itemDetailImage");
 const itemDetailMeta = document.getElementById("itemDetailMeta");
 const itemDetailLinks = document.getElementById("itemDetailLinks");
+const itemDetailAttribution = document.getElementById("itemDetailAttribution");
 const mapOverlay = document.getElementById("mapOverlay");
 const mapSummaryEl = document.getElementById("mapSummary");
 const mapDirectionsEl = document.getElementById("mapDirections");
@@ -61,9 +62,10 @@ let sheetState = { open: false, day: null, slot: "morning", tab: "activity" };
 let cardDragSource = null;
 let chipDragData = null;
 let mapInstance = null;
-let mapMarkersLayer = null;
+let mapMarkers = [];
 let mapRouteLayer = null;
 let mapStepHighlightLayer = null;
+let mapInfoWindow = null;
 let mapOverlayMode = "transit";
 let overlayMode = null;
 let activeMapDate = null;
@@ -72,6 +74,11 @@ const travelRequests = new Map();
 const travelExpansionState = new Map();
 const mapModeState = new Map();
 let mapDirectionsData = null;
+let googleMapsScriptPromise = null;
+let googleMapsCorePromise = null;
+let googleMarkerLibraryPromise = null;
+const placeDetailCache = new Map();
+const placeQueryCache = new Map();
 const DEFAULT_DEPARTURE_MINUTES = 9 * 60;
 let routingKeyPromptActive = false;
 let googleRoutingKeyPromptActive = false;
@@ -101,12 +108,12 @@ const MODE_COLORS = {
 
 const VALID_ROUTING_PROFILES = new Set(Object.values(MODE_TO_PROFILE));
 
-const DEFAULT_ROUTING_PROVIDER = "openrouteservice";
+const DEFAULT_ROUTING_PROVIDER = "google-directions";
 const HYBRID_ROUTING_PROVIDER = "hybrid-routing";
 
 const ROUTING_PROVIDER_LABELS = {
   "openrouteservice": "OpenRouteService",
-  "google-directions": "Google Directions",
+  "google-directions": "Google Routes",
 };
 
 const SUPPORTED_ROUTING_PROVIDERS = new Set([
@@ -233,6 +240,659 @@ function encodeGoogleApiKeyForStorage(value) {
     chunks.push(encoded.slice(index, index + chunkSize));
   }
   return `${googlePrefix}${chunks.join(".")}`;
+}
+
+function loadGoogleMapsScript(apiKey) {
+  if (!apiKey) {
+    return Promise.reject(new Error("Google Maps API key is required."));
+  }
+  if (typeof window !== "undefined" && window.google?.maps?.Map) {
+    return Promise.resolve(window.google);
+  }
+  if (googleMapsScriptPromise) {
+    return googleMapsScriptPromise;
+  }
+  if (typeof document === "undefined") {
+    return Promise.reject(new Error("Google Maps cannot load in this environment."));
+  }
+
+  googleMapsScriptPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-google-maps-script]');
+    if (existing) {
+      const handleLoad = () => {
+        existing.removeEventListener("load", handleLoad);
+        existing.removeEventListener("error", handleError);
+        if (window.google?.maps?.Map) {
+          resolve(window.google);
+        } else {
+          googleMapsScriptPromise = null;
+          reject(new Error("Google Maps failed to initialize."));
+        }
+      };
+      const handleError = () => {
+        existing.removeEventListener("load", handleLoad);
+        existing.removeEventListener("error", handleError);
+        googleMapsScriptPromise = null;
+        reject(new Error("Google Maps script failed to load."));
+      };
+      existing.addEventListener("load", handleLoad, { once: true });
+      existing.addEventListener("error", handleError, { once: true });
+      return;
+    }
+
+    const callbackName = `initGoogleMaps_${Date.now()}_${Math.random()
+      .toString(36)
+      .slice(2)}`;
+    const cleanup = () => {
+      if (typeof window !== "undefined" && window[callbackName]) {
+        delete window[callbackName];
+      }
+    };
+    window[callbackName] = () => {
+      cleanup();
+      resolve(window.google);
+    };
+
+    const script = document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(
+      apiKey
+    )}&libraries=places&v=weekly&loading=async&callback=${callbackName}`;
+    script.async = true;
+    script.defer = true;
+    script.dataset.googleMapsScript = "true";
+    script.onerror = () => {
+      cleanup();
+      googleMapsScriptPromise = null;
+      reject(new Error("Google Maps script failed to load."));
+    };
+    document.head.appendChild(script);
+  });
+
+  return googleMapsScriptPromise;
+}
+
+async function ensureGoogleMaps({ interactive = false } = {}) {
+  const apiKey = getGoogleRoutingApiKey({ interactive });
+  if (!apiKey) {
+    return null;
+  }
+  try {
+    const google = await loadGoogleMapsScript(apiKey);
+    if (!google?.maps?.importLibrary) {
+      return google;
+    }
+    if (!googleMapsCorePromise) {
+      googleMapsCorePromise = google.maps.importLibrary("maps");
+    }
+    await googleMapsCorePromise;
+    return google;
+  } catch (error) {
+    console.warn("Google Maps unavailable", error);
+    return null;
+  }
+}
+
+async function ensureGoogleMarkerLibrary() {
+  const google = await ensureGoogleMaps({ interactive: true });
+  if (!google?.maps?.importLibrary) {
+    return null;
+  }
+  if (!googleMarkerLibraryPromise) {
+    googleMarkerLibraryPromise = google.maps.importLibrary("marker");
+  }
+  return await googleMarkerLibraryPromise;
+}
+
+function normalizePlaceLookup(raw) {
+  if (!raw) return null;
+  if (typeof raw === "string") {
+    const query = raw.trim();
+    return query ? { query } : null;
+  }
+  if (typeof raw === "object") {
+    const placeId =
+      typeof raw.placeId === "string" && raw.placeId.trim()
+        ? raw.placeId.trim()
+        : typeof raw.id === "string" && raw.id.trim()
+        ? raw.id.trim()
+        : "";
+    const query =
+      typeof raw.query === "string" && raw.query.trim()
+        ? raw.query.trim()
+        : typeof raw.search === "string" && raw.search.trim()
+        ? raw.search.trim()
+        : "";
+    if (placeId || query) {
+      const result = {};
+      if (placeId) result.placeId = placeId;
+      if (query) result.query = query;
+      return result;
+    }
+  }
+  return null;
+}
+
+function getPlaceReferenceForCoord(coordRef) {
+  if (!coordRef) return null;
+  const lookup = planState.config.mapPlaces?.[coordRef];
+  return normalizePlaceLookup(lookup);
+}
+
+function getPlaceReferenceForItem(item) {
+  if (!item) return null;
+  const direct =
+    normalizePlaceLookup(item.googlePlaceId || item.placeId) ||
+    (typeof item.placeQuery === "string"
+      ? normalizePlaceLookup({ query: item.placeQuery })
+      : null);
+  if (direct) {
+    return direct;
+  }
+  const coordRef = item.coord || item.mapCoord || item.id;
+  return getPlaceReferenceForCoord(coordRef);
+}
+
+function buildPlaceContextForItem(item) {
+  const reference = getPlaceReferenceForItem(item);
+  if (!reference) return null;
+  const coords = resolveItemCoordinates(item);
+  return { reference, coords, label: item.label || item.id || "" };
+}
+
+function getPlaceCacheKey(reference) {
+  if (!reference) return null;
+  if (reference.placeId) {
+    return `id:${reference.placeId}`;
+  }
+  if (reference.query) {
+    return `query:${reference.query.toLowerCase()}`;
+  }
+  return null;
+}
+
+function getGoogleMapsLinkForItem(item) {
+  if (!item) return "";
+  const reference = getPlaceReferenceForItem(item);
+  if (reference?.placeId) {
+    return `https://www.google.com/maps/place/?q=place_id:${reference.placeId}`;
+  }
+  if (reference?.query) {
+    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+      reference.query
+    )}`;
+  }
+  const coords = resolveItemCoordinates(item);
+  if (Array.isArray(coords) && coords.length >= 2) {
+    const [lat, lng] = coords;
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+    }
+  }
+  return "";
+}
+
+async function fetchPlaceDetailsForContext(context, { interactive = false } = {}) {
+  if (!context || !context.reference) {
+    return null;
+  }
+  return loadPlaceDetails(context.reference, {
+    interactive,
+    coords: context.coords,
+  });
+}
+
+async function loadPlaceDetails(reference, { interactive = false, coords = null } = {}) {
+  const lookup = normalizePlaceLookup(reference);
+  if (!lookup) return null;
+  const cacheKey = getPlaceCacheKey(lookup);
+  if (cacheKey && placeDetailCache.has(cacheKey)) {
+    try {
+      return await placeDetailCache.get(cacheKey);
+    } catch (error) {
+      placeDetailCache.delete(cacheKey);
+    }
+  }
+
+  const promise = (async () => {
+    const apiKey = getGoogleRoutingApiKey({ interactive });
+    if (!apiKey) {
+      return null;
+    }
+
+    let placeId = lookup.placeId;
+    if (!placeId && lookup.query) {
+      const normalizedQuery = lookup.query.toLowerCase();
+      if (placeQueryCache.has(normalizedQuery)) {
+        placeId = placeQueryCache.get(normalizedQuery);
+      } else {
+        placeId = await searchPlaceIdByText(lookup.query, {
+          apiKey,
+          coords,
+        });
+        if (placeId) {
+          placeQueryCache.set(normalizedQuery, placeId);
+        }
+      }
+    }
+
+    if (!placeId) {
+      return null;
+    }
+
+    const details = await fetchPlaceDetailsById({ placeId, apiKey });
+    if (!details) {
+      return null;
+    }
+    if (details.id) {
+      placeDetailCache.set(`id:${details.id}`, Promise.resolve(details));
+    }
+    return details;
+  })();
+
+  if (cacheKey) {
+    placeDetailCache.set(cacheKey, promise);
+  }
+  promise.catch(() => {
+    if (cacheKey) {
+      placeDetailCache.delete(cacheKey);
+    }
+  });
+  return promise;
+}
+
+async function searchPlaceIdByText(query, { apiKey, coords = null, language = "en", region = "JP" } = {}) {
+  if (!query || !apiKey) {
+    return null;
+  }
+  const body = { textQuery: query, languageCode: language };
+  if (region) {
+    body.regionCode = region.toUpperCase();
+  }
+  if (Array.isArray(coords) && coords.length >= 2) {
+    const [lat, lng] = coords.map(Number);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      body.locationBias = {
+        circle: {
+          center: { latitude: lat, longitude: lng },
+          radius: 5000,
+        },
+      };
+    }
+  }
+
+  try {
+    const response = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": "places.id",
+      },
+      body: JSON.stringify(body),
+    });
+    if (!response.ok) {
+      return null;
+    }
+    const data = await response.json();
+    const place = Array.isArray(data?.places) && data.places.length ? data.places[0] : null;
+    return place?.id || null;
+  } catch (error) {
+    console.warn("Places text search failed", error);
+    return null;
+  }
+}
+
+async function fetchPlaceDetailsById({
+  placeId,
+  apiKey,
+  language = "en",
+  region = "JP",
+} = {}) {
+  if (!placeId || !apiKey) {
+    return null;
+  }
+  const params = new URLSearchParams();
+  params.set(
+    "fields",
+    [
+      "id",
+      "displayName",
+      "formattedAddress",
+      "location",
+      "rating",
+      "userRatingCount",
+      "priceLevel",
+      "websiteUri",
+      "googleMapsUri",
+      "internationalPhoneNumber",
+      "nationalPhoneNumber",
+      "businessStatus",
+      "editorialSummary",
+      "types",
+      "regularOpeningHours.weekdayDescriptions",
+      "currentOpeningHours.weekdayDescriptions",
+      "currentOpeningHours.openNow",
+      "photos.name",
+      "photos.widthPx",
+      "photos.heightPx",
+      "photos.authorAttributions.displayName",
+      "photos.authorAttributions.uri",
+    ].join(",")
+  );
+  params.set("languageCode", language);
+  if (region) {
+    params.set("regionCode", region.toUpperCase());
+  }
+
+  const url = `https://places.googleapis.com/v1/places/${encodeURIComponent(placeId)}?${params.toString()}`;
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "X-Goog-Api-Key": apiKey,
+      },
+    });
+    if (!response.ok) {
+      throw new Error(`${response.status} ${response.statusText}`);
+    }
+    const data = await response.json();
+    return normalizePlaceDetails(data, { apiKey });
+  } catch (error) {
+    console.warn("Places detail lookup failed", error);
+    return null;
+  }
+}
+
+function normalizePlaceDetails(place, { apiKey } = {}) {
+  if (!place) return null;
+  const details = {
+    id: place.id || null,
+    name: place.displayName?.text || place.displayName || "",
+    address: place.formattedAddress || "",
+    rating:
+      typeof place.rating === "number" && Number.isFinite(place.rating)
+        ? place.rating
+        : null,
+    userRatingsTotal:
+      typeof place.userRatingCount === "number"
+        ? place.userRatingCount
+        : null,
+    priceLevel: normalizePlacePriceLevel(place.priceLevel),
+    website: place.websiteUri || null,
+    googleMapsUri:
+      place.googleMapsUri ||
+      (place.id ? `https://www.google.com/maps/place/?q=place_id:${place.id}` : null),
+    phone: place.internationalPhoneNumber || place.nationalPhoneNumber || null,
+    businessStatus: place.businessStatus || null,
+    editorialSummary: place.editorialSummary?.text || "",
+    types: Array.isArray(place.types) ? [...place.types] : [],
+    openingHours: Array.isArray(place.regularOpeningHours?.weekdayDescriptions)
+      ? [...place.regularOpeningHours.weekdayDescriptions]
+      : Array.isArray(place.currentOpeningHours?.weekdayDescriptions)
+      ? [...place.currentOpeningHours.weekdayDescriptions]
+      : [],
+    isOpenNow:
+      typeof place.currentOpeningHours?.openNow === "boolean"
+        ? place.currentOpeningHours.openNow
+        : null,
+    location: extractLatLng(place.location),
+  };
+
+  const photos = Array.isArray(place.photos)
+    ? place.photos
+        .map((photo) => {
+          if (!photo?.name || !apiKey) {
+            return null;
+          }
+          const url =
+            `https://places.googleapis.com/v1/${encodeURIComponent(photo.name)}/media?` +
+            `maxHeightPx=1200&maxWidthPx=1600&key=${encodeURIComponent(apiKey)}`;
+          return {
+            url,
+            width: photo.widthPx || null,
+            height: photo.heightPx || null,
+            attributions: formatPhotoAttributions(photo.authorAttributions),
+          };
+        })
+        .filter(Boolean)
+    : [];
+
+  details.photos = photos;
+  details.primaryPhoto = photos.length ? photos[0] : null;
+  return details;
+}
+
+function extractLatLng(location) {
+  if (!location) return null;
+  if (Array.isArray(location) && location.length >= 2) {
+    const lat = Number(location[0]);
+    const lng = Number(location[1]);
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      return [lat, lng];
+    }
+    return null;
+  }
+  const source = location.latLng || location;
+  const lat = Number(source?.latitude ?? source?.lat ?? source?.y);
+  const lng = Number(source?.longitude ?? source?.lng ?? source?.x);
+  if (Number.isFinite(lat) && Number.isFinite(lng)) {
+    return [lat, lng];
+  }
+  return null;
+}
+
+function normalizePlacePriceLevel(level) {
+  if (typeof level === "number" && Number.isFinite(level)) {
+    return Math.max(0, Math.min(4, Math.round(level)));
+  }
+  if (typeof level !== "string") {
+    return null;
+  }
+  const map = {
+    PRICE_LEVEL_FREE: 0,
+    PRICE_LEVEL_INEXPENSIVE: 1,
+    PRICE_LEVEL_MODERATE: 2,
+    PRICE_LEVEL_EXPENSIVE: 3,
+    PRICE_LEVEL_VERY_EXPENSIVE: 4,
+  };
+  const key = level.toUpperCase();
+  return Object.prototype.hasOwnProperty.call(map, key) ? map[key] : null;
+}
+
+function formatPhotoAttributions(attributions) {
+  if (!Array.isArray(attributions) || !attributions.length) {
+    return [];
+  }
+  return attributions
+    .map((attr) => {
+      if (!attr) return null;
+      const name = typeof attr.displayName === "string" ? attr.displayName : "";
+      const uri = sanitizeAttributionUrl(attr.uri);
+      if (uri) {
+        const label = escapeHtml(name || uri);
+        return `<a href="${uri}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+      }
+      if (name) {
+        return escapeHtml(name);
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
+function sanitizeAttributionUrl(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
+    return "";
+  }
+  return trimmed.replace(/"/g, "&quot;");
+}
+
+function escapeHtml(value) {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value.replace(/[&<>"']/g, (char) => {
+    switch (char) {
+      case "&":
+        return "&amp;";
+      case "<":
+        return "&lt;";
+      case ">":
+        return "&gt;";
+      case '"':
+        return "&quot;";
+      case "'":
+        return "&#39;";
+      default:
+        return char;
+    }
+  });
+}
+
+function updateMediaImage(mediaEl, { url, alt, attributions = [], source = "" } = {}) {
+  if (!mediaEl) return;
+  const img = mediaEl.querySelector("img");
+  if (!img) return;
+  if (!url) {
+    mediaEl.hidden = true;
+    mediaEl.dataset.source = "";
+    const attributionEl = mediaEl.querySelector(".photo-attribution");
+    if (attributionEl) {
+      attributionEl.innerHTML = "";
+      attributionEl.hidden = true;
+    }
+    return;
+  }
+  const handleError = () => {
+    img.removeAttribute("src");
+    mediaEl.hidden = true;
+    mediaEl.dataset.source = "";
+    const attributionEl = mediaEl.querySelector(".photo-attribution");
+    if (attributionEl) {
+      attributionEl.innerHTML = "";
+      attributionEl.hidden = true;
+    }
+  };
+  img.onerror = handleError;
+  img.decoding = "async";
+  img.src = url;
+  img.alt = alt || "";
+  mediaEl.hidden = false;
+  mediaEl.dataset.source = source;
+  const attributionEl = mediaEl.querySelector(".photo-attribution");
+  if (attributionEl) {
+    if (Array.isArray(attributions) && attributions.length) {
+      attributionEl.innerHTML = attributions.join(', ');
+      attributionEl.hidden = false;
+      if (!attributionEl.classList.contains("photo-attribution--inline")) {
+        attributionEl.classList.add("photo-attribution--inline");
+      }
+    } else {
+      attributionEl.innerHTML = "";
+      attributionEl.hidden = true;
+    }
+  }
+}
+
+function updateItemDetailMedia({ url, alt, attributions = [] } = {}) {
+  if (!itemDetailMedia || !itemDetailImage) return;
+  if (!url) {
+    itemDetailImage.src = "";
+    itemDetailMedia.hidden = true;
+    itemDetailMedia.classList.add("is-hidden");
+    if (itemDetailAttribution) {
+      itemDetailAttribution.innerHTML = "";
+      itemDetailAttribution.style.display = "none";
+    }
+    return;
+  }
+  itemDetailImage.onerror = () => {
+    itemDetailImage.src = "";
+    itemDetailMedia.hidden = true;
+    itemDetailMedia.classList.add("is-hidden");
+    if (itemDetailAttribution) {
+      itemDetailAttribution.innerHTML = "";
+      itemDetailAttribution.style.display = "none";
+    }
+  };
+  itemDetailImage.decoding = "async";
+  itemDetailImage.src = url;
+  itemDetailImage.alt = alt || "";
+  itemDetailMedia.hidden = false;
+  itemDetailMedia.classList.remove("is-hidden");
+  if (itemDetailAttribution) {
+    if (Array.isArray(attributions) && attributions.length) {
+      itemDetailAttribution.innerHTML = attributions.join(', ');
+      itemDetailAttribution.style.display = "";
+    } else {
+      itemDetailAttribution.innerHTML = "";
+      itemDetailAttribution.style.display = "none";
+    }
+  }
+}
+
+function formatNumber(value) {
+  if (!Number.isFinite(value)) return "";
+  try {
+    return new Intl.NumberFormat().format(value);
+  } catch (error) {
+    return String(value);
+  }
+}
+
+function formatRatingSummary(rating, total) {
+  if (!Number.isFinite(rating)) return "";
+  const score = rating.toFixed(1);
+  const reviews = Number.isFinite(total) && total > 0 ? ` (${formatNumber(total)} reviews)` : "";
+  return `${score} ★${reviews}`;
+}
+
+function formatPriceLevel(level) {
+  if (!Number.isFinite(level) || level < 0) return "";
+  const normalized = Math.max(0, Math.min(4, Math.floor(level)));
+  if (normalized === 0) {
+    return "Free";
+  }
+  return "¥".repeat(normalized + 1);
+}
+
+function formatPlaceTypes(types, { limit = 3 } = {}) {
+  if (!Array.isArray(types) || !types.length) return "";
+  const slice = limit > 0 ? types.slice(0, limit) : [...types];
+  const labels = slice
+    .map((type) => (typeof type === "string" ? humanizeId(type) : ""))
+    .filter(Boolean);
+  return labels.join(", ");
+}
+
+function setItemDetailMetaEntry(key, label, value) {
+  if (!itemDetailMeta) return;
+  const existingDt = itemDetailMeta.querySelector(`dt[data-meta-key="${key}"]`);
+  const existingDd = itemDetailMeta.querySelector(`dd[data-meta-key="${key}"]`);
+  if (!value) {
+    if (existingDt) existingDt.remove();
+    if (existingDd) existingDd.remove();
+    return;
+  }
+  if (existingDt && existingDd) {
+    existingDt.textContent = label;
+    existingDd.textContent = value;
+    return;
+  }
+  const dt = document.createElement("dt");
+  dt.dataset.metaKey = key;
+  dt.textContent = label;
+  const dd = document.createElement("dd");
+  dd.dataset.metaKey = key;
+  dd.textContent = value;
+  itemDetailMeta.append(dt, dd);
+}
+
+function clearItemDetailMeta() {
+  if (itemDetailMeta) {
+    itemDetailMeta.innerHTML = "";
+  }
 }
 
 function normalizeRoutingProvider(value, { allowAuto = false } = {}) {
@@ -778,9 +1438,24 @@ function createConfigFromTemplate(template) {
     defaultThemes: { ...(template.defaultThemes || {}) },
     mapDefaults: template.mapDefaults ? { ...template.mapDefaults } : null,
     mapCoordinates: deepClone(template.mapCoordinates || {}),
+    mapPlaces: deepClone(template.mapPlaces || {}),
+    mapCoordinateLabels: { ...(template.mapCoordinateLabels || {}) },
     routing: {
-      provider: template.routing?.provider || "openrouteservice",
+      provider: template.routing?.provider || DEFAULT_ROUTING_PROVIDER,
+      drivingProvider:
+        template.routing?.drivingProvider ||
+        template.routing?.provider ||
+        DEFAULT_ROUTING_PROVIDER,
+      walkingProvider:
+        template.routing?.walkingProvider ||
+        template.routing?.provider ||
+        DEFAULT_ROUTING_PROVIDER,
+      transitProvider:
+        template.routing?.transitProvider ||
+        template.routing?.provider ||
+        DEFAULT_ROUTING_PROVIDER,
       openRouteApiKey: template.routing?.openRouteApiKey || "",
+      googleApiKey: template.routing?.googleApiKey || "",
     },
     catalog: {
       activity: Array.isArray(template.catalog?.activity)
@@ -835,6 +1510,14 @@ function normalizeConfig(rawConfig) {
     ...(template.mapCoordinates || {}),
     ...(rawConfig.mapCoordinates || {}),
   };
+  const mergedPlaces = {
+    ...(template.mapPlaces || {}),
+    ...(rawConfig.mapPlaces || {}),
+  };
+  const mergedCoordinateLabels = {
+    ...(template.mapCoordinateLabels || {}),
+    ...(rawConfig.mapCoordinateLabels || {}),
+  };
 
   const rawRouting = rawConfig.routing || {};
   const templateRouting = template.routing || {};
@@ -880,6 +1563,8 @@ function normalizeConfig(rawConfig) {
       ? { ...rawConfig.mapDefaults }
       : template.mapDefaults || null,
     mapCoordinates: deepClone(mergedCoordinates),
+    mapPlaces: deepClone(mergedPlaces),
+    mapCoordinateLabels: { ...mergedCoordinateLabels },
     routing: {
       provider: normalizedBase,
       drivingProvider:
@@ -932,6 +1617,24 @@ function refreshCatalogLookups() {
   BOOKING_MAP = new Map(
     (planState.config.catalog.booking || []).map((item) => [item.id, item])
   );
+  [
+    planState.config.catalog.activity,
+    planState.config.catalog.stay,
+    planState.config.catalog.booking,
+  ]
+    .filter(Array.isArray)
+    .forEach((list) => {
+      list.forEach((entry) => {
+        const mapUrl = getGoogleMapsLinkForItem(entry);
+        if (mapUrl) {
+          entry.mapUrl = mapUrl;
+          entry.url = mapUrl;
+        } else {
+          entry.mapUrl = "";
+          entry.url = "";
+        }
+      });
+    });
 }
 
 function deepClone(value) {
@@ -2466,7 +3169,7 @@ function getGoogleRoutingApiKey({ interactive = false } = {}) {
   googleRoutingKeyPromptActive = true;
   try {
     const input = window.prompt(
-      "Enter your Google Maps Directions API key to enable public transit routing"
+      "Enter your Google Maps Routes API key to enable public transit routing"
     );
     if (!input) {
       return null;
@@ -2573,7 +3276,7 @@ async function requestGoogleDirectionsRoute({
   alternatives = false,
 } = {}) {
   if (!apiKey) {
-    throw new Error("Google Directions API key is required for this request.");
+    throw new Error("Google Routes API key is required for this request.");
   }
   const coords = normalizeRoutePoints(points);
   if (!Array.isArray(coords) || coords.length < 2) {
@@ -2582,50 +3285,246 @@ async function requestGoogleDirectionsRoute({
   const origin = coords[0];
   const destination = coords[coords.length - 1];
   const waypointList = coords.slice(1, -1);
-  const params = new URLSearchParams();
-  params.set("origin", `${origin[0]},${origin[1]}`);
-  params.set("destination", `${destination[0]},${destination[1]}`);
-  params.set("mode", mode);
-  params.set("units", "metric");
-  params.set("key", apiKey);
-  if (language) params.set("language", language);
-  if (region) params.set("region", region);
+  const body = {
+    origin: { location: { latLng: buildLatLng(origin) } },
+    destination: { location: { latLng: buildLatLng(destination) } },
+    travelMode: mapRouteTravelMode(mode),
+    routingPreference: "ROUTING_PREFERENCE_UNSPECIFIED",
+    computeAlternativeRoutes: Boolean(alternatives),
+    languageCode: language || "en",
+    units: "METRIC",
+  };
+  if (region) {
+    body.regionCode = region.toUpperCase();
+  }
   if (waypointList.length) {
-    const encoded = waypointList
-      .map((coord) => `via:${coord[0]},${coord[1]}`)
-      .join("|");
-    params.set("waypoints", encoded);
+    body.intermediates = waypointList.map((coord) => ({
+      location: { latLng: buildLatLng(coord) },
+    }));
   }
-  if (typeof departureTime === "number" && Number.isFinite(departureTime)) {
-    params.set("departure_time", Math.floor(departureTime / 1000).toString());
-  } else if (mode === "transit") {
-    params.set("departure_time", Math.floor(Date.now() / 1000).toString());
-  }
-  if (mode === "transit" && transitMode) {
-    params.set("transit_mode", transitMode);
-  }
-  if (alternatives) {
-    params.set("alternatives", "true");
+  if (mode === "transit") {
+    body.transitPreferences = buildTransitPreferences(transitMode);
   }
   if (Array.isArray(avoid) && avoid.length) {
-    params.set("avoid", avoid.join("|"));
+    body.routeModifiers = buildRouteModifiers(avoid);
+  }
+  if (typeof departureTime === "number" && Number.isFinite(departureTime)) {
+    body.departureTime = new Date(departureTime).toISOString();
+  } else if (mode === "transit") {
+    body.departureTime = new Date().toISOString();
   }
 
-  const url = `https://maps.googleapis.com/maps/api/directions/json?${params.toString()}`;
-  const response = await fetch(url);
+  const fieldMask = [
+    "routes.distanceMeters",
+    "routes.duration",
+    "routes.polyline.encodedPolyline",
+    "routes.legs.distanceMeters",
+    "routes.legs.duration",
+    "routes.legs.polyline.encodedPolyline",
+    "routes.legs.steps.distanceMeters",
+    "routes.legs.steps.duration",
+    "routes.legs.steps.staticDuration",
+    "routes.legs.steps.polyline.encodedPolyline",
+    "routes.legs.steps.navigationInstruction",
+    "routes.legs.steps.travelMode",
+    "routes.legs.steps.transitDetails",
+    "routes.legs.departureTime",
+    "routes.legs.arrivalTime",
+    "routes.travelAdvisory.transitFare",
+  ].join(",");
+
+  const response = await fetch(
+    "https://routes.googleapis.com/directions/v2:computeRoutes",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Goog-Api-Key": apiKey,
+        "X-Goog-FieldMask": fieldMask,
+      },
+      body: JSON.stringify(body),
+    }
+  );
   if (!response.ok) {
     throw new Error(`${response.status} ${response.statusText}`);
   }
   const data = await response.json();
-  if (!data || data.status !== "OK") {
-    const message = data?.error_message || data?.status || "Directions request failed.";
-    throw new Error(message);
-  }
-  const route = Array.isArray(data.routes) && data.routes.length ? data.routes[0] : null;
+  const route = Array.isArray(data?.routes) && data.routes.length ? data.routes[0] : null;
   if (!route) {
     throw new Error("No route found for the selected stops.");
   }
-  return route;
+  return transformRoutesRouteToLegacy(route);
+}
+
+function buildLatLng(coord) {
+  const lat = Number(coord?.[0]);
+  const lng = Number(coord?.[1]);
+  return { latitude: lat, longitude: lng };
+}
+
+function mapRouteTravelMode(mode) {
+  const normalized = String(mode || "").toLowerCase();
+  if (normalized === "walking") return "WALK";
+  if (normalized === "bicycling" || normalized === "cycling") return "BICYCLE";
+  if (normalized === "transit" || normalized === "public-transit") return "TRANSIT";
+  return "DRIVE";
+}
+
+function buildTransitPreferences(transitMode) {
+  return { routingPreference: "TRANSIT_ROUTING_PREFERENCE_UNSPECIFIED" };
+}
+
+function buildRouteModifiers(avoidList) {
+  const modifiers = {};
+  avoidList.forEach((value) => {
+    const token = String(value || "").toLowerCase();
+    if (token.includes("toll")) {
+      modifiers.avoidTolls = true;
+    }
+    if (token.includes("highway")) {
+      modifiers.avoidHighways = true;
+    }
+    if (token.includes("ferry")) {
+      modifiers.avoidFerries = true;
+    }
+  });
+  return Object.keys(modifiers).length ? modifiers : undefined;
+}
+
+function transformRoutesRouteToLegacy(route) {
+  const legs = Array.isArray(route.legs) ? route.legs.map(transformRoutesLegToLegacy) : [];
+  return {
+    legs,
+    overview_polyline: { points: route.polyline?.encodedPolyline || "" },
+  };
+}
+
+function transformRoutesLegToLegacy(leg) {
+  const steps = Array.isArray(leg.steps)
+    ? leg.steps.map(transformRoutesStepToLegacy).filter(Boolean)
+    : [];
+  const legacyLeg = {
+    duration: { value: durationStringToSeconds(leg.duration || leg.staticDuration) },
+    distance: { value: Number(leg.distanceMeters) || 0 },
+    steps,
+  };
+  const departure = parseTimestampToSeconds(leg.departureTime);
+  const arrival = parseTimestampToSeconds(leg.arrivalTime);
+  if (departure != null) {
+    legacyLeg.departure_time = { value: departure };
+  }
+  if (arrival != null) {
+    legacyLeg.arrival_time = { value: arrival };
+  }
+  if (leg.polyline?.encodedPolyline) {
+    legacyLeg.overview_polyline = { points: leg.polyline.encodedPolyline };
+  }
+  return legacyLeg;
+}
+
+function transformRoutesStepToLegacy(step) {
+  if (!step) return null;
+  const travelMode = String(step.travelMode || step.travel_mode || "").toUpperCase();
+  const legacyStep = {
+    travel_mode: travelMode,
+    duration: { value: durationStringToSeconds(step.duration || step.staticDuration) },
+    distance: { value: Number(step.distanceMeters) || 0 },
+    polyline: { points: step.polyline?.encodedPolyline || "" },
+    html_instructions: step.navigationInstruction?.instructions || "",
+    maneuver: step.navigationInstruction?.maneuver || "",
+  };
+  if (step.transitDetails) {
+    legacyStep.transit_details = transformTransitDetails(step.transitDetails);
+    legacyStep.travel_mode = "TRANSIT";
+  }
+  return legacyStep;
+}
+
+function transformTransitDetails(details) {
+  const line = details.transitLine || {};
+  const agencies = Array.isArray(line.agencies)
+    ? line.agencies
+        .map((agency) =>
+          agency?.name ? { name: agency.name } : null
+        )
+        .filter(Boolean)
+    : [];
+  const vehicle = line.vehicle || {};
+  const colorHex = rgbaColorToHex(line.color);
+  const shortName = line.shortName || line.nameShort || "";
+  const name = line.name || line.displayName || shortName || vehicle.name || vehicle.type || "";
+  const stopDetails = details.stopDetails || {};
+  const stops = Array.isArray(stopDetails.intermediateStopList)
+    ? stopDetails.intermediateStopList.length
+    : Number.isFinite(stopDetails.intermediateStopCount)
+    ? stopDetails.intermediateStopCount
+    : null;
+  const transformed = {
+    line: {
+      agencies,
+      short_name: shortName || undefined,
+      name,
+      color: colorHex || undefined,
+      vehicle: {
+        name: vehicle.name || vehicle.type || "",
+        type: vehicle.type || "",
+      },
+    },
+    headsign: details.headsign || "",
+    departure_stop: { name: stopDetails.departureStop?.name || "" },
+    arrival_stop: { name: stopDetails.arrivalStop?.name || "" },
+  };
+  if (stops != null) {
+    transformed.num_stops = stops;
+  }
+  const departureTime = parseTimestampToSeconds(details.estimatedDepartureTime);
+  if (departureTime != null) {
+    transformed.departure_time = { value: departureTime };
+  }
+  const arrivalTime = parseTimestampToSeconds(details.estimatedArrivalTime);
+  if (arrivalTime != null) {
+    transformed.arrival_time = { value: arrivalTime };
+  }
+  return transformed;
+}
+
+function durationStringToSeconds(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value !== "string") {
+    return 0;
+  }
+  const match = value.match(/([0-9.]+)s/);
+  if (!match) {
+    return 0;
+  }
+  const seconds = Number(match[1]);
+  return Number.isFinite(seconds) ? Math.round(seconds) : 0;
+}
+
+function parseTimestampToSeconds(value) {
+  if (!value) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? Math.floor(timestamp / 1000) : null;
+}
+
+function rgbaColorToHex(color) {
+  if (!color) return "";
+  const rgba = color.rgba || color;
+  const toChannel = (component) => {
+    if (typeof component !== "number" || Number.isNaN(component)) {
+      return 0;
+    }
+    const scaled = component > 1 ? component : component * 255;
+    return Math.max(0, Math.min(255, Math.round(scaled)));
+  };
+  const r = toChannel(rgba.red ?? rgba.r ?? 0);
+  const g = toChannel(rgba.green ?? rgba.g ?? 0);
+  const b = toChannel(rgba.blue ?? rgba.b ?? 0);
+  return [r, g, b]
+    .map((channel) => channel.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function convertGoogleStepsToLegs(steps, { defaultKind = "drive", modeKey = "driving" } = {}) {
@@ -2913,7 +3812,7 @@ async function fetchDrivingRouteDetails(
   const providerKey = normalizeRoutingProvider(provider);
   if (providerKey === "google-directions") {
     if (!googleApiKey) {
-      throw new Error("Google Directions API key required for driving routes.");
+    throw new Error("Google Routes API key required for driving routes.");
     }
     const route = await requestGoogleDirectionsRoute({
       points: routePoints,
@@ -2962,7 +3861,7 @@ async function fetchWalkingRouteDetails(
   const providerKey = normalizeRoutingProvider(provider);
   if (providerKey === "google-directions") {
     if (!googleApiKey) {
-      throw new Error("Google Directions API key required for walking routes.");
+    throw new Error("Google Routes API key required for walking routes.");
     }
     const route = await requestGoogleDirectionsRoute({
       points: routePoints,
@@ -3010,7 +3909,7 @@ async function fetchTransitRouteDetails(
   const providerKey = normalizeRoutingProvider(provider);
   if (providerKey === "google-directions") {
     if (!googleApiKey) {
-      throw new Error("Google Directions API key required for transit routes.");
+    throw new Error("Google Routes API key required for transit routes.");
     }
     return requestGoogleTransitItinerary(routePoints, {
       apiKey: googleApiKey,
@@ -3834,68 +4733,177 @@ function updateMapSummary(dateKey) {
   mapSummaryEl.textContent = message;
 }
 
-function renderMapMarkers(dateKey) {
-  if (!mapInstance || !mapMarkersLayer) return;
-  mapMarkersLayer.clearLayers();
+function coordsToLatLngLiteral(coords) {
+  if (!Array.isArray(coords) || coords.length < 2) return null;
+  const lat = Number(coords[0]);
+  const lng = Number(coords[1]);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  return { lat, lng };
+}
+
+async function renderMapMarkers(dateKey) {
+  if (!mapInstance || !window.google?.maps) return;
+  const markerLib = await ensureGoogleMarkerLibrary();
+  if (!markerLib) return;
+  const { AdvancedMarkerElement, PinElement } = markerLib;
+  mapMarkers.forEach((marker) => {
+    if (marker) {
+      marker.map = null;
+    }
+  });
+  mapMarkers = [];
   clearMapRoute();
+  if (mapInfoWindow) {
+    try {
+      mapInfoWindow.close();
+    } catch (error) {
+      // ignore
+    }
+  }
 
   const day = ensureDay(dateKey);
   const itinerary = buildItineraryForDay(day, dateKey);
-  const bounds = window.L.latLngBounds([]);
+  const google = window.google;
+  const bounds = new google.maps.LatLngBounds();
+
+  const addMarker = (position, options = {}) => {
+    if (!position || !mapInstance) return;
+    const markerOptions = {
+      map: mapInstance,
+      position,
+      title: options.title || "",
+    };
+    if (options.zIndex != null) {
+      markerOptions.zIndex = options.zIndex;
+    }
+    if (options.label || options.pinOptions) {
+      const pin = new PinElement({
+        glyph: options.label ? String(options.label) : "",
+        glyphColor: options.pinOptions?.glyphColor || "#1f2937",
+        background: options.pinOptions?.background || "#f8fafc",
+        borderColor: options.pinOptions?.borderColor || "#1f2937",
+        scale: options.pinOptions?.scale || 1,
+      });
+      markerOptions.content = pin.element;
+    }
+    const marker = new AdvancedMarkerElement(markerOptions);
+    mapMarkers.push(marker);
+    bounds.extend(position);
+    if (options.infoContent) {
+      if (!mapInfoWindow) {
+        mapInfoWindow = new google.maps.InfoWindow();
+      }
+      marker.addListener("click", () => {
+        mapInfoWindow.setContent(options.infoContent);
+        mapInfoWindow.open({ map: mapInstance, anchor: marker });
+      });
+    }
+  };
 
   if (
     itinerary.originStay?.coords &&
     (!itinerary.stay?.coords ||
       !coordsEqual(itinerary.originStay.coords, itinerary.stay.coords))
   ) {
-    const startMarker = window.L.circleMarker(itinerary.originStay.coords, {
-      radius: 7,
-      color: "#10b981",
-      fillColor: "#10b981",
-      fillOpacity: 0.85,
-      weight: 2,
-      opacity: 0.9,
-    }).addTo(mapMarkersLayer);
-    startMarker.bindPopup(
-      `Start: ${itinerary.originStay.label || "Previous stay"}`
-    );
-    bounds.extend(itinerary.originStay.coords);
+    const position = coordsToLatLngLiteral(itinerary.originStay.coords);
+    if (position) {
+      addMarker(position, {
+        title: `Start: ${itinerary.originStay.label || "Previous stay"}`,
+        label: "S",
+        pinOptions: {
+          background: "#10b981",
+          borderColor: "#047857",
+          glyphColor: "#ffffff",
+        },
+        infoContent: `Start: ${itinerary.originStay.label || "Previous stay"}`,
+      });
+    }
   }
 
   if (itinerary.stay?.coords) {
-    const stayMarker = window.L.circleMarker(itinerary.stay.coords, {
-      radius: 8,
-      color: "#2563eb",
-      fillColor: "#2563eb",
-      fillOpacity: 0.9,
-      weight: 2,
-    }).addTo(mapMarkersLayer);
-    stayMarker.bindPopup(`Stay: ${itinerary.stay.label}`);
-    bounds.extend(itinerary.stay.coords);
+    const position = coordsToLatLngLiteral(itinerary.stay.coords);
+    if (position) {
+      addMarker(position, {
+        title: `Stay: ${itinerary.stay.label}`,
+        label: "H",
+        pinOptions: {
+          background: "#2563eb",
+          borderColor: "#1d4ed8",
+          glyphColor: "#ffffff",
+        },
+        infoContent: `Stay: ${itinerary.stay.label}`,
+      });
+    }
   }
 
   itinerary.activities.forEach((activity, index) => {
-    const marker = window.L.marker(activity.coords, {
-      riseOnHover: true,
-    }).addTo(mapMarkersLayer);
-    marker.bindPopup(`${index + 1}. ${activity.label}`);
-    bounds.extend(activity.coords);
+    const position = coordsToLatLngLiteral(activity.coords);
+    if (!position) return;
+    addMarker(position, {
+      title: activity.label,
+      label: index + 1,
+      pinOptions: {
+        background: "#ffffff",
+        borderColor: "#1f2937",
+        glyphColor: "#1f2937",
+      },
+      infoContent: `${index + 1}. ${activity.label}`,
+    });
   });
 
-  if (bounds.isValid()) {
-    mapInstance.fitBounds(bounds, { padding: [32, 32] });
+  if (!bounds.isEmpty()) {
+    mapInstance.fitBounds(bounds, {
+      top: 32,
+      right: 32,
+      bottom: 32,
+      left: 32,
+    });
   } else if (planState.config.mapDefaults?.center) {
-    mapInstance.setView(
-      planState.config.mapDefaults.center,
-      planState.config.mapDefaults.zoom || 5
-    );
+    const [lat, lng] = planState.config.mapDefaults.center;
+    mapInstance.setCenter({ lat, lng });
+    if (planState.config.mapDefaults.zoom != null) {
+      mapInstance.setZoom(planState.config.mapDefaults.zoom);
+    }
   } else {
-    mapInstance.setView([20, 0], 2);
+    mapInstance.setCenter({ lat: 20, lng: 0 });
+    mapInstance.setZoom(2);
   }
 }
 
+async function initializeGoogleMap(dateKey) {
+  const google = await ensureGoogleMaps({ interactive: true });
+  if (!google || !window.google?.maps) {
+    return;
+  }
+  const mapElement = document.getElementById("map");
+  if (!mapElement) {
+    return;
+  }
+  if (!mapInstance) {
+    const defaultCenter = planState.config.mapDefaults?.center;
+    const center = defaultCenter
+      ? { lat: Number(defaultCenter[0]), lng: Number(defaultCenter[1]) }
+      : { lat: 35, lng: 135.5 };
+    const zoom =
+      planState.config.mapDefaults?.zoom != null
+        ? Number(planState.config.mapDefaults.zoom)
+        : 6;
+    mapInstance = new google.maps.Map(mapElement, {
+      center,
+      zoom: Number.isFinite(zoom) ? zoom : 6,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: false,
+    });
+  } else {
+    google.maps.event.trigger(mapInstance, "resize");
+  }
+  await renderMapMarkers(dateKey);
+  renderMapRoute(dateKey, { mode: mapOverlayMode, fit: true });
+}
+
 function renderMapRoute(dateKey, { mode: modeOverride, fit = true } = {}) {
-  if (!mapInstance || activeMapDate !== dateKey) {
+  if (!mapInstance || activeMapDate !== dateKey || !window.google?.maps) {
     return;
   }
   clearMapRoute();
@@ -3911,34 +4919,45 @@ function renderMapRoute(dateKey, { mode: modeOverride, fit = true } = {}) {
     return;
   }
   const color = MODE_COLORS[mode] || "#2563eb";
-  const style =
-    mode === "walking"
-      ? { color, weight: 4, opacity: 0.85, dashArray: "6 6" }
-      : { color, weight: 4, opacity: 0.85 };
-  mapRouteLayer = window.L.geoJSON(geometry, { style }).addTo(mapInstance);
+  const path = geometryToLatLngs(geometry);
+  const googlePath = path
+    .map((coord) => coordsToLatLngLiteral(coord))
+    .filter(Boolean);
+  if (!googlePath.length) {
+    return;
+  }
+  mapRouteLayer = new window.google.maps.Polyline({
+    map: mapInstance,
+    path: googlePath,
+    strokeColor: color,
+    strokeOpacity: 0.85,
+    strokeWeight: mode === "walking" ? 4 : 5,
+  });
   if (fit) {
-    try {
-      const bounds = mapRouteLayer.getBounds();
-      if (bounds.isValid()) {
-        mapInstance.fitBounds(bounds, { padding: [48, 48] });
-      }
-    } catch (error) {
-      console.warn("Unable to fit map to route", error);
+    const bounds = new window.google.maps.LatLngBounds();
+    googlePath.forEach((point) => bounds.extend(point));
+    if (!bounds.isEmpty()) {
+      mapInstance.fitBounds(bounds, {
+        top: 48,
+        right: 48,
+        bottom: 48,
+        left: 48,
+      });
     }
   }
 }
 
 function clearMapRoute() {
-  if (mapRouteLayer && mapInstance) {
-    mapInstance.removeLayer(mapRouteLayer);
+  if (mapRouteLayer && typeof mapRouteLayer.setMap === "function") {
+    mapRouteLayer.setMap(null);
   }
   mapRouteLayer = null;
   clearStepHighlight();
 }
 
 function clearStepHighlight() {
-  if (mapStepHighlightLayer && mapInstance) {
-    mapInstance.removeLayer(mapStepHighlightLayer);
+  if (mapStepHighlightLayer && typeof mapStepHighlightLayer.setMap === "function") {
+    mapStepHighlightLayer.setMap(null);
   }
   mapStepHighlightLayer = null;
   if (mapDirectionsEl) {
@@ -3977,27 +4996,45 @@ function activateDirectionStep(stepIndex, { flyTo = true } = {}) {
   }
 
   const path = Array.isArray(step.path) && step.path.length ? step.path : null;
-  if (mapInstance && path) {
+  if (mapInstance && window.google?.maps && path) {
     const highlightColor =
       step.color || (step.modeKey ? MODE_COLORS[step.modeKey] : "#f97316");
-    mapStepHighlightLayer = window.L.polyline(path, {
-      color: highlightColor,
-      weight: 6,
-      opacity: 0.9,
-      lineCap: "round",
-      lineJoin: "round",
-    }).addTo(mapInstance);
-    if (flyTo) {
-      const bounds = computeBoundsFromPath(path);
-      if (bounds) {
-        mapInstance.fitBounds(bounds, { padding: [48, 48] });
+    const googlePath = path
+      .map((coord) => coordsToLatLngLiteral(coord))
+      .filter(Boolean);
+    if (googlePath.length) {
+      mapStepHighlightLayer = new window.google.maps.Polyline({
+        map: mapInstance,
+        path: googlePath,
+        strokeColor: highlightColor,
+        strokeOpacity: 0.9,
+        strokeWeight: 6,
+      });
+      if (flyTo) {
+        const bounds = new window.google.maps.LatLngBounds();
+        googlePath.forEach((point) => bounds.extend(point));
+        if (!bounds.isEmpty()) {
+          mapInstance.fitBounds(bounds, {
+            top: 48,
+            right: 48,
+            bottom: 48,
+            left: 48,
+          });
+        }
       }
     }
   } else if (flyTo && mapRouteLayer) {
     try {
-      const bounds = mapRouteLayer.getBounds();
-      if (bounds.isValid()) {
-        mapInstance.fitBounds(bounds, { padding: [48, 48] });
+      const bounds = new window.google.maps.LatLngBounds();
+      const routePath = mapRouteLayer.getPath();
+      routePath?.forEach((point) => bounds.extend(point));
+      if (!bounds.isEmpty()) {
+        mapInstance.fitBounds(bounds, {
+          top: 48,
+          right: 48,
+          bottom: 48,
+          left: 48,
+        });
       }
     } catch (error) {
       console.warn("Unable to focus map on step", error);
@@ -4722,6 +5759,16 @@ function renderSheetGroup(locationId, items, options = {}) {
   return group;
 }
 
+function updateMetaVisibility(container) {
+  if (!container) return;
+  const hasVisibleChild = Array.from(container.children || []).some((child) => {
+    if (child.hidden) return false;
+    if (child.classList?.contains("sheet-card__tag")) return true;
+    return Boolean(child.textContent && child.textContent.trim());
+  });
+  container.hidden = !hasVisibleChild;
+}
+
 function createCatalogCard(type, item, options = {}) {
   const card = document.createElement("article");
   card.className = "sheet-card";
@@ -4729,15 +5776,28 @@ function createCatalogCard(type, item, options = {}) {
     card.classList.add("sheet-card--selected");
   }
 
+  const titleText = item.label || item.id;
+
+  const media = document.createElement("div");
+  media.className = "sheet-card__media";
+  const img = document.createElement("img");
+  img.alt = "";
+  img.loading = "lazy";
+  media.appendChild(img);
+  const attribution = document.createElement("div");
+  attribution.className = "photo-attribution photo-attribution--inline";
+  attribution.hidden = true;
+  media.appendChild(attribution);
+  card.appendChild(media);
+
   if (item.image) {
-    const media = document.createElement("div");
-    media.className = "sheet-card__media";
-    const img = document.createElement("img");
-    img.src = item.image;
-    img.alt = item.imageAlt || item.label || item.id;
-    img.loading = "lazy";
-    media.appendChild(img);
-    card.appendChild(media);
+    updateMediaImage(media, {
+      url: item.image,
+      alt: item.imageAlt || titleText,
+      source: "manual",
+    });
+  } else {
+    updateMediaImage(media, {});
   }
 
   const body = document.createElement("div");
@@ -4745,26 +5805,41 @@ function createCatalogCard(type, item, options = {}) {
 
   const title = document.createElement("h3");
   title.className = "sheet-card__title";
-  title.textContent = item.label || item.id;
+  title.textContent = titleText;
   body.appendChild(title);
 
   const meta = document.createElement("div");
   meta.className = "sheet-card__meta";
-  const metaParts = [];
+
+  const ratingEl = document.createElement("span");
+  ratingEl.className = "sheet-card__rating";
+  ratingEl.hidden = true;
+  meta.appendChild(ratingEl);
+
   if (item.city) {
-    metaParts.push(getLocationLabel(item.city));
+    const locationSpan = document.createElement("span");
+    locationSpan.textContent = getLocationLabel(item.city);
+    meta.appendChild(locationSpan);
   }
+
   const coords = resolveItemCoordinates(item);
   const coordLabel = formatCoordinatePair(coords);
   if (coordLabel) {
-    metaParts.push(coordLabel);
+    const coordSpan = document.createElement("span");
+    coordSpan.textContent = coordLabel;
+    meta.appendChild(coordSpan);
   }
-  metaParts.forEach((text) => {
-    if (!text) return;
-    const span = document.createElement("span");
-    span.textContent = text;
-    meta.appendChild(span);
-  });
+
+  const priceEl = document.createElement("span");
+  priceEl.dataset.metaRole = "price";
+  priceEl.hidden = true;
+  meta.appendChild(priceEl);
+
+  const addressEl = document.createElement("span");
+  addressEl.dataset.metaRole = "address";
+  addressEl.hidden = true;
+  meta.appendChild(addressEl);
+
   if (item.locked) {
     const tag = document.createElement("span");
     tag.className = "sheet-card__tag";
@@ -4777,16 +5852,18 @@ function createCatalogCard(type, item, options = {}) {
     tag.textContent = "Selected";
     meta.appendChild(tag);
   }
-  if (meta.children.length) {
-    body.appendChild(meta);
-  }
 
+  updateMetaVisibility(meta);
+  body.appendChild(meta);
+
+  const description = document.createElement("p");
+  description.className = "sheet-card__description";
   if (item.description) {
-    const description = document.createElement("p");
-    description.className = "sheet-card__description";
     description.textContent = item.description;
-    body.appendChild(description);
+  } else {
+    description.hidden = true;
   }
+  body.appendChild(description);
 
   card.appendChild(body);
 
@@ -4817,14 +5894,15 @@ function createCatalogCard(type, item, options = {}) {
   detailBtn.addEventListener("click", () => openItemDetail(type, item.id));
   actions.appendChild(detailBtn);
 
-  if (item.url) {
-    const siteLink = document.createElement("a");
-    siteLink.href = item.url;
-    siteLink.target = "_blank";
-    siteLink.rel = "noreferrer noopener";
-    siteLink.className = "btn sheet-card__action";
-    siteLink.textContent = "Official site";
-    actions.appendChild(siteLink);
+  const primaryMapUrl = getGoogleMapsLinkForItem(item);
+  if (primaryMapUrl) {
+    const mapLink = document.createElement("a");
+    mapLink.href = primaryMapUrl;
+    mapLink.target = "_blank";
+    mapLink.rel = "noreferrer noopener";
+    mapLink.className = "btn sheet-card__action";
+    mapLink.textContent = "View in Google Maps";
+    actions.appendChild(mapLink);
   }
 
   const bookingLinks = getBookingLinks(item.bookingIds);
@@ -4842,7 +5920,72 @@ function createCatalogCard(type, item, options = {}) {
     card.appendChild(actions);
   }
 
+  enhanceCatalogCardWithPlace(type, item, {
+    card,
+    media,
+    meta,
+    ratingEl,
+    priceEl,
+    addressEl,
+    descriptionEl: description,
+  });
+
   return card;
+}
+
+function enhanceCatalogCardWithPlace(
+  type,
+  item,
+  { card, media, meta, ratingEl, priceEl, addressEl, descriptionEl }
+) {
+  const context = buildPlaceContextForItem(item);
+  if (!context) return;
+
+  fetchPlaceDetailsForContext(context, { interactive: false })
+    .then((details) => {
+      if (!details || !card?.isConnected) {
+        return;
+      }
+      const placeLabel = details.name || item.label || item.id;
+      if (details.primaryPhoto) {
+        updateMediaImage(media, {
+          url: details.primaryPhoto.url,
+          alt: placeLabel,
+          attributions: details.primaryPhoto.attributions,
+          source: "google",
+        });
+      }
+      const ratingText = formatRatingSummary(
+        Number(details.rating),
+        Number(details.totalRatings)
+      );
+      if (ratingText && ratingEl) {
+        ratingEl.textContent = ratingText;
+        ratingEl.hidden = false;
+      }
+      const priceText = formatPriceLevel(details.priceLevel);
+      if (priceText && priceEl) {
+        priceEl.textContent = priceText;
+        priceEl.hidden = false;
+      }
+      if (details.address && addressEl) {
+        addressEl.textContent = details.address;
+        addressEl.hidden = false;
+      }
+      if (
+        descriptionEl &&
+        descriptionEl.hidden &&
+        details.editorialSummary &&
+        !item.description
+      ) {
+        descriptionEl.textContent = details.editorialSummary;
+        descriptionEl.hidden = false;
+      }
+      updateMetaVisibility(meta);
+    })
+    .catch((error) => {
+      console.warn("Unable to enhance catalog card with place details", error);
+    });
 }
 
 function createBookingCard(item) {
@@ -4872,13 +6015,14 @@ function createBookingCard(item) {
 
   const actions = document.createElement("div");
   actions.className = "sheet-card__actions";
-  if (item.url) {
+  const bookingMapUrl = getGoogleMapsLinkForItem(item);
+  if (bookingMapUrl) {
     const openLink = document.createElement("a");
-    openLink.href = item.url;
+    openLink.href = bookingMapUrl;
     openLink.target = "_blank";
     openLink.rel = "noreferrer noopener";
     openLink.className = "btn sheet-card__action";
-    openLink.textContent = "Open link";
+    openLink.textContent = "View in Google Maps";
     actions.appendChild(openLink);
   }
   if (actions.children.length) {
@@ -5353,11 +6497,13 @@ function openItemDetail(type, itemId) {
   }
   if (!item) return;
 
-  activeItemDetail = { type, id: itemId };
   const titleText =
     item.label ||
     (type === "activity" ? getActivityLabel(itemId) : getStayLabel(itemId)) ||
     itemId;
+
+  activeItemDetail = { type, id: itemId };
+
   if (itemDetailTitle) {
     itemDetailTitle.textContent = titleText;
   }
@@ -5379,54 +6525,42 @@ function openItemDetail(type, itemId) {
     }
   }
 
-  if (item.image && itemDetailImage) {
-    itemDetailImage.src = item.image;
-    itemDetailImage.alt = item.imageAlt || titleText;
-    if (itemDetailMedia) {
-      itemDetailMedia.hidden = false;
-      itemDetailMedia.classList.remove("is-hidden");
-    }
-  } else if (itemDetailImage) {
-    itemDetailImage.src = "";
-    if (itemDetailMedia) {
-      itemDetailMedia.hidden = true;
-      itemDetailMedia.classList.add("is-hidden");
-    }
+  if (item.image) {
+    updateItemDetailMedia({
+      url: item.image,
+      alt: item.imageAlt || titleText,
+    });
+  } else {
+    updateItemDetailMedia();
   }
 
   const coords = resolveItemCoordinates(item);
   const coordLabel = formatCoordinatePair(coords);
-  if (itemDetailMeta) {
-    itemDetailMeta.innerHTML = "";
-    const appendMeta = (label, value) => {
-      if (!value) return;
-      const dt = document.createElement("dt");
-      dt.textContent = label;
-      const dd = document.createElement("dd");
-      dd.textContent = value;
-      itemDetailMeta.append(dt, dd);
-    };
-    if (locationLabel) {
-      appendMeta("Location", locationLabel);
-    }
-    if (coordLabel) {
-      appendMeta("Coordinates", coordLabel);
-    }
-    if (item.locked) {
-      appendMeta("Status", "Locked itinerary item");
-    }
+
+  clearItemDetailMeta();
+  if (locationLabel) {
+    setItemDetailMetaEntry("location", "Location", locationLabel);
+  }
+  if (coordLabel) {
+    setItemDetailMetaEntry("coordinates", "Coordinates", coordLabel);
+  }
+  if (item.locked) {
+    setItemDetailMetaEntry("status", "Status", "Locked itinerary item");
   }
 
   if (itemDetailLinks) {
     itemDetailLinks.innerHTML = "";
-    if (item.url) {
-      const siteLink = document.createElement("a");
-      siteLink.href = item.url;
-      siteLink.target = "_blank";
-      siteLink.rel = "noreferrer noopener";
-      siteLink.className = "btn btn--primary";
-      siteLink.textContent = "Official site";
-      itemDetailLinks.appendChild(siteLink);
+    const baseMapUrl = getGoogleMapsLinkForItem(item);
+    if (baseMapUrl) {
+      const mapLink = document.createElement("a");
+      mapLink.href = baseMapUrl;
+      mapLink.target = "_blank";
+      mapLink.rel = "noreferrer noopener";
+      mapLink.className = "btn btn--primary";
+      mapLink.dataset.linkRole = "map";
+      mapLink.textContent = "View in Google Maps";
+      mapLink.hidden = false;
+      itemDetailLinks.appendChild(mapLink);
     }
     const bookingLinks = getBookingLinks(item.bookingIds);
     bookingLinks.forEach((booking) => {
@@ -5438,21 +6572,13 @@ function openItemDetail(type, itemId) {
       link.textContent = booking.label;
       itemDetailLinks.appendChild(link);
     });
-    if (coordLabel && Array.isArray(coords)) {
-      const [lat, lng] = coords;
-      const mapLink = document.createElement("a");
-      mapLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
-      mapLink.target = "_blank";
-      mapLink.rel = "noreferrer noopener";
-      mapLink.className = "btn";
-      mapLink.textContent = "Open in Google Maps";
-      itemDetailLinks.appendChild(mapLink);
-    }
   }
 
   itemOverlay.classList.add("is-open");
   itemOverlay.setAttribute("aria-hidden", "false");
   document.body.classList.add("item-open");
+
+  enhanceItemDetailWithPlace(type, item);
 }
 
 function closeItemDetail() {
@@ -5461,23 +6587,144 @@ function closeItemDetail() {
   itemOverlay.setAttribute("aria-hidden", "true");
   document.body.classList.remove("item-open");
   activeItemDetail = null;
-  if (itemDetailImage) {
-    itemDetailImage.src = "";
-  }
+  updateItemDetailMedia();
   if (itemDetailDescription) {
     itemDetailDescription.textContent = "";
     itemDetailDescription.hidden = true;
   }
-  if (itemDetailMeta) {
-    itemDetailMeta.innerHTML = "";
-  }
+  clearItemDetailMeta();
   if (itemDetailLinks) {
     itemDetailLinks.innerHTML = "";
   }
-  if (itemDetailMedia) {
-    itemDetailMedia.hidden = true;
-    itemDetailMedia.classList.add("is-hidden");
+}
+
+function enhanceItemDetailWithPlace(type, item) {
+  const context = buildPlaceContextForItem(item);
+  if (!context) return;
+
+  if (activeItemDetail) {
+    activeItemDetail.placeToken = Symbol("place-detail");
   }
+  const expectedToken = activeItemDetail?.placeToken;
+
+  fetchPlaceDetailsForContext(context, { interactive: true })
+    .then((details) => {
+      if (!details) return;
+      if (
+        !activeItemDetail ||
+        activeItemDetail.type !== type ||
+        activeItemDetail.id !== item.id ||
+        activeItemDetail.placeToken !== expectedToken
+      ) {
+        return;
+      }
+
+      const placeLabel = details.name || item.label || item.id;
+
+      if (details.primaryPhoto) {
+        updateItemDetailMedia({
+          url: details.primaryPhoto.url,
+          alt: placeLabel,
+          attributions: details.primaryPhoto.attributions,
+        });
+      }
+
+      if (itemDetailDescription && !item.description && details.editorialSummary) {
+        itemDetailDescription.textContent = details.editorialSummary;
+        itemDetailDescription.hidden = false;
+      }
+
+      const ratingText = formatRatingSummary(
+        Number(details.rating),
+        Number(details.totalRatings)
+      );
+      setItemDetailMetaEntry("rating", "Rating", ratingText);
+
+      const priceText = formatPriceLevel(details.priceLevel);
+      setItemDetailMetaEntry("price", "Price level", priceText);
+
+      setItemDetailMetaEntry("address", "Address", details.address || "");
+      setItemDetailMetaEntry("phone", "Phone", details.phone || "");
+
+      const typeSummary = formatPlaceTypes(details.types || [], { limit: 3 });
+      setItemDetailMetaEntry("categories", "Categories", typeSummary);
+
+      if (Array.isArray(details.openingHours) && details.openingHours.length) {
+        setItemDetailMetaEntry(
+          "hours",
+          "Hours",
+          details.openingHours.join(" · ")
+        );
+      } else if (typeof details.isOpenNow === "boolean") {
+        setItemDetailMetaEntry(
+          "availability",
+          "Availability",
+          details.isOpenNow ? "Open now" : "Closed now"
+        );
+      } else {
+        setItemDetailMetaEntry("hours", "Hours", "");
+        setItemDetailMetaEntry("availability", "Availability", "");
+      }
+
+      if (itemDetailLinks) {
+        let siteLink = itemDetailLinks.querySelector("[data-link-role=\"website\"]");
+        if (details.website) {
+          if (!siteLink) {
+            siteLink = document.createElement("a");
+            siteLink.className = "btn";
+            siteLink.target = "_blank";
+            siteLink.rel = "noreferrer noopener";
+            siteLink.dataset.linkRole = "website";
+            siteLink.textContent = "Official site";
+            itemDetailLinks.prepend(siteLink);
+          }
+          siteLink.href = details.website;
+          siteLink.hidden = false;
+        } else if (siteLink) {
+          siteLink.hidden = true;
+        }
+
+        const mapLink = itemDetailLinks.querySelector("[data-link-role=\"map\"]");
+        const fallbackCoords = Array.isArray(details.location)
+          ? details.location
+          : context.coords;
+        if (mapLink) {
+          if (details.googleMapsUri) {
+            mapLink.href = details.googleMapsUri;
+            mapLink.hidden = false;
+          } else if (!mapLink.href && Array.isArray(fallbackCoords)) {
+            const [lat, lng] = fallbackCoords;
+            if (Number.isFinite(lat) && Number.isFinite(lng)) {
+              mapLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+              mapLink.hidden = false;
+            }
+          }
+        } else {
+          let mapHref = "";
+          if (details.googleMapsUri) {
+            mapHref = details.googleMapsUri;
+          } else if (Array.isArray(fallbackCoords)) {
+            const [lat, lng] = fallbackCoords;
+            if (Number.isFinite(lat) && Number.isFinite(lng)) {
+              mapHref = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+            }
+          }
+          if (mapHref) {
+            const newMapLink = document.createElement("a");
+            newMapLink.className = "btn";
+            newMapLink.target = "_blank";
+            newMapLink.rel = "noreferrer noopener";
+            newMapLink.dataset.linkRole = "map";
+            newMapLink.textContent = "Open in Google Maps";
+            newMapLink.href = mapHref;
+            itemDetailLinks.appendChild(newMapLink);
+          }
+        }
+      }
+    })
+    .catch((error) => {
+      console.warn("Unable to load Google place details for item", error);
+    });
 }
 
 function openMap(dateKey) {
@@ -5496,17 +6743,9 @@ function openMap(dateKey) {
   updateMapDirections(dateKey, { mode: mapOverlayMode });
 
   setTimeout(() => {
-    if (!mapInstance) {
-      mapInstance = window.L.map("map");
-      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
-        maxZoom: 19,
-      }).addTo(mapInstance);
-      mapMarkersLayer = window.L.layerGroup().addTo(mapInstance);
-    }
-    mapInstance.invalidateSize();
-    renderMapMarkers(dateKey);
-    renderMapRoute(dateKey, { mode: mapOverlayMode, fit: true });
+    initializeGoogleMap(dateKey).catch((error) => {
+      console.warn("Unable to initialize Google Map", error);
+    });
   }, 50);
 
   scheduleTravelCalculation(dateKey, { interactive: true }).finally(() => {
@@ -5525,8 +6764,13 @@ function closeMap() {
   document.body.classList.remove("map-open");
   activeMapDate = null;
   clearMapRoute();
-  if (mapMarkersLayer) {
-    mapMarkersLayer.clearLayers();
+  if (mapMarkers.length) {
+    mapMarkers.forEach((marker) => {
+      if (marker && typeof marker.setMap === "function") {
+        marker.setMap(null);
+      }
+    });
+    mapMarkers = [];
   }
   if (mapSummaryEl) {
     mapSummaryEl.textContent = "";
@@ -6290,10 +7534,10 @@ function renderCatalogSection(type, headingText) {
       row.appendChild(lockField.wrapper);
     } else {
       const { wrapper: urlField, input: urlInput } = createLabeledInput({
-        label: "Link (optional)",
+        label: "Google Maps link (optional)",
         type: "url",
         value: item.url || "",
-        placeholder: "https://…",
+        placeholder: "https://www.google.com/maps/…",
       });
       urlInput.addEventListener("input", (event) => {
         wizardState.data.catalog[type][index].url = event.target.value;
@@ -6617,6 +7861,7 @@ function extractWizardData(state) {
         };
       }
     ),
+    mapPlaces: deepClone(config.mapPlaces || {}),
     catalog: {
       activity: (config.catalog?.activity || []).map((item) => ({ ...item })),
       stay: (config.catalog?.stay || []).map((item) => ({ ...item })),
@@ -6626,6 +7871,8 @@ function extractWizardData(state) {
 }
 
 function buildConfigFromWizardData(data) {
+  const previousConfig = planState?.config || DEFAULT_TRIP_TEMPLATE;
+  const resetDays = Boolean(data?.resetDays);
   const start = data.startDate || new Date().toISOString().slice(0, 10);
   const end = data.endDate || start;
   const friends = data.friends
@@ -6677,6 +7924,13 @@ function buildConfigFromWizardData(data) {
     }
   });
 
+  const mapPlaces = deepClone(
+    data.mapPlaces ||
+      previousConfig.mapPlaces ||
+      DEFAULT_TRIP_TEMPLATE.mapPlaces ||
+      {}
+  );
+
   const catalog = { activity: [], stay: [], booking: [] };
   const locationSet = new Set(locationOrder);
   const coordinateSet = new Set(Object.keys(mapCoordinates));
@@ -6717,7 +7971,9 @@ function buildConfigFromWizardData(data) {
     locationOrder,
     defaultThemes,
     mapDefaults: resetDays ? null : previousConfig?.mapDefaults || null,
-    mapCoordinates: resetDays ? {} : previousConfig?.mapCoordinates || {},
+    mapCoordinates: resetDays ? {} : mapCoordinates,
+    mapCoordinateLabels,
+    mapPlaces,
     routing: previousConfig?.routing
       ? { ...previousConfig.routing }
       : {
@@ -6734,6 +7990,25 @@ function buildConfigFromWizardData(data) {
 
 function buildStateFromWizardData(data) {
   const config = buildConfigFromWizardData(data);
+  if (!config.mapPlaces) {
+    config.mapPlaces = deepClone(
+      planState?.config?.mapPlaces || DEFAULT_TRIP_TEMPLATE.mapPlaces || {}
+    );
+  }
+  if (!config.routing) {
+    const existingRouting = planState?.config?.routing || {};
+    config.routing = {
+      provider: existingRouting.provider || DEFAULT_ROUTING_PROVIDER,
+      drivingProvider:
+        existingRouting.drivingProvider || existingRouting.provider || DEFAULT_ROUTING_PROVIDER,
+      walkingProvider:
+        existingRouting.walkingProvider || existingRouting.provider || DEFAULT_ROUTING_PROVIDER,
+      transitProvider:
+        existingRouting.transitProvider || existingRouting.provider || DEFAULT_ROUTING_PROVIDER,
+      openRouteApiKey: existingRouting.openRouteApiKey || "",
+      googleApiKey: existingRouting.googleApiKey || "",
+    };
+  }
   const sequence = buildDateSequence(config.range.start, config.range.end);
   const days = {};
   sequence.forEach((dateKey) => {
@@ -6775,6 +8050,12 @@ function applyConfigUpdate(nextConfig, { resetDays = false } = {}) {
     mapDefaults: nextConfig.mapDefaults ? { ...nextConfig.mapDefaults } : null,
     mapCoordinates: deepClone(nextConfig.mapCoordinates || {}),
     mapCoordinateLabels: { ...(nextConfig.mapCoordinateLabels || {}) },
+    mapPlaces: deepClone(
+      nextConfig.mapPlaces ||
+        planState.config.mapPlaces ||
+        DEFAULT_TRIP_TEMPLATE.mapPlaces ||
+        {}
+    ),
     catalog: {
       activity: Array.isArray(nextConfig.catalog?.activity)
         ? nextConfig.catalog.activity.map((item) => ({ ...item }))
@@ -6787,6 +8068,49 @@ function applyConfigUpdate(nextConfig, { resetDays = false } = {}) {
         : [],
     },
   };
+
+  const existingRouting = planState.config?.routing || {};
+  const sourceRouting = nextConfig.routing || existingRouting;
+  const baseProviderRaw =
+    sourceRouting.provider || existingRouting.provider || DEFAULT_ROUTING_PROVIDER;
+  const normalizedBase = normalizeRoutingProvider(baseProviderRaw, {
+    allowAuto: true,
+  });
+  const baseProvider =
+    normalizedBase === "auto" ? DEFAULT_ROUTING_PROVIDER : normalizedBase;
+  const drivingRaw =
+    sourceRouting.drivingProvider || existingRouting.drivingProvider || baseProviderRaw;
+  const walkingRaw =
+    sourceRouting.walkingProvider || existingRouting.walkingProvider || baseProviderRaw;
+  const transitRaw =
+    sourceRouting.transitProvider || existingRouting.transitProvider || baseProviderRaw;
+
+  const routingConfig = {
+    provider: baseProvider,
+    drivingProvider: normalizeRoutingProvider(drivingRaw, { allowAuto: true }),
+    walkingProvider: normalizeRoutingProvider(walkingRaw, { allowAuto: true }),
+    transitProvider: normalizeRoutingProvider(transitRaw, { allowAuto: true }),
+    openRouteApiKey:
+      typeof sourceRouting.openRouteApiKey === "string"
+        ? sourceRouting.openRouteApiKey.trim()
+        : existingRouting.openRouteApiKey || "",
+    googleApiKey:
+      typeof sourceRouting.googleApiKey === "string"
+        ? sourceRouting.googleApiKey.trim()
+        : existingRouting.googleApiKey || "",
+  };
+
+  if (routingConfig.drivingProvider === "auto") {
+    routingConfig.drivingProvider = baseProvider;
+  }
+  if (routingConfig.walkingProvider === "auto") {
+    routingConfig.walkingProvider = baseProvider;
+  }
+  if (routingConfig.transitProvider === "auto") {
+    routingConfig.transitProvider = baseProvider;
+  }
+
+  config.routing = routingConfig;
 
   const sequence = buildDateSequence(config.range.start, config.range.end);
   const newDays = {};
