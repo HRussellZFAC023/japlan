@@ -61,9 +61,11 @@ let sheetState = { open: false, day: null, slot: "morning", tab: "activity" };
 let cardDragSource = null;
 let chipDragData = null;
 let mapInstance = null;
-let mapMarkersLayer = null;
-let mapRouteLayer = null;
-let mapStepHighlightLayer = null;
+let mapMarkers = [];
+let mapRoutePolyline = null;
+let mapStepHighlightPolyline = null;
+let googleMapsScriptPromise = null;
+let googleMapsLoaded = false;
 let mapOverlayMode = "transit";
 let overlayMode = null;
 let activeMapDate = null;
@@ -72,17 +74,20 @@ const travelRequests = new Map();
 const travelExpansionState = new Map();
 const mapModeState = new Map();
 let mapDirectionsData = null;
+const placeDetailsCache = new Map();
+const placeFetchPromises = new Map();
+const placeReferenceMap = new Map();
 const DEFAULT_DEPARTURE_MINUTES = 9 * 60;
 let routingKeyPromptActive = false;
-let googleRoutingKeyPromptActive = false;
+let googleApiKeyPromptActive = false;
 let wizardState = null;
 let tripLibraryConfirm = null;
 let uniqueIdCounter = 0;
 
 const MODE_TO_PROFILE = {
-  transit: "public-transport",
-  walking: "foot-walking",
-  driving: "driving-car",
+  transit: "transit",
+  walking: "walking",
+  driving: "driving",
 };
 
 const PROFILE_TO_MODE = Object.entries(MODE_TO_PROFILE).reduce(
@@ -101,16 +106,14 @@ const MODE_COLORS = {
 
 const VALID_ROUTING_PROFILES = new Set(Object.values(MODE_TO_PROFILE));
 
-const DEFAULT_ROUTING_PROVIDER = "openrouteservice";
+const DEFAULT_ROUTING_PROVIDER = "google-directions";
 const HYBRID_ROUTING_PROVIDER = "hybrid-routing";
 
 const ROUTING_PROVIDER_LABELS = {
-  "openrouteservice": "OpenRouteService",
   "google-directions": "Google Directions",
 };
 
 const SUPPORTED_ROUTING_PROVIDERS = new Set([
-  "openrouteservice",
   "google-directions",
   "auto",
 ]);
@@ -240,18 +243,10 @@ function normalizeRoutingProvider(value, { allowAuto = false } = {}) {
     return allowAuto ? "auto" : DEFAULT_ROUTING_PROVIDER;
   }
   const normalized = value.trim().toLowerCase();
-  if (allowAuto) {
-    if (!normalized || normalized === "auto" || normalized === "hybrid") {
-      return "auto";
-    }
-  } else if (!normalized) {
-    return DEFAULT_ROUTING_PROVIDER;
+  if (allowAuto && (!normalized || normalized === "auto" || normalized === "hybrid")) {
+    return "auto";
   }
   switch (normalized) {
-    case "ors":
-    case "openroute":
-    case "openrouteservice":
-      return "openrouteservice";
     case "google":
     case "google_directions":
     case "googledirections":
@@ -260,9 +255,7 @@ function normalizeRoutingProvider(value, { allowAuto = false } = {}) {
     case "auto":
       return allowAuto ? "auto" : DEFAULT_ROUTING_PROVIDER;
     default:
-      return SUPPORTED_ROUTING_PROVIDERS.has(normalized)
-        ? normalized
-        : DEFAULT_ROUTING_PROVIDER;
+      return DEFAULT_ROUTING_PROVIDER;
   }
 }
 
@@ -275,26 +268,13 @@ function resolveRoutingProviders(routing = {}) {
   const walkingRaw = normalizeRoutingProvider(routing.walkingProvider, {
     allowAuto: true,
   });
-  let transit = normalizeRoutingProvider(routing.transitProvider, {
+  const transitRaw = normalizeRoutingProvider(routing.transitProvider, {
     allowAuto: true,
   });
   const driving = drivingRaw === "auto" ? base : drivingRaw || base;
   const walking = walkingRaw === "auto" ? base : walkingRaw || base;
-  if (transit === "auto") {
-    const googleKey = revealEmbeddedApiKey(routing.googleApiKey);
-    if (googleKey) {
-      transit = "google-directions";
-    } else if (baseRaw !== "auto") {
-      transit = base;
-    } else {
-      transit = DEFAULT_ROUTING_PROVIDER;
-    }
-  }
+  const transit = transitRaw === "auto" ? base : transitRaw || base;
   return { base, driving, walking, transit };
-}
-
-function providerNeedsOpenRoute(provider) {
-  return normalizeRoutingProvider(provider) === "openrouteservice";
 }
 
 function providerNeedsGoogle(provider) {
@@ -763,6 +743,23 @@ function createConfigFromTemplate(template) {
   const rangeStart =
     template.range?.start || new Date().toISOString().slice(0, 10);
   const rangeEnd = template.range?.end || rangeStart;
+  const templateRouting = template.routing || {};
+  const baseRaw = templateRouting.provider || DEFAULT_ROUTING_PROVIDER;
+  const normalizedBase = normalizeRoutingProvider(baseRaw, { allowAuto: true });
+  const baseProvider =
+    normalizedBase === "auto" ? DEFAULT_ROUTING_PROVIDER : normalizedBase;
+  const drivingNormalized = normalizeRoutingProvider(
+    templateRouting.drivingProvider || baseRaw,
+    { allowAuto: true }
+  );
+  const walkingNormalized = normalizeRoutingProvider(
+    templateRouting.walkingProvider || baseRaw,
+    { allowAuto: true }
+  );
+  const transitNormalized = normalizeRoutingProvider(
+    templateRouting.transitProvider || baseRaw,
+    { allowAuto: true }
+  );
   const config = {
     tripName: template.tripName || "Trip Planner",
     range: { start: rangeStart, end: rangeEnd },
@@ -777,10 +774,17 @@ function createConfigFromTemplate(template) {
     locationOrder,
     defaultThemes: { ...(template.defaultThemes || {}) },
     mapDefaults: template.mapDefaults ? { ...template.mapDefaults } : null,
+    placeLookups: deepClone(template.placeLookups || {}),
     mapCoordinates: deepClone(template.mapCoordinates || {}),
     routing: {
-      provider: template.routing?.provider || "openrouteservice",
-      openRouteApiKey: template.routing?.openRouteApiKey || "",
+      provider: baseProvider,
+      drivingProvider:
+        drivingNormalized === "auto" ? baseProvider : drivingNormalized,
+      walkingProvider:
+        walkingNormalized === "auto" ? baseProvider : walkingNormalized,
+      transitProvider:
+        transitNormalized === "auto" ? baseProvider : transitNormalized,
+      googleApiKey: templateRouting.googleApiKey || "",
     },
     catalog: {
       activity: Array.isArray(template.catalog?.activity)
@@ -835,6 +839,10 @@ function normalizeConfig(rawConfig) {
     ...(template.mapCoordinates || {}),
     ...(rawConfig.mapCoordinates || {}),
   };
+  const mergedPlaceLookups = {
+    ...(template.placeLookups || {}),
+    ...(rawConfig.placeLookups || {}),
+  };
 
   const rawRouting = rawConfig.routing || {};
   const templateRouting = template.routing || {};
@@ -858,7 +866,7 @@ function normalizeConfig(rawConfig) {
   const transitProviderRaw =
     rawRouting.transitProvider ||
     templateRouting.transitProvider ||
-    "auto";
+    baseProviderRaw;
   const normalizedDriving = normalizeRoutingProvider(drivingProviderRaw, {
     allowAuto: true,
   });
@@ -879,20 +887,16 @@ function normalizeConfig(rawConfig) {
     mapDefaults: rawConfig.mapDefaults
       ? { ...rawConfig.mapDefaults }
       : template.mapDefaults || null,
+    placeLookups: deepClone(mergedPlaceLookups),
     mapCoordinates: deepClone(mergedCoordinates),
     routing: {
-      provider: normalizedBase,
+      provider: fallbackBase,
       drivingProvider:
         normalizedDriving === "auto" ? fallbackBase : normalizedDriving,
       walkingProvider:
         normalizedWalking === "auto" ? fallbackBase : normalizedWalking,
-      transitProvider: normalizedTransit,
-      openRouteApiKey:
-        typeof rawRouting.openRouteApiKey === "string"
-          ? rawRouting.openRouteApiKey.trim()
-          : typeof templateRouting.openRouteApiKey === "string"
-          ? templateRouting.openRouteApiKey.trim()
-          : "",
+      transitProvider:
+        normalizedTransit === "auto" ? fallbackBase : normalizedTransit,
       googleApiKey:
         typeof rawRouting.googleApiKey === "string"
           ? rawRouting.googleApiKey.trim()
@@ -932,6 +936,367 @@ function refreshCatalogLookups() {
   BOOKING_MAP = new Map(
     (planState.config.catalog.booking || []).map((item) => [item.id, item])
   );
+  rebuildPlaceReferenceIndex();
+}
+
+function rebuildPlaceReferenceIndex() {
+  placeReferenceMap.clear();
+  const register = (item) => {
+    if (!item || typeof item !== "object") return;
+    const coordKey =
+      typeof item.coord === "string"
+        ? item.coord
+        : typeof item.placeRef === "string"
+        ? item.placeRef
+        : null;
+    if (!coordKey) return;
+    if (!placeReferenceMap.has(coordKey)) {
+      placeReferenceMap.set(coordKey, new Set());
+    }
+    placeReferenceMap.get(coordKey).add(item);
+  };
+  (planState.config.catalog.activity || []).forEach(register);
+  (planState.config.catalog.stay || []).forEach(register);
+  (planState.config.catalog.booking || []).forEach(register);
+}
+
+function getPlaceLookup(coordKey) {
+  if (!coordKey) return null;
+  const lookup = planState.config.placeLookups?.[coordKey];
+  if (lookup && typeof lookup === "object") {
+    return { ...lookup };
+  }
+  return null;
+}
+
+function updatePlaceLookup(coordKey, updates) {
+  if (!coordKey || !updates) return;
+  if (!planState.config.placeLookups) {
+    planState.config.placeLookups = {};
+  }
+  const existing = planState.config.placeLookups[coordKey] || {};
+  planState.config.placeLookups[coordKey] = { ...existing, ...updates };
+}
+
+function buildPlacePhotoUrl(photoReference, { apiKey, maxWidth = 960 } = {}) {
+  if (!photoReference || !apiKey) {
+    return "";
+  }
+  const params = new URLSearchParams();
+  params.set("maxwidth", String(maxWidth));
+  params.set("photo_reference", photoReference);
+  params.set("key", apiKey);
+  return `https://maps.googleapis.com/maps/api/place/photo?${params.toString()}`;
+}
+
+function getCachedPlaceDetails(coordKey) {
+  return placeDetailsCache.get(coordKey) || null;
+}
+
+function setCachedPlaceDetails(coordKey, details) {
+  if (!coordKey || !details) return;
+  placeDetailsCache.set(coordKey, details);
+  applyPlaceDetailsToItems(coordKey, details);
+  const location = details.location;
+  if (
+    location &&
+    Number.isFinite(location.lat) &&
+    Number.isFinite(location.lng)
+  ) {
+    if (!planState.config.mapCoordinates) {
+      planState.config.mapCoordinates = {};
+    }
+    planState.config.mapCoordinates[coordKey] = [
+      Number(location.lat),
+      Number(location.lng),
+    ];
+  }
+}
+
+async function ensurePlaceDetails(coordKey, { interactive = false } = {}) {
+  if (!coordKey) return null;
+  const cached = getCachedPlaceDetails(coordKey);
+  if (cached) {
+    return cached;
+  }
+  if (placeFetchPromises.has(coordKey)) {
+    return placeFetchPromises.get(coordKey);
+  }
+  const hint = getPlaceLookup(coordKey);
+  if (!hint) {
+    return null;
+  }
+  const promise = fetchPlaceDetailsForHint(coordKey, hint, { interactive })
+    .then((details) => {
+      if (details) {
+        setCachedPlaceDetails(coordKey, details);
+      }
+      return details;
+    })
+    .catch((error) => {
+      console.warn(`Unable to load place details for ${coordKey}`, error);
+      return null;
+    })
+    .finally(() => {
+      placeFetchPromises.delete(coordKey);
+    });
+  placeFetchPromises.set(coordKey, promise);
+  return promise;
+}
+
+async function fetchPlaceDetailsForHint(coordKey, hint, { interactive = false } = {}) {
+  const apiKey = getGoogleApiKey({ interactive });
+  if (!apiKey) {
+    return null;
+  }
+  const query = typeof hint.query === "string" ? hint.query.trim() : "";
+  const language = hint.language || "en";
+  const region = hint.region || "jp";
+  let placeId = typeof hint.placeId === "string" ? hint.placeId.trim() : "";
+  let stateChanged = false;
+
+  if (!placeId && query) {
+    const searchResult = await requestGooglePlaceSearch(query, {
+      apiKey,
+      language,
+      region,
+    });
+    if (!searchResult || !searchResult.placeId) {
+      return null;
+    }
+    placeId = searchResult.placeId;
+    updatePlaceLookup(coordKey, { placeId });
+    stateChanged = true;
+  }
+
+  if (!placeId) {
+    return null;
+  }
+
+  const details = await requestGooglePlaceDetails(placeId, {
+    apiKey,
+    language,
+    region,
+  });
+  if (!details) {
+    return null;
+  }
+
+  const location = details.geometry?.location;
+  const normalizedLocation =
+    location &&
+    Number.isFinite(location.lat) &&
+    Number.isFinite(location.lng)
+      ? { lat: Number(location.lat), lng: Number(location.lng) }
+      : null;
+
+  if (
+    normalizedLocation &&
+    (!planState.config.mapCoordinates?.[coordKey] ||
+      !coordsEqual(planState.config.mapCoordinates[coordKey], [
+        normalizedLocation.lat,
+        normalizedLocation.lng,
+      ]))
+  ) {
+    if (!planState.config.mapCoordinates) {
+      planState.config.mapCoordinates = {};
+    }
+    planState.config.mapCoordinates[coordKey] = [
+      normalizedLocation.lat,
+      normalizedLocation.lng,
+    ];
+    stateChanged = true;
+  }
+
+  const result = {
+    id: details.place_id || placeId,
+    name: details.name || query || coordKey,
+    formattedAddress: details.formatted_address || "",
+    location: normalizedLocation,
+    rating:
+      typeof details.rating === "number" ? Number(details.rating) : null,
+    userRatingsTotal: Number(details.user_ratings_total || 0) || null,
+    phone: details.international_phone_number || "",
+    website: details.website || "",
+    googleMapsUrl: details.url || "",
+    editorialSummary: details.editorial_summary?.overview || "",
+    photoReference:
+      Array.isArray(details.photos) && details.photos.length
+        ? details.photos[0].photo_reference || null
+        : null,
+    photoAttributions: Array.isArray(details.photos?.[0]?.html_attributions)
+      ? [...details.photos[0].html_attributions]
+      : [],
+    types: Array.isArray(details.types) ? [...details.types] : [],
+  };
+
+  if (stateChanged) {
+    persistState();
+  }
+
+  return result;
+}
+
+async function requestGooglePlaceSearch(query, { apiKey, language = "en", region = "jp" } = {}) {
+  if (!query || !apiKey) {
+    return null;
+  }
+  const params = new URLSearchParams();
+  params.set("input", query);
+  params.set("inputtype", "textquery");
+  params.set("fields", "place_id,geometry,name");
+  params.set("language", language);
+  if (region) {
+    params.set("region", region);
+  }
+  params.set("key", apiKey);
+  const url = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?${params.toString()}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
+  }
+  const data = await response.json();
+  if (!data || data.status !== "OK" || !Array.isArray(data.candidates)) {
+    const message = data?.error_message || data?.status || "Place search failed.";
+    throw new Error(message);
+  }
+  const candidate = data.candidates[0];
+  if (!candidate) {
+    return null;
+  }
+  const location = candidate.geometry?.location;
+  return {
+    placeId: candidate.place_id || "",
+    location: location
+      ? { lat: Number(location.lat), lng: Number(location.lng) }
+      : null,
+  };
+}
+
+async function requestGooglePlaceDetails(placeId, { apiKey, language = "en", region = "jp" } = {}) {
+  if (!placeId || !apiKey) {
+    return null;
+  }
+  const params = new URLSearchParams();
+  params.set("place_id", placeId);
+  params.set(
+    "fields",
+    [
+      "place_id",
+      "name",
+      "formatted_address",
+      "geometry",
+      "international_phone_number",
+      "website",
+      "url",
+      "editorial_summary",
+      "rating",
+      "user_ratings_total",
+      "photos",
+      "types",
+    ].join(",")
+  );
+  params.set("language", language);
+  if (region) {
+    params.set("region", region);
+  }
+  params.set("key", apiKey);
+  const url = `https://maps.googleapis.com/maps/api/place/details/json?${params.toString()}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`${response.status} ${response.statusText}`);
+  }
+  const data = await response.json();
+  if (!data || data.status !== "OK") {
+    const message = data?.error_message || data?.status || "Place details request failed.";
+    throw new Error(message);
+  }
+  return data.result || null;
+}
+
+function applyPlaceDetailsToItems(coordKey, details) {
+  const items = placeReferenceMap.get(coordKey);
+  if (!items || !items.size || !details) {
+    return;
+  }
+  const summary = {
+    placeId: details.id || details.placeId || null,
+    name: details.name || "",
+    rating: details.rating || null,
+    userRatingsTotal: details.userRatingsTotal || null,
+    formattedAddress: details.formattedAddress || "",
+    photoReference: details.photoReference || null,
+    photoAttributions: Array.isArray(details.photoAttributions)
+      ? [...details.photoAttributions]
+      : [],
+    googleMapsUrl: details.googleMapsUrl || "",
+    website: details.website || "",
+    phone: details.phone || "",
+    editorialSummary: details.editorialSummary || "",
+    location: details.location || null,
+  };
+  items.forEach((item) => {
+    if (item && typeof item === "object") {
+      item.googlePlace = summary;
+    }
+  });
+}
+
+async function loadGoogleMapsLibrary({ interactive = false } = {}) {
+  if (googleMapsLoaded && window.google?.maps) {
+    return window.google.maps;
+  }
+  if (typeof window !== "undefined" && window.google?.maps) {
+    googleMapsLoaded = true;
+    return window.google.maps;
+  }
+  const apiKey = getGoogleApiKey({ interactive });
+  if (!apiKey) {
+    return null;
+  }
+  if (googleMapsScriptPromise) {
+    try {
+      const maps = await googleMapsScriptPromise;
+      if (maps) {
+        return maps;
+      }
+    } catch (error) {
+      console.warn("Retrying Google Maps load after previous failure.", error);
+      googleMapsScriptPromise = null;
+    }
+  }
+  googleMapsScriptPromise = new Promise((resolve, reject) => {
+    const existing = document.querySelector('script[data-role="google-maps"]');
+    if (existing && existing.hasAttribute("data-loaded")) {
+      if (window.google?.maps) {
+        googleMapsLoaded = true;
+        resolve(window.google.maps);
+        return;
+      }
+    }
+    const script = existing || document.createElement("script");
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places`;
+    script.async = true;
+    script.defer = true;
+    script.dataset.role = "google-maps";
+    script.addEventListener("load", () => {
+      script.setAttribute("data-loaded", "true");
+      googleMapsLoaded = true;
+      resolve(window.google?.maps || null);
+    });
+    script.addEventListener("error", (event) => {
+      googleMapsScriptPromise = null;
+      reject(new Error("Failed to load Google Maps library."));
+    });
+    if (!existing) {
+      document.head.appendChild(script);
+    }
+  });
+  const maps = await googleMapsScriptPromise;
+  if (!maps) {
+    throw new Error("Google Maps library unavailable.");
+  }
+  return maps;
 }
 
 function deepClone(value) {
@@ -1028,6 +1393,19 @@ function getCoordinateValue(coordRef) {
     const lookup = planState.config.mapCoordinates?.[coordRef];
     if (Array.isArray(lookup) && lookup.length === 2) {
       return [Number(lookup[0]), Number(lookup[1])];
+    }
+    if (lookup && typeof lookup === "object") {
+      const { lat, lng } = lookup;
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        return [Number(lat), Number(lng)];
+      }
+    }
+    const cached = placeDetailsCache.get(coordRef);
+    if (cached && cached.location) {
+      const { lat, lng } = cached.location;
+      if (Number.isFinite(lat) && Number.isFinite(lng)) {
+        return [Number(lat), Number(lng)];
+      }
     }
   }
   return null;
@@ -2235,31 +2613,17 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     return null;
   }
 
-  const needsOpenRoute = [
-    providers.driving,
-    providers.walking,
-    providers.transit,
-  ].some(providerNeedsOpenRoute);
   const needsGoogle = [
     providers.driving,
     providers.walking,
     providers.transit,
   ].some(providerNeedsGoogle);
 
-  let openRouteApiKey = null;
-  let googleApiKey = null;
-
-  if (needsOpenRoute) {
-    openRouteApiKey = getRoutingApiKey({ interactive });
-  }
-  if (needsGoogle) {
-    googleApiKey = getGoogleRoutingApiKey({ interactive });
-  }
+  const googleApiKey = needsGoogle
+    ? getGoogleApiKey({ interactive })
+    : getGoogleApiKey({ interactive: false });
 
   const missingProviders = [];
-  if (needsOpenRoute && !openRouteApiKey) {
-    missingProviders.push(getRoutingProviderDisplayName("openrouteservice"));
-  }
   if (needsGoogle && !googleApiKey) {
     missingProviders.push(getRoutingProviderDisplayName("google-directions"));
   }
@@ -2294,7 +2658,6 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     try {
       drivingDetails = await fetchDrivingRouteDetails(itinerary.routePoints, {
         provider: providers.driving,
-        openRouteApiKey,
         googleApiKey,
         departureTime: departureTimestamp,
       });
@@ -2315,7 +2678,6 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
       try {
         walkingDetails = await fetchWalkingRouteDetails(itinerary.routePoints, {
           provider: providers.walking,
-          openRouteApiKey,
           googleApiKey,
         });
       } catch (walkingError) {
@@ -2337,7 +2699,6 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
     try {
       transitDetails = await fetchTransitRouteDetails(itinerary.routePoints, {
         provider: providers.transit,
-        openRouteApiKey,
         googleApiKey,
         departureTime: departureTimestamp,
       });
@@ -2420,53 +2781,20 @@ async function computeTravelForDay(dateKey, { interactive = false } = {}) {
   }
 }
 
-function getRoutingApiKey({ interactive = false } = {}) {
-  const current = planState.config.routing?.openRouteApiKey;
-  if (current && typeof current === "string" && current.trim()) {
-    return current.trim();
-  }
-  if (!interactive || routingKeyPromptActive) {
-    return null;
-  }
-
-  routingKeyPromptActive = true;
-  try {
-    const input = window.prompt(
-      "Enter your OpenRouteService API key to enable travel time calculations"
-    );
-    if (!input) {
-      return null;
-    }
-    const normalized = input.trim();
-    if (!normalized) {
-      return null;
-    }
-    const nextRouting = {
-      ...(planState.config.routing || {}),
-      openRouteApiKey: normalized,
-    };
-    planState.config.routing = nextRouting;
-    persistState();
-    return normalized;
-  } finally {
-    routingKeyPromptActive = false;
-  }
-}
-
-function getGoogleRoutingApiKey({ interactive = false } = {}) {
+function getGoogleApiKey({ interactive = false } = {}) {
   const current = planState.config.routing?.googleApiKey;
   const revealed = revealEmbeddedApiKey(current);
   if (revealed) {
     return revealed;
   }
-  if (!interactive || googleRoutingKeyPromptActive) {
+  if (!interactive || googleApiKeyPromptActive) {
     return null;
   }
 
-  googleRoutingKeyPromptActive = true;
+  googleApiKeyPromptActive = true;
   try {
     const input = window.prompt(
-      "Enter your Google Maps Directions API key to enable public transit routing"
+      "Enter your Google Maps Platform API key to enable maps, directions, and place details"
     );
     if (!input) {
       return null;
@@ -2481,7 +2809,7 @@ function getGoogleRoutingApiKey({ interactive = false } = {}) {
       googleApiKey: storedValue,
     };
     if (!nextRouting.transitProvider) {
-      nextRouting.transitProvider = "auto";
+      nextRouting.transitProvider = DEFAULT_ROUTING_PROVIDER;
     }
     planState.config.routing = nextRouting;
     persistState();
@@ -2489,77 +2817,10 @@ function getGoogleRoutingApiKey({ interactive = false } = {}) {
       ? revealEmbeddedApiKey(storedValue)
       : storedValue;
   } finally {
-    googleRoutingKeyPromptActive = false;
+    googleApiKeyPromptActive = false;
   }
 }
 
-async function requestOpenRouteRoute(
-  points,
-  apiKey,
-  profile = "driving-car",
-  options = {}
-) {
-  const coordinates = points.map((coord) => {
-    if (!Array.isArray(coord) || coord.length !== 2) {
-      throw new Error("Invalid coordinate provided to routing request.");
-    }
-    const [lat, lon] = coord;
-    return [Number(lon), Number(lat)];
-  });
-
-  const extraBody =
-    options?.body && typeof options.body === "object" ? options.body : null;
-  const payload = extraBody ? { coordinates, ...extraBody } : { coordinates };
-
-  const response = await fetch(
-    `https://api.openrouteservice.org/v2/directions/${profile}/geojson`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: apiKey,
-      },
-      body: JSON.stringify(payload),
-    }
-  );
-
-  if (!response.ok) {
-    let message = `${response.status} ${response.statusText}`;
-    try {
-      const errorBody = await response.json();
-      if (errorBody?.error?.message) {
-        message = errorBody.error.message;
-      }
-    } catch (parseError) {
-      const text = await response.text();
-      if (text) {
-        message = text.slice(0, 200);
-      }
-    }
-    throw new Error(message || "Routing request failed.");
-  }
-
-  const data = await response.json();
-  const feature = data?.features?.[0];
-  if (!feature) {
-    throw new Error("No route found for the selected stops.");
-  }
-  const properties = feature.properties || {};
-  return {
-    geometry: feature.geometry,
-    summary: properties.summary || {},
-    segments: Array.isArray(properties.segments) ? properties.segments : [],
-    wayPoints: Array.isArray(properties.way_points)
-      ? properties.way_points
-      : [],
-    bbox: Array.isArray(feature.bbox) ? [...feature.bbox] : null,
-    metadata: {
-      transfers: properties.transfers,
-      fare: properties.fare,
-      warnings: properties.warnings,
-    },
-  };
-}
 
 async function requestGoogleDirectionsRoute({
   points,
@@ -2905,132 +3166,81 @@ async function requestGoogleTransitItinerary(points, { apiKey, departureTime = n
 
 async function fetchDrivingRouteDetails(
   routePoints,
-  { provider, openRouteApiKey, googleApiKey, departureTime = null } = {}
+  { provider, googleApiKey, departureTime = null } = {}
 ) {
   if (!Array.isArray(routePoints) || routePoints.length < 2) {
     return { status: "unavailable" };
   }
   const providerKey = normalizeRoutingProvider(provider);
-  if (providerKey === "google-directions") {
-    if (!googleApiKey) {
-      throw new Error("Google Directions API key required for driving routes.");
-    }
-    const route = await requestGoogleDirectionsRoute({
-      points: routePoints,
-      apiKey: googleApiKey,
-      mode: "driving",
-      departureTime,
-    });
-    const details = buildGoogleRouteDetails(route, {
-      modeKey: "driving",
-      defaultKind: "drive",
-    });
-    if (!details) {
-      throw new Error("Driving route unavailable.");
-    }
-    return details;
+  if (providerKey !== "google-directions") {
+    throw new Error("Driving routes require the Google Directions API.");
   }
-  if (!openRouteApiKey) {
-    throw new Error("OpenRouteService API key required for driving routes.");
+  if (!googleApiKey) {
+    throw new Error("Google Directions API key required for driving routes.");
   }
-  const route = await requestOpenRouteRoute(
-    routePoints,
-    openRouteApiKey,
-    MODE_TO_PROFILE.driving
-  );
-  return (
-    buildRouteDetails(route, MODE_TO_PROFILE.driving, { defaultKind: "drive" }) || {
-      status: "ready",
-      profile: MODE_TO_PROFILE.driving,
-      mode: "driving",
-      durationSeconds: Number(route?.summary?.duration ?? 0) || 0,
-      distanceMeters: Number(route?.summary?.distance ?? 0) || 0,
-      geometry: route?.geometry || null,
-      legs: [],
-      path: geometryToLatLngs(route?.geometry),
-    }
-  );
+  const route = await requestGoogleDirectionsRoute({
+    points: routePoints,
+    apiKey: googleApiKey,
+    mode: "driving",
+    departureTime,
+  });
+  const details = buildGoogleRouteDetails(route, {
+    modeKey: "driving",
+    defaultKind: "drive",
+  });
+  if (!details) {
+    throw new Error("Driving route unavailable.");
+  }
+  return details;
 }
 
 async function fetchWalkingRouteDetails(
   routePoints,
-  { provider, openRouteApiKey, googleApiKey } = {}
+  { provider, googleApiKey } = {}
 ) {
   if (!Array.isArray(routePoints) || routePoints.length < 2) {
     return { status: "unavailable" };
   }
   const providerKey = normalizeRoutingProvider(provider);
-  if (providerKey === "google-directions") {
-    if (!googleApiKey) {
-      throw new Error("Google Directions API key required for walking routes.");
-    }
-    const route = await requestGoogleDirectionsRoute({
-      points: routePoints,
-      apiKey: googleApiKey,
-      mode: "walking",
-    });
-    const details = buildGoogleRouteDetails(route, {
-      modeKey: "walking",
-      defaultKind: "walk",
-    });
-    if (!details) {
-      throw new Error("Walking route unavailable.");
-    }
-    return details;
+  if (providerKey !== "google-directions") {
+    throw new Error("Walking routes require the Google Directions API.");
   }
-  if (!openRouteApiKey) {
-    throw new Error("OpenRouteService API key required for walking routes.");
+  if (!googleApiKey) {
+    throw new Error("Google Directions API key required for walking routes.");
   }
-  const route = await requestOpenRouteRoute(
-    routePoints,
-    openRouteApiKey,
-    MODE_TO_PROFILE.walking
-  );
-  return (
-    buildRouteDetails(route, MODE_TO_PROFILE.walking, { defaultKind: "walk" }) || {
-      status: "ready",
-      profile: MODE_TO_PROFILE.walking,
-      mode: "walking",
-      durationSeconds: Number(route?.summary?.duration ?? 0) || 0,
-      distanceMeters: Number(route?.summary?.distance ?? 0) || 0,
-      geometry: route?.geometry || null,
-      legs: [],
-      path: geometryToLatLngs(route?.geometry),
-    }
-  );
+  const route = await requestGoogleDirectionsRoute({
+    points: routePoints,
+    apiKey: googleApiKey,
+    mode: "walking",
+  });
+  const details = buildGoogleRouteDetails(route, {
+    modeKey: "walking",
+    defaultKind: "walk",
+  });
+  if (!details) {
+    throw new Error("Walking route unavailable.");
+  }
+  return details;
 }
 
 async function fetchTransitRouteDetails(
   routePoints,
-  { provider, openRouteApiKey, googleApiKey, departureTime = null } = {}
+  { provider, googleApiKey, departureTime = null } = {}
 ) {
   if (!Array.isArray(routePoints) || routePoints.length < 2) {
     return { status: "unavailable" };
   }
   const providerKey = normalizeRoutingProvider(provider);
-  if (providerKey === "google-directions") {
-    if (!googleApiKey) {
-      throw new Error("Google Directions API key required for transit routes.");
-    }
-    return requestGoogleTransitItinerary(routePoints, {
-      apiKey: googleApiKey,
-      departureTime,
-    });
+  if (providerKey !== "google-directions") {
+    throw new Error("Transit routes require the Google Directions API.");
   }
-  if (!openRouteApiKey) {
-    throw new Error("OpenRouteService API key required for transit routes.");
+  if (!googleApiKey) {
+    throw new Error("Google Directions API key required for transit routes.");
   }
-  const route = await requestOpenRouteRoute(
-    routePoints,
-    openRouteApiKey,
-    MODE_TO_PROFILE.transit
-  );
-  return (
-    buildTransitDetails(route) || {
-      status: "error",
-      error: "Transit route unavailable.",
-    }
-  );
+  return requestGoogleTransitItinerary(routePoints, {
+    apiKey: googleApiKey,
+    departureTime,
+  });
 }
 
 function uniqueOrdered(values) {
@@ -3045,173 +3255,7 @@ function uniqueOrdered(values) {
   return result;
 }
 
-function buildRouteDetails(
-  route,
-  profile = "driving-car",
-  { defaultKind = "drive" } = {}
-) {
-  if (!route) return null;
-  const segments = Array.isArray(route.segments) ? route.segments : [];
-  const legs = [];
-  segments.forEach((segment) => {
-    const steps = Array.isArray(segment.steps) ? segment.steps : [];
-    steps.forEach((step) => {
-      if (typeof step.instruction !== "string" || !step.instruction.trim()) {
-        return;
-      }
-      const rawMode = typeof step.mode === "string" ? step.mode : "";
-      const modeLower = rawMode.toLowerCase();
-      let kind = defaultKind;
-      if (
-        modeLower.includes("foot") ||
-        modeLower.includes("walk") ||
-        modeLower.includes("pedestrian")
-      ) {
-        kind = "walk";
-      } else if (modeLower.includes("bike") || modeLower.includes("bicycle")) {
-        kind = "cycle";
-      } else if (
-        modeLower.includes("bus") ||
-        modeLower.includes("train") ||
-        modeLower.includes("metro")
-      ) {
-        kind = "transit";
-      }
-      const modeLabel =
-        rawMode ||
-        (kind === "walk" ? "Walk" : kind === "drive" ? "Drive" : "Move");
-      const path = extractLegPath(route.geometry, step.way_points);
-      legs.push({
-        kind,
-        mode: modeLabel,
-        info: step.instruction.trim(),
-        durationSeconds: Number(step.duration ?? segment.duration ?? 0) || 0,
-        distanceMeters: Number(step.distance ?? segment.distance ?? 0) || 0,
-        path,
-        wayPoints: Array.isArray(step.way_points) ? [...step.way_points] : null,
-      });
-    });
-  });
 
-  return {
-    status: "ready",
-    profile,
-    mode: PROFILE_TO_MODE[profile] || null,
-    durationSeconds: Number(route.summary?.duration ?? 0) || 0,
-    distanceMeters: Number(route.summary?.distance ?? 0) || 0,
-    geometry: route.geometry || null,
-    legs,
-    path: geometryToLatLngs(route.geometry),
-  };
-}
-
-function buildTransitDetails(route) {
-  if (!route) return null;
-  const segments = Array.isArray(route.segments) ? route.segments : [];
-  if (!segments.length) return null;
-
-  const legs = [];
-  segments.forEach((segment) => {
-    const steps = Array.isArray(segment.steps) ? segment.steps : [];
-    steps.forEach((step) => {
-      const transit = step?.transit || segment?.transit;
-      if (transit) {
-        const lineName = [
-          transit.route_short_name,
-          transit.route_long_name,
-          transit.name,
-          transit.line,
-          transit.code,
-        ].find((value) => typeof value === "string" && value.trim());
-        const mode =
-          transit.mode || transit.type || transit.vehicle_type || "Transit";
-        const from =
-          transit.from?.name ||
-          transit.departure_stop?.name ||
-          step.departure?.name ||
-          "";
-        const to =
-          transit.to?.name ||
-          transit.arrival_stop?.name ||
-          step.arrival?.name ||
-          "";
-        const headsign = transit.headsign || transit.direction || "";
-        const agency = transit.agency || transit.agency_name || "";
-        const infoParts = [
-          lineName,
-          headsign ? `to ${headsign}` : "",
-          agency ? `(${agency})` : "",
-        ].filter(Boolean);
-        const path = extractLegPath(
-          route.geometry,
-          step.way_points || segment.way_points
-        );
-        legs.push({
-          kind: "transit",
-          mode,
-          line: lineName || mode,
-          from: from || null,
-          to: to || null,
-          info: infoParts.join(" "),
-          durationSeconds: Number(step.duration ?? segment.duration ?? 0) || 0,
-          distanceMeters: Number(step.distance ?? segment.distance ?? 0) || 0,
-          path,
-          wayPoints: Array.isArray(step.way_points)
-            ? [...step.way_points]
-            : Array.isArray(segment.way_points)
-            ? [...segment.way_points]
-            : null,
-        });
-      } else if (
-        step &&
-        typeof step.instruction === "string" &&
-        step.instruction.trim()
-      ) {
-        const moveType = step.mode || (step.type === 11 ? "Walk" : "Move");
-        const path = extractLegPath(
-          route.geometry,
-          step.way_points || segment.way_points
-        );
-        legs.push({
-          kind: "walk",
-          mode: moveType,
-          info: step.instruction.trim(),
-          durationSeconds: Number(step.duration ?? 0) || 0,
-          distanceMeters: Number(step.distance ?? 0) || 0,
-          path,
-          wayPoints: Array.isArray(step.way_points)
-            ? [...step.way_points]
-            : Array.isArray(segment.way_points)
-            ? [...segment.way_points]
-            : null,
-        });
-      }
-    });
-  });
-
-  if (!legs.length) {
-    return null;
-  }
-
-  const transitLegs = legs.filter((leg) => leg.kind === "transit");
-  const transfers = Math.max(0, transitLegs.length - 1);
-  const lines = uniqueOrdered(
-    transitLegs.map((leg) => leg.line || leg.mode).filter(Boolean)
-  );
-
-  return {
-    status: "ready",
-    mode: "transit",
-    durationSeconds: Number(route.summary?.duration ?? 0) || 0,
-    distanceMeters: Number(route.summary?.distance ?? 0) || 0,
-    transfers,
-    lines,
-    legs,
-    geometry: route.geometry || null,
-    path: geometryToLatLngs(route.geometry),
-    metadata: route.metadata || {},
-  };
-}
 
 function formatTransitSummary(transit, { includeLines = true } = {}) {
   if (!transit) return "";
@@ -3834,63 +3878,110 @@ function updateMapSummary(dateKey) {
   mapSummaryEl.textContent = message;
 }
 
-function renderMapMarkers(dateKey) {
-  if (!mapInstance || !mapMarkersLayer) return;
-  mapMarkersLayer.clearLayers();
+async function renderMapMarkers(dateKey) {
+  if (!mapInstance) return;
+  mapMarkers.forEach((marker) => marker.setMap(null));
+  mapMarkers = [];
   clearMapRoute();
 
   const day = ensureDay(dateKey);
   const itinerary = buildItineraryForDay(day, dateKey);
-  const bounds = window.L.latLngBounds([]);
+  const bounds = new google.maps.LatLngBounds();
+  let hasPoints = false;
 
-  if (
-    itinerary.originStay?.coords &&
-    (!itinerary.stay?.coords ||
-      !coordsEqual(itinerary.originStay.coords, itinerary.stay.coords))
-  ) {
-    const startMarker = window.L.circleMarker(itinerary.originStay.coords, {
-      radius: 7,
-      color: "#10b981",
-      fillColor: "#10b981",
-      fillOpacity: 0.85,
-      weight: 2,
-      opacity: 0.9,
-    }).addTo(mapMarkersLayer);
-    startMarker.bindPopup(
-      `Start: ${itinerary.originStay.label || "Previous stay"}`
-    );
-    bounds.extend(itinerary.originStay.coords);
+  const addMarker = (coords, options = {}) => {
+    if (!Array.isArray(coords) || coords.length !== 2) {
+      return;
+    }
+    const [lat, lng] = coords;
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return;
+    }
+    const position = { lat, lng };
+    const marker = new google.maps.Marker({
+      map: mapInstance,
+      position,
+      ...options,
+    });
+    mapMarkers.push(marker);
+    bounds.extend(position);
+    hasPoints = true;
+  };
+
+  const markerPromises = [];
+
+  if (itinerary.originStay?.coords) {
+    addMarker(itinerary.originStay.coords, {
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 6,
+        fillColor: "#10b981",
+        fillOpacity: 0.9,
+        strokeColor: "#0f766e",
+        strokeWeight: 2,
+      },
+      title: itinerary.originStay.label || "Start",
+    });
   }
 
   if (itinerary.stay?.coords) {
-    const stayMarker = window.L.circleMarker(itinerary.stay.coords, {
-      radius: 8,
-      color: "#2563eb",
-      fillColor: "#2563eb",
-      fillOpacity: 0.9,
-      weight: 2,
-    }).addTo(mapMarkersLayer);
-    stayMarker.bindPopup(`Stay: ${itinerary.stay.label}`);
-    bounds.extend(itinerary.stay.coords);
+    addMarker(itinerary.stay.coords, {
+      icon: {
+        path: google.maps.SymbolPath.CIRCLE,
+        scale: 7,
+        fillColor: "#2563eb",
+        fillOpacity: 0.9,
+        strokeColor: "#1d4ed8",
+        strokeWeight: 2,
+      },
+      title: itinerary.stay.label || "Stay",
+    });
+    const stayItem = day.stay ? STAY_MAP.get(day.stay) : null;
+    const stayCoordKey =
+      typeof stayItem?.coord === "string" ? stayItem.coord : null;
+    if (stayCoordKey) {
+      markerPromises.push(
+        ensurePlaceDetails(stayCoordKey, { interactive: false })
+      );
+    }
+    if (itinerary.stay.id) {
+      markerPromises.push(
+        ensurePlaceDetails(itinerary.stay.id, { interactive: false })
+      );
+    }
   }
 
   itinerary.activities.forEach((activity, index) => {
-    const marker = window.L.marker(activity.coords, {
-      riseOnHover: true,
-    }).addTo(mapMarkersLayer);
-    marker.bindPopup(`${index + 1}. ${activity.label}`);
-    bounds.extend(activity.coords);
+    addMarker(activity.coords, {
+      label: String(index + 1),
+      title: activity.label || `Stop ${index + 1}`,
+    });
+    if (activity.id) {
+      const catalogItem = ACTIVITY_MAP.get(activity.id);
+      const coordKey =
+        typeof catalogItem?.coord === "string" ? catalogItem.coord : null;
+      if (coordKey) {
+        markerPromises.push(
+          ensurePlaceDetails(coordKey, { interactive: false })
+        );
+      }
+    }
   });
 
-  if (bounds.isValid()) {
-    mapInstance.fitBounds(bounds, { padding: [32, 32] });
+  if (markerPromises.length) {
+    Promise.allSettled(markerPromises).catch(() => {});
+  }
+
+  if (hasPoints) {
+    mapInstance.fitBounds(bounds, { padding: 48 });
   } else if (planState.config.mapDefaults?.center) {
-    mapInstance.setView(
-      planState.config.mapDefaults.center,
-      planState.config.mapDefaults.zoom || 5
-    );
+    const center = planState.config.mapDefaults.center;
+    const zoom = planState.config.mapDefaults.zoom || 5;
+    mapInstance.setCenter({ lat: center[0], lng: center[1] });
+    mapInstance.setZoom(zoom);
   } else {
-    mapInstance.setView([20, 0], 2);
+    mapInstance.setCenter({ lat: 35, lng: 135.5 });
+    mapInstance.setZoom(5);
   }
 }
 
@@ -3907,40 +3998,42 @@ function renderMapRoute(dateKey, { mode: modeOverride, fit = true } = {}) {
   const mode = modeOverride || getMapModeForDate(dateKey);
   const modeDetails = getModeDetails(travel, mode);
   const geometry = modeDetails?.geometry || travel.geometry;
-  if (!geometry) {
+  const path = geometryToLatLngs(geometry);
+  if (!Array.isArray(path) || path.length < 2) {
     return;
   }
   const color = MODE_COLORS[mode] || "#2563eb";
-  const style =
-    mode === "walking"
-      ? { color, weight: 4, opacity: 0.85, dashArray: "6 6" }
-      : { color, weight: 4, opacity: 0.85 };
-  mapRouteLayer = window.L.geoJSON(geometry, { style }).addTo(mapInstance);
+  const latLngPath = path.map(([lat, lng]) => ({ lat, lng }));
+  mapRoutePolyline = new google.maps.Polyline({
+    map: mapInstance,
+    path: latLngPath,
+    strokeColor: color,
+    strokeOpacity: mode === "walking" ? 0.8 : 0.85,
+    strokeWeight: mode === "walking" ? 3 : 4,
+    geodesic: true,
+  });
   if (fit) {
-    try {
-      const bounds = mapRouteLayer.getBounds();
-      if (bounds.isValid()) {
-        mapInstance.fitBounds(bounds, { padding: [48, 48] });
-      }
-    } catch (error) {
-      console.warn("Unable to fit map to route", error);
+    const bounds = new google.maps.LatLngBounds();
+    latLngPath.forEach((point) => bounds.extend(point));
+    if (!bounds.isEmpty()) {
+      mapInstance.fitBounds(bounds, { padding: 48 });
     }
   }
 }
 
 function clearMapRoute() {
-  if (mapRouteLayer && mapInstance) {
-    mapInstance.removeLayer(mapRouteLayer);
+  if (mapRoutePolyline) {
+    mapRoutePolyline.setMap(null);
   }
-  mapRouteLayer = null;
+  mapRoutePolyline = null;
   clearStepHighlight();
 }
 
 function clearStepHighlight() {
-  if (mapStepHighlightLayer && mapInstance) {
-    mapInstance.removeLayer(mapStepHighlightLayer);
+  if (mapStepHighlightPolyline) {
+    mapStepHighlightPolyline.setMap(null);
   }
-  mapStepHighlightLayer = null;
+  mapStepHighlightPolyline = null;
   if (mapDirectionsEl) {
     mapDirectionsEl
       .querySelectorAll(".directions__item--active")
@@ -3980,27 +4073,30 @@ function activateDirectionStep(stepIndex, { flyTo = true } = {}) {
   if (mapInstance && path) {
     const highlightColor =
       step.color || (step.modeKey ? MODE_COLORS[step.modeKey] : "#f97316");
-    mapStepHighlightLayer = window.L.polyline(path, {
-      color: highlightColor,
-      weight: 6,
-      opacity: 0.9,
-      lineCap: "round",
-      lineJoin: "round",
-    }).addTo(mapInstance);
+    const latLngPath = path.map(([lat, lng]) => ({ lat, lng }));
+    mapStepHighlightPolyline = new google.maps.Polyline({
+      map: mapInstance,
+      path: latLngPath,
+      strokeColor: highlightColor,
+      strokeOpacity: 0.9,
+      strokeWeight: 6,
+      geodesic: true,
+    });
     if (flyTo) {
-      const bounds = computeBoundsFromPath(path);
-      if (bounds) {
-        mapInstance.fitBounds(bounds, { padding: [48, 48] });
+      const bounds = new google.maps.LatLngBounds();
+      latLngPath.forEach((point) => bounds.extend(point));
+      if (!bounds.isEmpty()) {
+        mapInstance.fitBounds(bounds, { padding: 48 });
       }
     }
-  } else if (flyTo && mapRouteLayer) {
-    try {
-      const bounds = mapRouteLayer.getBounds();
-      if (bounds.isValid()) {
-        mapInstance.fitBounds(bounds, { padding: [48, 48] });
+  } else if (flyTo && mapRoutePolyline) {
+    const routePath = mapRoutePolyline.getPath();
+    if (routePath && routePath.getLength() > 0) {
+      const bounds = new google.maps.LatLngBounds();
+      routePath.forEach((point) => bounds.extend(point));
+      if (!bounds.isEmpty()) {
+        mapInstance.fitBounds(bounds, { padding: 48 });
       }
-    } catch (error) {
-      console.warn("Unable to focus map on step", error);
     }
   }
 }
@@ -4923,6 +5019,33 @@ function formatCoordinatePair(pair) {
   )}° ${lngHem}`;
 }
 
+function formatPlaceRating(details) {
+  if (!details) return "";
+  const ratingRaw =
+    typeof details.rating === "number"
+      ? details.rating
+      : typeof details.rating === "string"
+      ? Number.parseFloat(details.rating)
+      : null;
+  if (!Number.isFinite(ratingRaw) || ratingRaw <= 0) {
+    return "";
+  }
+  const ratingValue = Math.max(0, Math.min(5, ratingRaw));
+  const reviewSource =
+    details.userRatingsTotal ??
+    details.user_ratings_total ??
+    (details.googlePlace?.userRatingsTotal || null);
+  const reviewNumber = Number(reviewSource);
+  const reviewCount = Number.isFinite(reviewNumber) ? reviewNumber : null;
+  const reviewsText =
+    reviewCount && reviewCount > 0
+      ? ` (${reviewCount.toLocaleString()} review${
+          reviewCount === 1 ? "" : "s"
+        })`
+      : "";
+  return `${ratingValue.toFixed(1)} ★${reviewsText}`;
+}
+
 function getBookingLinks(ids) {
   if (!Array.isArray(ids)) return [];
   const seen = new Set();
@@ -5369,34 +5492,32 @@ function openItemDetail(type, itemId) {
     itemDetailSubtitle.textContent = subtitleParts.join(" • ");
   }
 
-  if (itemDetailDescription) {
-    if (item.description) {
-      itemDetailDescription.textContent = item.description;
+  const coords = resolveItemCoordinates(item);
+  const coordLabel = formatCoordinatePair(coords);
+  const baseDescription = item.description || "";
+  const coordKey =
+    typeof item.coord === "string" ? item.coord : null;
+  const cachedPlaceDetails = coordKey
+    ? getCachedPlaceDetails(coordKey) || item.googlePlace || null
+    : item.googlePlace || null;
+
+  const applyDescription = (details) => {
+    if (!itemDetailDescription) return;
+    const summary = details?.editorialSummary;
+    if (baseDescription) {
+      itemDetailDescription.textContent = baseDescription;
+      itemDetailDescription.hidden = false;
+    } else if (summary) {
+      itemDetailDescription.textContent = summary;
       itemDetailDescription.hidden = false;
     } else {
       itemDetailDescription.textContent = "";
       itemDetailDescription.hidden = true;
     }
-  }
+  };
 
-  if (item.image && itemDetailImage) {
-    itemDetailImage.src = item.image;
-    itemDetailImage.alt = item.imageAlt || titleText;
-    if (itemDetailMedia) {
-      itemDetailMedia.hidden = false;
-      itemDetailMedia.classList.remove("is-hidden");
-    }
-  } else if (itemDetailImage) {
-    itemDetailImage.src = "";
-    if (itemDetailMedia) {
-      itemDetailMedia.hidden = true;
-      itemDetailMedia.classList.add("is-hidden");
-    }
-  }
-
-  const coords = resolveItemCoordinates(item);
-  const coordLabel = formatCoordinatePair(coords);
-  if (itemDetailMeta) {
+  const renderMeta = (details) => {
+    if (!itemDetailMeta) return;
     itemDetailMeta.innerHTML = "";
     const appendMeta = (label, value) => {
       if (!value) return;
@@ -5415,9 +5536,20 @@ function openItemDetail(type, itemId) {
     if (item.locked) {
       appendMeta("Status", "Locked itinerary item");
     }
-  }
+    if (details?.formattedAddress) {
+      appendMeta("Address", details.formattedAddress);
+    }
+    const ratingText = formatPlaceRating(details);
+    if (ratingText) {
+      appendMeta("Rating", ratingText);
+    }
+    if (details?.phone) {
+      appendMeta("Phone", details.phone);
+    }
+  };
 
-  if (itemDetailLinks) {
+  const renderLinks = (details) => {
+    if (!itemDetailLinks) return;
     itemDetailLinks.innerHTML = "";
     if (item.url) {
       const siteLink = document.createElement("a");
@@ -5427,6 +5559,15 @@ function openItemDetail(type, itemId) {
       siteLink.className = "btn btn--primary";
       siteLink.textContent = "Official site";
       itemDetailLinks.appendChild(siteLink);
+    }
+    if (details?.website && details.website !== item.url) {
+      const websiteLink = document.createElement("a");
+      websiteLink.href = details.website;
+      websiteLink.target = "_blank";
+      websiteLink.rel = "noreferrer noopener";
+      websiteLink.className = "btn";
+      websiteLink.textContent = "Website";
+      itemDetailLinks.appendChild(websiteLink);
     }
     const bookingLinks = getBookingLinks(item.bookingIds);
     bookingLinks.forEach((booking) => {
@@ -5438,21 +5579,77 @@ function openItemDetail(type, itemId) {
       link.textContent = booking.label;
       itemDetailLinks.appendChild(link);
     });
-    if (coordLabel && Array.isArray(coords)) {
-      const [lat, lng] = coords;
+    const mapUrl = details?.googleMapsUrl
+      ? details.googleMapsUrl
+      : Array.isArray(coords)
+      ? `https://www.google.com/maps/search/?api=1&query=${coords[0]},${coords[1]}`
+      : null;
+    if (mapUrl) {
       const mapLink = document.createElement("a");
-      mapLink.href = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+      mapLink.href = mapUrl;
       mapLink.target = "_blank";
       mapLink.rel = "noreferrer noopener";
       mapLink.className = "btn";
       mapLink.textContent = "Open in Google Maps";
       itemDetailLinks.appendChild(mapLink);
     }
-  }
+  };
+
+  const renderMedia = (details) => {
+    if (!itemDetailImage) return;
+    const apiKey = revealEmbeddedApiKey(planState.config.routing?.googleApiKey);
+    const photoUrl =
+      details?.photoReference && apiKey
+        ? buildPlacePhotoUrl(details.photoReference, { apiKey, maxWidth: 1600 })
+        : null;
+    if (photoUrl) {
+      itemDetailImage.src = photoUrl;
+      itemDetailImage.alt = details?.name || titleText;
+      if (itemDetailMedia) {
+        itemDetailMedia.hidden = false;
+        itemDetailMedia.classList.remove("is-hidden");
+      }
+    } else if (item.image) {
+      itemDetailImage.src = item.image;
+      itemDetailImage.alt = item.imageAlt || titleText;
+      if (itemDetailMedia) {
+        itemDetailMedia.hidden = false;
+        itemDetailMedia.classList.remove("is-hidden");
+      }
+    } else {
+      itemDetailImage.src = "";
+      if (itemDetailMedia) {
+        itemDetailMedia.hidden = true;
+        itemDetailMedia.classList.add("is-hidden");
+      }
+    }
+  };
+
+  applyDescription(cachedPlaceDetails);
+  renderMedia(cachedPlaceDetails);
+  renderMeta(cachedPlaceDetails);
+  renderLinks(cachedPlaceDetails);
 
   itemOverlay.classList.add("is-open");
   itemOverlay.setAttribute("aria-hidden", "false");
   document.body.classList.add("item-open");
+
+  if (coordKey) {
+    ensurePlaceDetails(coordKey, { interactive: true }).then((details) => {
+      if (
+        !details ||
+        !activeItemDetail ||
+        activeItemDetail.id !== itemId ||
+        activeItemDetail.type !== type
+      ) {
+        return;
+      }
+      applyDescription(details);
+      renderMedia(details);
+      renderMeta(details);
+      renderLinks(details);
+    });
+  }
 }
 
 function closeItemDetail() {
@@ -5480,7 +5677,7 @@ function closeItemDetail() {
   }
 }
 
-function openMap(dateKey) {
+async function openMap(dateKey) {
   const plan = ensureDay(dateKey);
   activeMapDate = dateKey;
   mapOverlayMode = getMapModeForDate(dateKey);
@@ -5495,19 +5692,43 @@ function openMap(dateKey) {
   updateMapModeUI(dateKey);
   updateMapDirections(dateKey, { mode: mapOverlayMode });
 
-  setTimeout(() => {
-    if (!mapInstance) {
-      mapInstance = window.L.map("map");
-      window.L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        attribution: "© OpenStreetMap contributors",
-        maxZoom: 19,
-      }).addTo(mapInstance);
-      mapMarkersLayer = window.L.layerGroup().addTo(mapInstance);
+  try {
+    const maps = await loadGoogleMapsLibrary({ interactive: true });
+    if (!maps) {
+      if (mapSummaryEl) {
+        mapSummaryEl.textContent =
+          "Add a Google Maps Platform API key to view the map.";
+      }
+      return;
     }
-    mapInstance.invalidateSize();
-    renderMapMarkers(dateKey);
+    if (!mapInstance) {
+      const defaults = planState.config.mapDefaults || {};
+      const defaultCenter = Array.isArray(defaults.center)
+        ? {
+            lat: Number(defaults.center[0]) || 35,
+            lng: Number(defaults.center[1]) || 135.5,
+          }
+        : { lat: 35, lng: 135.5 };
+      const defaultZoom = Number(defaults.zoom) || 5;
+      mapInstance = new maps.Map(document.getElementById("map"), {
+        center: defaultCenter,
+        zoom: defaultZoom,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        gestureHandling: "greedy",
+      });
+    }
+    google.maps.event.trigger(mapInstance, "resize");
+    await renderMapMarkers(dateKey);
     renderMapRoute(dateKey, { mode: mapOverlayMode, fit: true });
-  }, 50);
+  } catch (error) {
+    console.error("Unable to initialize Google Maps", error);
+    if (mapSummaryEl) {
+      mapSummaryEl.textContent =
+        "Unable to load Google Maps. Check your API key and network connection.";
+    }
+  }
 
   scheduleTravelCalculation(dateKey, { interactive: true }).finally(() => {
     if (activeMapDate === dateKey) {
@@ -5525,9 +5746,8 @@ function closeMap() {
   document.body.classList.remove("map-open");
   activeMapDate = null;
   clearMapRoute();
-  if (mapMarkersLayer) {
-    mapMarkersLayer.clearLayers();
-  }
+  mapMarkers.forEach((marker) => marker.setMap(null));
+  mapMarkers = [];
   if (mapSummaryEl) {
     mapSummaryEl.textContent = "";
   }
@@ -6718,14 +6938,14 @@ function buildConfigFromWizardData(data) {
     defaultThemes,
     mapDefaults: resetDays ? null : previousConfig?.mapDefaults || null,
     mapCoordinates: resetDays ? {} : previousConfig?.mapCoordinates || {},
+    placeLookups: deepClone(previousConfig?.placeLookups || planState.config.placeLookups || {}),
     routing: previousConfig?.routing
       ? { ...previousConfig.routing }
       : {
           provider: DEFAULT_ROUTING_PROVIDER,
           drivingProvider: DEFAULT_ROUTING_PROVIDER,
           walkingProvider: DEFAULT_ROUTING_PROVIDER,
-          transitProvider: "auto",
-          openRouteApiKey: "",
+          transitProvider: DEFAULT_ROUTING_PROVIDER,
           googleApiKey: "",
         },
     catalog,
@@ -6773,6 +6993,7 @@ function applyConfigUpdate(nextConfig, { resetDays = false } = {}) {
       : Object.keys(nextConfig.locations || {}),
     defaultThemes: { ...(nextConfig.defaultThemes || {}) },
     mapDefaults: nextConfig.mapDefaults ? { ...nextConfig.mapDefaults } : null,
+    placeLookups: deepClone(nextConfig.placeLookups || {}),
     mapCoordinates: deepClone(nextConfig.mapCoordinates || {}),
     mapCoordinateLabels: { ...(nextConfig.mapCoordinateLabels || {}) },
     catalog: {
