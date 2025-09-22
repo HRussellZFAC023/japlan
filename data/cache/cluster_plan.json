@@ -208,11 +208,12 @@
     "label": "Osaka Minami Street Food",
     "region": "Osaka",
     "centroid": [
-      34.667940400000006,
-      135.50371837499998
+      34.667738911111115,
+      135.50347922222224
     ],
     "members": [
       "CAFE ANNON",
+      "Rikuro's",
       "Gyukatsu Motomura",
       "Katsudon Chiyomatsu",
       "Masahiko Ozumi Paris",
@@ -282,38 +283,21 @@
     "label": "Shibuya Night Circuit",
     "region": "Tokyo",
     "centroid": [
-      35.65929010833333,
-      139.69903729166666
+      35.659356071428576,
+      139.69722527142858
     ],
     "members": [
       "Togoshiya",
-      "Tokyo Metropolitan Government Building",
-      "Shibuya Sky",
       "Gonpachi Shibuya",
       "Karaoke Kan Shibuya",
       "Shibuya 109",
       "Kaikaya by the Sea",
       "GiGO Shibuya",
-      "Genshin Impact Official Shop",
-      "Ichiran Ramen",
-      "NHK Studio Park",
-      "Shibuya Crossing"
+      "Genshin Impact Official Shop"
     ]
   },
   {
     "id": 23,
-    "label": "Osaka Sweet Cravings",
-    "region": "Kansai Airport",
-    "centroid": [
-      34.5229248,
-      130.3527671
-    ],
-    "members": [
-      "Rikuro's"
-    ]
-  },
-  {
-    "id": 24,
     "label": "Pokémon Cafe",
     "region": "Tokyo",
     "centroid": [
@@ -328,34 +312,36 @@
     ]
   },
   {
-    "id": 25,
+    "id": 24,
     "label": "Kyoto Downtown Bites",
     "region": "Kyoto",
     "centroid": [
-      35.007667766666664,
-      135.75876436666667
+      35.008090075000005,
+      135.75905875
     ],
     "members": [
       "Nishiki Market",
+      "(THISIS)SHIZEN",
       "Shunsai Imari",
       "Honke Owariya"
     ]
   },
   {
-    "id": 26,
+    "id": 25,
     "label": "Tsukiji Uni Bowls",
     "region": "Tokyo",
     "centroid": [
-      35.66787295,
-      139.76566995000002
+      35.66884853333334,
+      139.76523706666669
     ],
     "members": [
       "Unitora Nakadori",
-      "Uniqlo Ginza"
+      "Uniqlo Ginza",
+      "GU"
     ]
   },
   {
-    "id": 27,
+    "id": 26,
     "label": "Arashiyama Day Circuit",
     "region": "Kyoto",
     "centroid": [
@@ -373,7 +359,7 @@
     ]
   },
   {
-    "id": 28,
+    "id": 27,
     "label": "Pontocho Alley",
     "region": "Kyoto",
     "centroid": [
@@ -389,7 +375,7 @@
     ]
   },
   {
-    "id": 29,
+    "id": 28,
     "label": "Asakusa Sunrise",
     "region": "Tokyo",
     "centroid": [
@@ -403,7 +389,7 @@
     ]
   },
   {
-    "id": 30,
+    "id": 29,
     "label": "Shabusen Shabu",
     "region": "Tokyo",
     "centroid": [
@@ -415,7 +401,7 @@
     ]
   },
   {
-    "id": 31,
+    "id": 30,
     "label": "Kyoto Higashiyama Morning",
     "region": "Kyoto",
     "centroid": [
@@ -430,7 +416,7 @@
     ]
   },
   {
-    "id": 32,
+    "id": 31,
     "label": "Shiba Park Morning",
     "region": "Tokyo",
     "centroid": [
@@ -443,7 +429,7 @@
     ]
   },
   {
-    "id": 33,
+    "id": 32,
     "label": "Udon Maruka Queue",
     "region": "Tokyo",
     "centroid": [
@@ -455,7 +441,7 @@
     ]
   },
   {
-    "id": 34,
+    "id": 33,
     "label": "Heian Shrine",
     "region": "Kyoto",
     "centroid": [
@@ -467,7 +453,7 @@
     ]
   },
   {
-    "id": 35,
+    "id": 34,
     "label": "Osaka Castle Morning",
     "region": "Osaka",
     "centroid": [
@@ -479,19 +465,25 @@
     ]
   },
   {
-    "id": 36,
-    "label": "Shibuya Tofu Dinner",
-    "region": "Kansai Airport",
+    "id": 35,
+    "label": "Daikanyama Stroll",
+    "region": "Tokyo",
     "centroid": [
-      35.1863258,
-      132.2506971
+      35.657121100000005,
+      139.70162197142855
     ],
     "members": [
-      "Tofu Cuisine Sorano"
+      "Tofu Cuisine Sorano",
+      "Tokyo Metropolitan Government Building",
+      "Shibuya Sky",
+      "Daikanyama T-Site",
+      "Ichiran Ramen",
+      "NHK Studio Park",
+      "Shibuya Crossing"
     ]
   },
   {
-    "id": 37,
+    "id": 36,
     "label": "Ikeda Cup Noodles",
     "region": "Osaka",
     "centroid": [
@@ -503,7 +495,7 @@
     ]
   },
   {
-    "id": 38,
+    "id": 37,
     "label": "Kyushu Ramen Kio",
     "region": "Osaka",
     "centroid": [
@@ -516,7 +508,7 @@
     ]
   },
   {
-    "id": 39,
+    "id": 38,
     "label": "Kura Sushi Conveyor",
     "region": "Osaka",
     "centroid": [
@@ -528,7 +520,7 @@
     ]
   },
   {
-    "id": 40,
+    "id": 39,
     "label": "2D Latte Stop",
     "region": "Tokyo",
     "centroid": [
@@ -541,33 +533,23 @@
     ]
   },
   {
-    "id": 41,
-    "label": "GU Flagship Osaka",
+    "id": 40,
+    "label": "Umeda Skylines",
     "region": "Osaka",
     "centroid": [
-      34.7350206,
-      135.5658619
-    ],
-    "members": [
-      "GU"
-    ]
-  },
-  {
-    "id": 42,
-    "label": "HEP Five Wheel",
-    "region": "Osaka",
-    "centroid": [
-      34.70326136666667,
-      135.49687986666666
+      34.7037217,
+      135.49497212
     ],
     "members": [
       "Unagi Kushiyaki Idumo",
+      "Umeda Sky Building",
+      "Grand Front Osaka",
       "HEP FIVE Ferris Wheel",
       "Osaka Station City"
     ]
   },
   {
-    "id": 43,
+    "id": 41,
     "label": "Tokyo Character Street",
     "region": "Tokyo",
     "centroid": [
@@ -582,19 +564,7 @@
     ]
   },
   {
-    "id": 44,
-    "label": "Shizen Flower Ice Cream",
-    "region": "Himeji",
-    "centroid": [
-      34.6660533,
-      134.941476
-    ],
-    "members": [
-      "(THISIS)SHIZEN"
-    ]
-  },
-  {
-    "id": 45,
+    "id": 42,
     "label": "Shinsekai Retro Stroll",
     "region": "Osaka",
     "centroid": [
@@ -606,7 +576,7 @@
     ]
   },
   {
-    "id": 46,
+    "id": 43,
     "label": "Brooklyn Roasting Break",
     "region": "Osaka",
     "centroid": [
@@ -618,7 +588,7 @@
     ]
   },
   {
-    "id": 47,
+    "id": 44,
     "label": "Fushimi Sake Cellar",
     "region": "Kyoto",
     "centroid": [
@@ -630,7 +600,7 @@
     ]
   },
   {
-    "id": 48,
+    "id": 45,
     "label": "Nara Deer Route",
     "region": "Nara",
     "centroid": [
@@ -643,7 +613,7 @@
     ]
   },
   {
-    "id": 49,
+    "id": 46,
     "label": "Nakatanidou Mochi",
     "region": "Nara",
     "centroid": [
@@ -655,7 +625,7 @@
     ]
   },
   {
-    "id": 50,
+    "id": 47,
     "label": "Uji Tea Pilgrimage",
     "region": "Uji",
     "centroid": [
@@ -668,7 +638,7 @@
     ]
   },
   {
-    "id": 51,
+    "id": 48,
     "label": "Hirakata Local Day",
     "region": "Hirakata",
     "centroid": [
@@ -682,7 +652,7 @@
     ]
   },
   {
-    "id": 52,
+    "id": 49,
     "label": "Hirakata Wellness Break",
     "region": "Hirakata",
     "centroid": [
@@ -694,7 +664,7 @@
     ]
   },
   {
-    "id": 53,
+    "id": 50,
     "label": "Kyoto Zen Gardens",
     "region": "Kyoto",
     "centroid": [
@@ -707,7 +677,7 @@
     ]
   },
   {
-    "id": 54,
+    "id": 51,
     "label": "Kyoto Station Sky Garden",
     "region": "Kyoto",
     "centroid": [
@@ -719,20 +689,7 @@
     ]
   },
   {
-    "id": 55,
-    "label": "Umeda Skylines",
-    "region": "Osaka",
-    "centroid": [
-      34.7044122,
-      135.4921105
-    ],
-    "members": [
-      "Umeda Sky Building",
-      "Grand Front Osaka"
-    ]
-  },
-  {
-    "id": 56,
+    "id": 52,
     "label": "Hirakata Park",
     "region": "Hirakata",
     "centroid": [
@@ -744,7 +701,7 @@
     ]
   },
   {
-    "id": 57,
+    "id": 53,
     "label": "Kuzuha Mall Late Run",
     "region": "Hirakata",
     "centroid": [
@@ -756,7 +713,7 @@
     ]
   },
   {
-    "id": 58,
+    "id": 54,
     "label": "Meiji Forest Walk",
     "region": "Tokyo",
     "centroid": [
@@ -769,7 +726,7 @@
     ]
   },
   {
-    "id": 59,
+    "id": 55,
     "label": "Toyosu Morning & teamLab",
     "region": "Tokyo",
     "centroid": [
@@ -782,7 +739,7 @@
     ]
   },
   {
-    "id": 60,
+    "id": 56,
     "label": "Tokyo DisneySea Day",
     "region": "Tokyo",
     "centroid": [
@@ -795,7 +752,7 @@
     ]
   },
   {
-    "id": 61,
+    "id": 57,
     "label": "Osaka Museum of Housing",
     "region": "Osaka",
     "centroid": [
@@ -807,7 +764,7 @@
     ]
   },
   {
-    "id": 62,
+    "id": 58,
     "label": "Kobe Herb View",
     "region": "Kobe",
     "centroid": [
@@ -819,7 +776,7 @@
     ]
   },
   {
-    "id": 63,
+    "id": 59,
     "label": "Steakland Kobe Lunch",
     "region": "Kobe",
     "centroid": [
@@ -831,7 +788,7 @@
     ]
   },
   {
-    "id": 64,
+    "id": 60,
     "label": "Arima Onsen Retreat",
     "region": "Kobe",
     "centroid": [
@@ -843,7 +800,7 @@
     ]
   },
   {
-    "id": 65,
+    "id": 61,
     "label": "Kobe Harbor Nights",
     "region": "Kobe",
     "centroid": [
@@ -855,7 +812,7 @@
     ]
   },
   {
-    "id": 66,
+    "id": 62,
     "label": "Universal Studios Japan Adventure",
     "region": "Osaka",
     "centroid": [
@@ -867,7 +824,7 @@
     ]
   },
   {
-    "id": 67,
+    "id": 63,
     "label": "MYDO Teppanyaki Feast",
     "region": "Osaka",
     "centroid": [
@@ -880,7 +837,7 @@
     ]
   },
   {
-    "id": 68,
+    "id": 64,
     "label": "Bar Nayuta Rooftop",
     "region": "Osaka",
     "centroid": [
@@ -893,7 +850,7 @@
     ]
   },
   {
-    "id": 69,
+    "id": 65,
     "label": "Okutan Nanzenji Lunch",
     "region": "Kyoto",
     "centroid": [
@@ -906,7 +863,7 @@
     ]
   },
   {
-    "id": 70,
+    "id": 66,
     "label": "Tōfuku-ji Canopies",
     "region": "Kyoto",
     "centroid": [
@@ -918,7 +875,7 @@
     ]
   },
   {
-    "id": 71,
+    "id": 67,
     "label": "Rinku Premium Outlets",
     "region": "Kansai Airport",
     "centroid": [
@@ -930,7 +887,7 @@
     ]
   },
   {
-    "id": 72,
+    "id": 68,
     "label": "Nakazakicho Ramen",
     "region": "Osaka",
     "centroid": [
@@ -942,7 +899,7 @@
     ]
   },
   {
-    "id": 73,
+    "id": 69,
     "label": "Bear Paw Cafe Break",
     "region": "Osaka",
     "centroid": [
@@ -954,7 +911,7 @@
     ]
   },
   {
-    "id": 74,
+    "id": 70,
     "label": "Koyasan Ropeway Ascent",
     "region": "Koyasan",
     "centroid": [
@@ -966,7 +923,7 @@
     ]
   },
   {
-    "id": 75,
+    "id": 71,
     "label": "Koyasan Temple Tour",
     "region": "Koyasan",
     "centroid": [
@@ -978,7 +935,7 @@
     ]
   },
   {
-    "id": 76,
+    "id": 72,
     "label": "Okunoin Night Walk",
     "region": "Koyasan",
     "centroid": [
@@ -990,7 +947,7 @@
     ]
   },
   {
-    "id": 77,
+    "id": 73,
     "label": "Kaiyukan Twilight Wander",
     "region": "Osaka",
     "centroid": [
@@ -1003,7 +960,7 @@
     ]
   },
   {
-    "id": 78,
+    "id": 74,
     "label": "Nozomi Northbound",
     "region": "Osaka",
     "centroid": [
@@ -1015,7 +972,7 @@
     ]
   },
   {
-    "id": 79,
+    "id": 75,
     "label": "Odaiba Seaside",
     "region": "Tokyo",
     "centroid": [
@@ -1027,20 +984,19 @@
     ]
   },
   {
-    "id": 80,
+    "id": 76,
     "label": "Daikanyama Stroll",
     "region": "Tokyo",
     "centroid": [
-      35.64539355,
-      139.7008068
+      35.6417281,
+      139.7019912
     ],
     "members": [
-      "Daikanyama T-Site",
       "Nakameguro"
     ]
   },
   {
-    "id": 81,
+    "id": 77,
     "label": "Tokyo Skytree Deck",
     "region": "Tokyo",
     "centroid": [
@@ -1052,7 +1008,7 @@
     ]
   },
   {
-    "id": 82,
+    "id": 78,
     "label": "Nagai Night Lights",
     "region": "Osaka",
     "centroid": [
@@ -1064,7 +1020,7 @@
     ]
   },
   {
-    "id": 83,
+    "id": 79,
     "label": "Himeji Heritage Walk",
     "region": "Himeji",
     "centroid": [
@@ -1076,7 +1032,7 @@
     ]
   },
   {
-    "id": 84,
+    "id": 80,
     "label": "Philosopher's Path",
     "region": "Kyoto",
     "centroid": [
@@ -1088,7 +1044,7 @@
     ]
   },
   {
-    "id": 85,
+    "id": 81,
     "label": "Takamura Farewell Brunch",
     "region": "Osaka",
     "centroid": [
@@ -1100,7 +1056,7 @@
     ]
   },
   {
-    "id": 86,
+    "id": 82,
     "label": "Animate Ikebukuro",
     "region": "Tokyo",
     "centroid": [
@@ -1112,7 +1068,7 @@
     ]
   },
   {
-    "id": 87,
+    "id": 83,
     "label": "Imperial Palace Gardens",
     "region": "Tokyo",
     "centroid": [
@@ -1124,7 +1080,7 @@
     ]
   },
   {
-    "id": 88,
+    "id": 84,
     "label": "Fushimi Sunset Gates",
     "region": "Kyoto",
     "centroid": [
@@ -1136,7 +1092,7 @@
     ]
   },
   {
-    "id": 89,
+    "id": 85,
     "label": "Maidreamin Akihabara",
     "region": "Tokyo",
     "centroid": [

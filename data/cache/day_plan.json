@@ -7,12 +7,12 @@
       "KIX Arrival",
       "Osaka Minami Street Food",
       "Osaka Late-Night Donki",
-      "Agora Riverside Base",
-      "Osaka Sweet Cravings"
+      "Agora Riverside Base"
     ],
     "stops": [
       "Kansai International Airport DXB → KIX (EK316) 13:30",
       "CAFE ANNON",
+      "Rikuro's",
       "Gyukatsu Motomura",
       "Katsudon Chiyomatsu",
       "Masahiko Ozumi Paris",
@@ -21,8 +21,7 @@
       "Okonomiyaki Mizuno",
       "Hozenji Yokocho",
       "Don Quijote",
-      "Hotel Agora Osaka Moriguchi",
-      "Rikuro's"
+      "Hotel Agora Osaka Moriguchi"
     ]
   },
   {
@@ -32,23 +31,25 @@
     "clusters": [
       "Osaka Castle Morning",
       "Brooklyn Roasting Break",
-      "HEP Five Wheel",
+      "Osaka Onigiri Snack",
+      "Bar Nayuta Rooftop",
       "Umeda Skylines",
       "Osaka Museum of Housing",
-      "Nakazakicho Ramen",
-      "Osaka Onigiri Snack"
+      "Nakazakicho Ramen"
     ],
     "stops": [
       "Osaka Castle",
       "Brooklyn Roasting Company",
+      "Riceball Gori-chan",
+      "Bar Nayuta",
+      "& COFFEE MAISON",
       "Unagi Kushiyaki Idumo",
-      "HEP FIVE Ferris Wheel",
-      "Osaka Station City",
       "Umeda Sky Building",
       "Grand Front Osaka",
+      "HEP FIVE Ferris Wheel",
+      "Osaka Station City",
       "Osaka Museum of Housing and Living",
-      "Human Beings Everybody Noodles",
-      "Riceball Gori-chan"
+      "Human Beings Everybody Noodles"
     ]
   },
   {
@@ -136,6 +137,7 @@
       "MACCHA HOUSE Kyoto Kawaramachi",
       "Kyomachiya Ryokan Sakura Urushitei",
       "Nishiki Market",
+      "(THISIS)SHIZEN",
       "Shunsai Imari",
       "Honke Owariya",
       "Kyoto Station Sky Garden",
@@ -157,22 +159,22 @@
     "clusters": [
       "Uji Tea Pilgrimage",
       "Okutan Nanzenji Lunch",
+      "Heian Shrine",
       "Kyoto Zen North",
       "Kyoto Zen Gardens",
-      "OMO7 Osaka Stay",
-      "Shizen Flower Ice Cream"
+      "OMO7 Osaka Stay"
     ],
     "stops": [
       "Byōdō-in",
       "Tsuen Tea",
       "Eikan-dō Zenrin-ji",
       "Okutan Nanzenji",
+      "Heian Shrine",
       "Abura Soba Kirinji",
       "Kinkaku-ji",
       "Ryōan-ji",
       "Camellia Tea Ceremony",
-      "OMO7 Osaka",
-      "(THISIS)SHIZEN"
+      "OMO7 Osaka"
     ]
   },
   {
@@ -197,8 +199,7 @@
       "Harajuku Street Mix",
       "Shibuya Night Circuit",
       "Suga Shrine Steps",
-      "Shibuya Loft Dash",
-      "Shibuya Tofu Dinner"
+      "Shibuya Loft Dash"
     ],
     "stops": [
       "Afuri",
@@ -209,22 +210,16 @@
       "Cat Street",
       "Soosh Harajuku",
       "Togoshiya",
-      "Tokyo Metropolitan Government Building",
-      "Shibuya Sky",
       "Gonpachi Shibuya",
       "Karaoke Kan Shibuya",
       "Shibuya 109",
       "Kaikaya by the Sea",
       "GiGO Shibuya",
       "Genshin Impact Official Shop",
-      "Ichiran Ramen",
-      "NHK Studio Park",
-      "Shibuya Crossing",
       "Suga Jinja",
       "Ikeda-ya TeaStore",
       "LOFT",
-      "Cinnamoroll Cafe",
-      "Tofu Cuisine Sorano"
+      "Cinnamoroll Cafe"
     ]
   },
   {
@@ -245,12 +240,12 @@
       "Toyosu Market",
       "Unitora Nakadori",
       "Uniqlo Ginza",
+      "GU",
       "Bakery Bank",
       "Ippuku & Matcha",
       "Godaime Hanayama Udon",
       "Pokémon Café",
       "MIMARU Tokyo Shinjuku WEST",
-      "Daikanyama T-Site",
       "Nakameguro",
       "Animate Ikebukuro",
       "Odaiba Seaside Park"
@@ -309,28 +304,29 @@
     "clusters": [
       "Nara Deer Route",
       "Nakatanidou Mochi",
-      "GU Flagship Osaka",
-      "Afternoon Glam & Restock",
-      "Shinsaibashi-Suji Stroll",
+      "Nagai Night Lights",
+      "Shinsekai Retro Stroll",
+      "Namba Yasaka Jinja",
       "Torame Yokocho Night Bites",
       "Kuromon Market Crawl",
-      "Namba Yasaka Jinja",
-      "Shinsekai Retro Stroll",
-      "Nagai Night Lights",
+      "Shinsaibashi-Suji Stroll",
+      "Afternoon Glam & Restock",
+      "MYDO Teppanyaki Feast",
       "Kura Sushi Conveyor"
     ],
     "stops": [
       "Tōdai-ji",
       "Nara Park",
       "Nakatanidou",
-      "GU",
-      "Afternoon Glam & Restock",
-      "Shinsaibashi-Suji Shopping Street",
+      "teamLab Botanical Garden",
+      "Shinsekai",
+      "Namba Yasaka Jinja",
       "Torame Yokocho",
       "Kuromon Market",
-      "Namba Yasaka Jinja",
-      "Shinsekai",
-      "teamLab Botanical Garden",
+      "Shinsaibashi-Suji Shopping Street",
+      "Afternoon Glam & Restock",
+      "MYDO Teppanyaki",
+      "Donguri Republic",
       "Kura Sushi"
     ]
   },
@@ -357,16 +353,10 @@
     "date": "2025-11-28",
     "clusters": [
       "W Osaka Birthday Core",
-      "MYDO Teppanyaki Feast",
-      "Bar Nayuta Rooftop",
       "Karaoke Kan Shinsaibashi"
     ],
     "stops": [
       "W Osaka",
-      "MYDO Teppanyaki",
-      "Donguri Republic",
-      "Bar Nayuta",
-      "& COFFEE MAISON",
       "Karaoke Kan Shinsaibashi"
     ]
   },
@@ -376,12 +366,10 @@
     "date": "2025-11-29",
     "clusters": [
       "Philosopher's Path",
-      "Heian Shrine",
       "Tōfuku-ji Canopies"
     ],
     "stops": [
       "Philosopher's Path",
-      "Heian Shrine",
       "Tōfuku-ji"
     ]
   },
