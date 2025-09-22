@@ -1,0 +1,403 @@
+[
+  {
+    "day": 1,
+    "title": "Arrival & Minami Night",
+    "date": "2025-11-14",
+    "clusters": [
+      "KIX Arrival",
+      "Osaka Minami Street Food",
+      "Osaka Late-Night Donki",
+      "Agora Riverside Base",
+      "Osaka Sweet Cravings"
+    ],
+    "stops": [
+      "Kansai International Airport DXB → KIX (EK316) 13:30",
+      "CAFE ANNON",
+      "Gyukatsu Motomura",
+      "Katsudon Chiyomatsu",
+      "Masahiko Ozumi Paris",
+      "Dotonbori",
+      "Tombori River Cruise",
+      "Okonomiyaki Mizuno",
+      "Hozenji Yokocho",
+      "Don Quijote",
+      "Hotel Agora Osaka Moriguchi",
+      "Rikuro's"
+    ]
+  },
+  {
+    "day": 2,
+    "title": "Osaka Icons & Umeda",
+    "date": "2025-11-15",
+    "clusters": [
+      "Osaka Castle Morning",
+      "Brooklyn Roasting Break",
+      "HEP Five Wheel",
+      "Umeda Skylines",
+      "Osaka Museum of Housing",
+      "Nakazakicho Ramen",
+      "Osaka Onigiri Snack"
+    ],
+    "stops": [
+      "Osaka Castle",
+      "Brooklyn Roasting Company",
+      "Unagi Kushiyaki Idumo",
+      "HEP FIVE Ferris Wheel",
+      "Osaka Station City",
+      "Umeda Sky Building",
+      "Grand Front Osaka",
+      "Osaka Museum of Housing and Living",
+      "Human Beings Everybody Noodles",
+      "Riceball Gori-chan"
+    ]
+  },
+  {
+    "day": 3,
+    "title": "Osaka Bay Adventure",
+    "date": "2025-11-16",
+    "clusters": [
+      "Universal Studios Japan Adventure",
+      "Kyushu Ramen Kio",
+      "Kaiyukan Twilight Wander",
+      "Ikeda Cup Noodles"
+    ],
+    "stops": [
+      "Universal Studios Japan",
+      "Kyushu Ramen Kio",
+      "Takoume Honten",
+      "Osaka Aquarium Kaiyukan",
+      "Tempozan Marketplace",
+      "Cup Noodles Museum"
+    ]
+  },
+  {
+    "day": 4,
+    "title": "Himeji & Kobe Day Trip",
+    "date": "2025-11-17",
+    "clusters": [
+      "Himeji Heritage Walk",
+      "Kobe Herb View",
+      "Steakland Kobe Lunch",
+      "Kobe Harbor Nights",
+      "Arima Onsen Retreat"
+    ],
+    "stops": [
+      "Himeji Castle",
+      "Kobe Nunobiki Herb Gardens",
+      "Steakland Kobe",
+      "Kobe Harborland",
+      "Arima Onsen Taiko-no-yu"
+    ]
+  },
+  {
+    "day": 5,
+    "title": "Hirakata Work Rhythm",
+    "date": "2025-11-18",
+    "clusters": [
+      "Hirakata Local Day",
+      "Hirakata Park",
+      "Hirakata Wellness Break",
+      "Kuzuha Mall Late Run",
+      "Bear Paw Cafe Break"
+    ],
+    "stops": [
+      "Café & Meal MUJI",
+      "Kushikatsu Tanaka",
+      "Torisei Hirakata",
+      "Hirakata Park",
+      "Gokurakuyu Hirakata",
+      "Kuzuha Mall",
+      "Bear Paw Cafe"
+    ]
+  },
+  {
+    "day": 6,
+    "title": "Kyoto Higashiyama & Fushimi",
+    "date": "2025-11-19",
+    "clusters": [
+      "Kyoto Higashiyama Morning",
+      "Pontocho Alley",
+      "Kyomachiya Stay",
+      "Kyoto Downtown Bites",
+      "Kyoto Station Sky Garden",
+      "Fushimi Sunset Gates",
+      "Fushimi Sake Cellar",
+      "Arashiyama Day Circuit"
+    ],
+    "stops": [
+      "Waka Kimono Rental",
+      "Kiyomizu-dera",
+      "Sannenzaka & Ninenzaka",
+      "Kōdai-ji",
+      "Gion Komori",
+      "Kyoto Yakiniku Hiro",
+      "Hanamikoji Street",
+      "Pontocho Alley",
+      "MACCHA HOUSE Kyoto Kawaramachi",
+      "Kyomachiya Ryokan Sakura Urushitei",
+      "Nishiki Market",
+      "Shunsai Imari",
+      "Honke Owariya",
+      "Kyoto Station Sky Garden",
+      "Fushimi Inari Taisha",
+      "Gekkeikan Okura Sake Museum",
+      "Arashiyama Itsukichaya",
+      "Arashiyama Rilakkuma Tea House",
+      "Arashiyama Miffy Sakura Kitchen",
+      "Arashiyama Bamboo Forest",
+      "Tenryu-ji",
+      "Arashiyama Yoshimura",
+      "Kimono Forest"
+    ]
+  },
+  {
+    "day": 7,
+    "title": "Arashiyama Dawn & Tea",
+    "date": "2025-11-20",
+    "clusters": [
+      "Uji Tea Pilgrimage",
+      "Okutan Nanzenji Lunch",
+      "Kyoto Zen North",
+      "Kyoto Zen Gardens",
+      "OMO7 Osaka Stay",
+      "Shizen Flower Ice Cream"
+    ],
+    "stops": [
+      "Byōdō-in",
+      "Tsuen Tea",
+      "Eikan-dō Zenrin-ji",
+      "Okutan Nanzenji",
+      "Abura Soba Kirinji",
+      "Kinkaku-ji",
+      "Ryōan-ji",
+      "Camellia Tea Ceremony",
+      "OMO7 Osaka",
+      "(THISIS)SHIZEN"
+    ]
+  },
+  {
+    "day": 8,
+    "title": "Work Sprint & Shibuya Arrival",
+    "date": "2025-11-21",
+    "clusters": [
+      "Nozomi Northbound",
+      "Sequence Miyashita Park"
+    ],
+    "stops": [
+      "Nozomi Express",
+      "sequence MIYASHITA PARK"
+    ]
+  },
+  {
+    "day": 9,
+    "title": "Harajuku & Shibuya With Friends",
+    "date": "2025-11-22",
+    "clusters": [
+      "Meiji Forest Walk",
+      "Harajuku Street Mix",
+      "Shibuya Night Circuit",
+      "Suga Shrine Steps",
+      "Shibuya Loft Dash",
+      "Shibuya Tofu Dinner"
+    ],
+    "stops": [
+      "Afuri",
+      "Meiji Jingu",
+      "NAMU CAFE",
+      "CAFE REISSUE",
+      "Takeshita Street",
+      "Cat Street",
+      "Soosh Harajuku",
+      "Togoshiya",
+      "Tokyo Metropolitan Government Building",
+      "Shibuya Sky",
+      "Gonpachi Shibuya",
+      "Karaoke Kan Shibuya",
+      "Shibuya 109",
+      "Kaikaya by the Sea",
+      "GiGO Shibuya",
+      "Genshin Impact Official Shop",
+      "Ichiran Ramen",
+      "NHK Studio Park",
+      "Shibuya Crossing",
+      "Suga Jinja",
+      "Ikeda-ya TeaStore",
+      "LOFT",
+      "Cinnamoroll Cafe",
+      "Tofu Cuisine Sorano"
+    ]
+  },
+  {
+    "day": 10,
+    "title": "Toyosu Morning & Odaiba Glow",
+    "date": "2025-11-23",
+    "clusters": [
+      "Toyosu Morning & teamLab",
+      "Tsukiji Uni Bowls",
+      "Pokémon Cafe",
+      "MIMARU Tokyo Base",
+      "Daikanyama Stroll",
+      "Animate Ikebukuro",
+      "Odaiba Seaside"
+    ],
+    "stops": [
+      "teamLab Planets",
+      "Toyosu Market",
+      "Unitora Nakadori",
+      "Uniqlo Ginza",
+      "Bakery Bank",
+      "Ippuku & Matcha",
+      "Godaime Hanayama Udon",
+      "Pokémon Café",
+      "MIMARU Tokyo Shinjuku WEST",
+      "Daikanyama T-Site",
+      "Nakameguro",
+      "Animate Ikebukuro",
+      "Odaiba Seaside Park"
+    ]
+  },
+  {
+    "day": 11,
+    "title": "DisneySea Celebration",
+    "date": "2025-11-24",
+    "clusters": [
+      "Tokyo DisneySea Day"
+    ],
+    "stops": [
+      "Tokyo DisneySea",
+      "Disney Hotel"
+    ]
+  },
+  {
+    "day": 12,
+    "title": "Asakusa Sunrise & Return South",
+    "date": "2025-11-25",
+    "clusters": [
+      "Asakusa Sunrise",
+      "Tokyo Skytree Deck",
+      "Maidreamin Akihabara",
+      "Udon Maruka Queue",
+      "Imperial Palace Gardens",
+      "Tokyo Character Street",
+      "Shabusen Shabu",
+      "Shiba Park Morning",
+      "2D Latte Stop"
+    ],
+    "stops": [
+      "Shinpachi Shokudō",
+      "Senso-ji",
+      "Asakusaimahan",
+      "Tokyo Skytree",
+      "Maidreamin Akihabara",
+      "Udon Maruka",
+      "Imperial Palace East Gardens",
+      "Tokyo Ramen Yokocho",
+      "Nozomi Express",
+      "Tokyo Character Street",
+      "Nozomi Express",
+      "Shabusen",
+      "Shiba Park",
+      "Tokyo Tower",
+      "2D Cafe",
+      "Hello Donuts"
+    ]
+  },
+  {
+    "day": 13,
+    "title": "Nara Morning & Osaka Evening",
+    "date": "2025-11-26",
+    "clusters": [
+      "Nara Deer Route",
+      "Nakatanidou Mochi",
+      "GU Flagship Osaka",
+      "Afternoon Glam & Restock",
+      "Shinsaibashi-Suji Stroll",
+      "Torame Yokocho Night Bites",
+      "Kuromon Market Crawl",
+      "Namba Yasaka Jinja",
+      "Shinsekai Retro Stroll",
+      "Nagai Night Lights",
+      "Kura Sushi Conveyor"
+    ],
+    "stops": [
+      "Tōdai-ji",
+      "Nara Park",
+      "Nakatanidou",
+      "GU",
+      "Afternoon Glam & Restock",
+      "Shinsaibashi-Suji Shopping Street",
+      "Torame Yokocho",
+      "Kuromon Market",
+      "Namba Yasaka Jinja",
+      "Shinsekai",
+      "teamLab Botanical Garden",
+      "Kura Sushi"
+    ]
+  },
+  {
+    "day": 14,
+    "title": "Koyasan Pilgrimage",
+    "date": "2025-11-27",
+    "clusters": [
+      "Koyasan Ropeway Ascent",
+      "Koyasan Temple Tour",
+      "Eko-in Temple Stay",
+      "Okunoin Night Walk"
+    ],
+    "stops": [
+      "Namba to Koyasan",
+      "Kongobu-ji",
+      "Eko-in Temple",
+      "Okunoin"
+    ]
+  },
+  {
+    "day": 15,
+    "title": "W Osaka Birthday",
+    "date": "2025-11-28",
+    "clusters": [
+      "W Osaka Birthday Core",
+      "MYDO Teppanyaki Feast",
+      "Bar Nayuta Rooftop",
+      "Karaoke Kan Shinsaibashi"
+    ],
+    "stops": [
+      "W Osaka",
+      "MYDO Teppanyaki",
+      "Donguri Republic",
+      "Bar Nayuta",
+      "& COFFEE MAISON",
+      "Karaoke Kan Shinsaibashi"
+    ]
+  },
+  {
+    "day": 16,
+    "title": "Kyoto Autumn Encore",
+    "date": "2025-11-29",
+    "clusters": [
+      "Philosopher's Path",
+      "Heian Shrine",
+      "Tōfuku-ji Canopies"
+    ],
+    "stops": [
+      "Philosopher's Path",
+      "Heian Shrine",
+      "Tōfuku-ji"
+    ]
+  },
+  {
+    "day": 17,
+    "title": "Farewell Kansai",
+    "date": "2025-11-30",
+    "clusters": [
+      "Takamura Farewell Brunch",
+      "Rinku Premium Outlets",
+      "KIX Departure"
+    ],
+    "stops": [
+      "Takamura Wine & Coffee",
+      "Rinku Premium Outlets",
+      "Kansai International Airport 23:10 KIX → DXB (EK317)"
+    ]
+  }
+]
