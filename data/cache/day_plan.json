@@ -1,0 +1,297 @@
+[
+  {
+    "day": 1,
+    "title": "Touchdown & cosy Hirakata welcome",
+    "date": "2025-11-14",
+    "clusters": [
+      "KIX Arrival",
+      "Agora Riverside Base",
+      "Hirakata Local Day"
+    ],
+    "stops": [
+      "Kansai International Airport DXB → KIX (EK316) 13:30",
+      "Hotel Agora Osaka Moriguchi",
+      "Torisei Hirakata"
+    ]
+  },
+  {
+    "day": 2,
+    "title": "Osaka Minami street fashion & neon bites",
+    "date": "2025-11-15",
+    "clusters": [
+      "Brooklyn Roasting Break",
+      "Shinsaibashi-Suji Stroll",
+      "Kuromon Market Crawl",
+      "Namba Yasaka Jinja",
+      "Osaka Minami Street Food",
+      "Nagai Night Lights"
+    ],
+    "stops": [
+      "Brooklyn Roasting Company",
+      "Shinsaibashi-Suji Shopping Street",
+      "Kuromon Market",
+      "Namba Yasaka Jinja",
+      "Dotonbori",
+      "Tombori River Cruise",
+      "Okonomiyaki Mizuno",
+      "Hozenji Yokocho",
+      "teamLab Botanical Garden"
+    ]
+  },
+  {
+    "day": 3,
+    "title": "Osaka Castle glow & Umeda skyline",
+    "date": "2025-11-16",
+    "clusters": [
+      "Osaka Castle Morning",
+      "Osaka Museum of Housing",
+      "Umeda Skylines",
+      "Nakazakicho Ramen"
+    ],
+    "stops": [
+      "Osaka Castle",
+      "& COFFEE MAISON",
+      "Osaka Museum of Housing and Living",
+      "Grand Front Osaka",
+      "Umeda Sky Building",
+      "Human Beings Everybody Noodles"
+    ]
+  },
+  {
+    "day": 4,
+    "title": "Kyoto riverside & shrine symphony",
+    "date": "2025-11-17",
+    "clusters": [
+      "Arashiyama Day Circuit",
+      "Fushimi Sunset Gates",
+      "Fushimi Sake Cellar",
+      "Pontocho Alley"
+    ],
+    "stops": [
+      "Arashiyama Bamboo Forest",
+      "Tenryu-ji",
+      "Kimono Forest",
+      "Fushimi Inari Taisha",
+      "Gekkeikan Okura Sake Museum",
+      "Pontocho Alley"
+    ]
+  },
+  {
+    "day": 5,
+    "title": "Hirakata co-work rhythm & cosy comforts",
+    "date": "2025-11-18",
+    "clusters": [
+      "Hirakata Local Day",
+      "Bear Paw Cafe Break",
+      "Hirakata Wellness Break",
+      "Kuzuha Mall Late Run"
+    ],
+    "stops": [
+      "Café & Meal MUJI",
+      "Bear Paw Cafe",
+      "Gokurakuyu Hirakata",
+      "Kushikatsu Tanaka",
+      "Kuzuha Mall"
+    ]
+  },
+  {
+    "day": 6,
+    "title": "Mount Koya retreat & temple night",
+    "date": "2025-11-19",
+    "clusters": [
+      "Koyasan Ropeway Ascent",
+      "Koyasan Temple Tour",
+      "Eko-in Temple Stay",
+      "Okunoin Night Walk"
+    ],
+    "stops": [
+      "Namba to Koyasan",
+      "Kongobu-ji",
+      "Eko-in Temple",
+      "Okunoin"
+    ]
+  },
+  {
+    "day": 7,
+    "title": "Return to Osaka & bayfront sparkle",
+    "date": "2025-11-20",
+    "clusters": [
+      "OMO7 Osaka Stay",
+      "Kaiyukan Twilight Wander"
+    ],
+    "stops": [
+      "OMO7 Osaka",
+      "Osaka Aquarium Kaiyukan"
+    ]
+  },
+  {
+    "day": 8,
+    "title": "Work sprint & shinkansen to Shibuya",
+    "date": "2025-11-21",
+    "clusters": [
+      "Nozomi Northbound",
+      "Sequence Miyashita Park",
+      "Shibuya Night Circuit"
+    ],
+    "stops": [
+      "Nozomi Express",
+      "sequence MIYASHITA PARK",
+      "Shibuya Crossing",
+      "Shibuya 109",
+      "Kaikaya by the Sea"
+    ]
+  },
+  {
+    "day": 9,
+    "title": "Tokyo DisneySea sparkle with the crew",
+    "date": "2025-11-22",
+    "clusters": [
+      "Tokyo DisneySea Day",
+      "MIMARU Tokyo Base"
+    ],
+    "stops": [
+      "Tokyo DisneySea",
+      "MIMARU Tokyo Shinjuku WEST"
+    ]
+  },
+  {
+    "day": 10,
+    "title": "Toyosu mornings & Odaiba glow",
+    "date": "2025-11-23",
+    "clusters": [
+      "Toyosu Morning & teamLab",
+      "Pokémon Cafe",
+      "Odaiba Seaside",
+      "Maidreamin Akihabara",
+      "Shibuya Night Circuit"
+    ],
+    "stops": [
+      "Toyosu Market",
+      "teamLab Planets",
+      "Pokémon Café",
+      "Odaiba Seaside Park",
+      "Maidreamin Akihabara",
+      "Karaoke Kan Shibuya"
+    ]
+  },
+  {
+    "day": 11,
+    "title": "Harajuku vibes & skyline toasts",
+    "date": "2025-11-24",
+    "clusters": [
+      "Meiji Forest Walk",
+      "Harajuku Street Mix",
+      "Daikanyama Stroll",
+      "Shibuya Night Circuit"
+    ],
+    "stops": [
+      "Meiji Jingu",
+      "Takeshita Street",
+      "Afuri",
+      "Cat Street",
+      "Daikanyama T-Site",
+      "Nakameguro",
+      "Shibuya Sky"
+    ]
+  },
+  {
+    "day": 12,
+    "title": "Asakusa sunrise & Osaka return reset",
+    "date": "2025-11-25",
+    "clusters": [
+      "Asakusa Sunrise",
+      "Tokyo Skytree Deck",
+      "Tokyo Character Street",
+      "Torame Yokocho Night Bites"
+    ],
+    "stops": [
+      "Senso-ji",
+      "Tokyo Skytree",
+      "Asakusaimahan",
+      "Tokyo Character Street",
+      "Nozomi Express",
+      "Torame Yokocho"
+    ]
+  },
+  {
+    "day": 13,
+    "title": "Creative Osaka reset & Kaiyukan night",
+    "date": "2025-11-26",
+    "clusters": [
+      "Shinsekai Retro Stroll"
+    ],
+    "stops": [
+      "Shinsekai"
+    ]
+  },
+  {
+    "day": 14,
+    "title": "Himeji heritage & Kobe indulgence",
+    "date": "2025-11-27",
+    "clusters": [
+      "Himeji Heritage Walk",
+      "Kobe Herb View",
+      "Steakland Kobe Lunch",
+      "Arima Onsen Retreat",
+      "Kobe Harbor Nights"
+    ],
+    "stops": [
+      "Himeji Castle",
+      "Kobe Nunobiki Herb Gardens",
+      "Steakland Kobe",
+      "Arima Onsen Taiko-no-yu",
+      "Kobe Harborland"
+    ]
+  },
+  {
+    "day": 15,
+    "title": "Osaka birthday supernova",
+    "date": "2025-11-28",
+    "clusters": [
+      "W Osaka Birthday Core",
+      "Afternoon Glam & Restock",
+      "MYDO Teppanyaki Feast",
+      "Karaoke Kan Shinsaibashi",
+      "Bar Nayuta Rooftop"
+    ],
+    "stops": [
+      "W Osaka",
+      "Afternoon Glam & Restock",
+      "Donguri Republic",
+      "MYDO Teppanyaki",
+      "Karaoke Kan Shinsaibashi",
+      "Bar Nayuta"
+    ]
+  },
+  {
+    "day": 16,
+    "title": "Kyoto foliage encore with friends",
+    "date": "2025-11-29",
+    "clusters": [
+      "Okutan Nanzenji Lunch",
+      "Philosopher's Path",
+      "Tōfuku-ji Canopies"
+    ],
+    "stops": [
+      "Eikan-dō Zenrin-ji",
+      "Philosopher's Path",
+      "Okutan Nanzenji",
+      "Tōfuku-ji"
+    ]
+  },
+  {
+    "day": 17,
+    "title": "Osaka soft landing & farewell",
+    "date": "2025-11-30",
+    "clusters": [
+      "Takamura Farewell Brunch",
+      "Rinku Premium Outlets",
+      "KIX Departure"
+    ],
+    "stops": [
+      "Takamura Wine & Coffee",
+      "Rinku Premium Outlets",
+      "Kansai International Airport 23:10 KIX → DXB (EK317)"
+    ]
+  }
+]
